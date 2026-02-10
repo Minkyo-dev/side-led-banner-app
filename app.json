@@ -3,7 +3,7 @@
     "name": "side-led-banner-app",
     "slug": "side-led-banner-app",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "sideledbannerapp",
     "userInterfaceStyle": "automatic",
