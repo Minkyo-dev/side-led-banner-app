@@ -8,7 +8,7 @@ export const styles = StyleSheet.create({
     backgroundColor: "#F6F6F6",
   },
   previewContainer: {
-    height: 355,
+    height: (SCREEN_WIDTH - 18) * (355 / 373),
     padding: 5,
     marginHorizontal: 9,
     backgroundColor: "black",

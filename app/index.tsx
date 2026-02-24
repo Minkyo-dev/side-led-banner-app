@@ -5,7 +5,7 @@ import {
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as ScreenOrientation from "expo-screen-orientation";
 
 import { ColorPicker } from "@/components/colorPicker";
@@ -81,12 +81,19 @@ export default function Index() {
   const onClickPreset = (index: number) => {
     setActivePreset(index);
   };
-  // preview text size state
-  const [previewTextSize, setPreviewTextSize] = useState(100);
-  // preview text state
+  const [previewHeight, setPreviewHeight] = useState(0);
   const [previewText, setPreviewText] = useState(
     "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
   );
+
+  const handleTextChange = (text: string) => {
+    const lines = text.split("\n");
+    if (lines.length > 3) {
+      setPreviewText(lines.slice(0, 3).join("\n"));
+    } else {
+      setPreviewText(text);
+    }
+  };
   // play option button state
   const [playOption, setPlayOption] = useState<"one" | "multi">("one");
   // tab state
@@ -135,6 +142,48 @@ export default function Index() {
     playOption,
   });
 
+  const previewFontSize = useMemo(() => {
+    if (previewHeight === 0) return 100;
+    const lineCount =
+      playOption === "one"
+        ? 1
+        : Math.min((previewText.match(/\n/g) || []).length + 1, 3);
+    const lineHeightRatio = 1.2;
+    const maxFontSize = Math.floor(
+      previewHeight / (lineCount * lineHeightRatio),
+    );
+    return Math.floor(maxFontSize * (fontSize / 100));
+  }, [previewHeight, playOption, previewText, fontSize]);
+
+  const previewTextStyles = useMemo(() => {
+    const result: any = {
+      fontSize: previewFontSize,
+      flexShrink: 0,
+      color: textSelectedColor,
+    };
+
+    const outlineRadius = (outLine / 100) * 3;
+    const shadowScale = dropShadow / 100;
+
+    if (outLine > 0 || dropShadow > 0) {
+      result.textShadowColor = "rgba(0,0,0,0.7)";
+      result.textShadowOffset = {
+        width: shadowScale * 4,
+        height: shadowScale * 4,
+      };
+      result.textShadowRadius = outlineRadius + shadowScale * 8;
+    }
+
+    return result;
+  }, [previewFontSize, textSelectedColor, outLine, dropShadow]);
+
+  const onPreviewLayout = (e: {
+    nativeEvent: { layout: { height: number; width: number } };
+  }) => {
+    setPreviewHeight(e.nativeEvent.layout.height);
+    onContainerLayout(e);
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* preview container */}
@@ -143,9 +192,13 @@ export default function Index() {
         <View
           style={[
             styles.preview,
-            { overflow: "hidden", justifyContent: "center" },
+            {
+              overflow: "hidden",
+              justifyContent: "center",
+              backgroundColor,
+            },
           ]}
-          onLayout={onContainerLayout}
+          onLayout={onPreviewLayout}
         >
           <Animated.View
             style={[
@@ -158,13 +211,13 @@ export default function Index() {
             ]}
           >
             <Text
-              style={[styles.previewText, { fontSize: previewTextSize }]}
+              style={[styles.previewText, previewTextStyles]}
               onTextLayout={onTextLayout}
             >
               {displayText}
             </Text>
             <View style={{ width: SPACER }} />
-            <Text style={[styles.previewText, { fontSize: previewTextSize }]}>
+            <Text style={[styles.previewText, previewTextStyles]}>
               {displayText}
             </Text>
           </Animated.View>
@@ -215,7 +268,7 @@ export default function Index() {
             style={styles.contentsInput}
             placeholder="Enter your text here"
             value={previewText}
-            onChangeText={setPreviewText}
+            onChangeText={handleTextChange}
             textAlignVertical="top"
           />
           <View style={styles.contentsInputResetButtonContainer}>
@@ -530,7 +583,7 @@ export default function Index() {
         text={previewText}
         speed={textMoveSpeed}
         playOption={playOption}
-        fontSize={previewTextSize}
+        fontSize={fontSize}
         textColor={textSelectedColor}
         backgroundColor={backgroundColor}
       />

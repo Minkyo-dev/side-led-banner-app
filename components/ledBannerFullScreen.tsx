@@ -61,6 +61,8 @@ export const LedBannerFullScreen = ({
               {
                 flexDirection: "row",
                 position: "absolute",
+                top: 0,
+                bottom: 0,
                 alignItems: "center",
               },
               animatedStyle,
