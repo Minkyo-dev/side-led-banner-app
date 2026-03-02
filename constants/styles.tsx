@@ -20,7 +20,7 @@ export const styles = StyleSheet.create({
     backgroundColor: "#D9D9D9",
   },
   previewText: {
-    textAlign: "center",
+    textAlign: "left",
     textAlignVertical: "center",
   },
   presetButtonsContainer: {

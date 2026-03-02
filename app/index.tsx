@@ -5,8 +5,8 @@ import {
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
-import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as ScreenOrientation from "expo-screen-orientation";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import { ColorPicker } from "@/components/colorPicker";
 import { SliderComponent } from "@/components/slider";
@@ -27,9 +27,9 @@ import {
 import { Dropdown } from "react-native-element-dropdown";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import Animated from "react-native-reanimated";
-import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
+import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
+import Animated from "react-native-reanimated";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -214,6 +214,18 @@ export default function Index() {
               style={[styles.previewText, previewTextStyles]}
               onTextLayout={onTextLayout}
             >
+              {displayText}
+            </Text>
+            <View style={{ width: SPACER }} />
+            <Text style={[styles.previewText, previewTextStyles]}>
+              {displayText}
+            </Text>
+            <View style={{ width: SPACER }} />
+            <Text style={[styles.previewText, previewTextStyles]}>
+              {displayText}
+            </Text>
+            <View style={{ width: SPACER }} />
+            <Text style={[styles.previewText, previewTextStyles]}>
               {displayText}
             </Text>
             <View style={{ width: SPACER }} />

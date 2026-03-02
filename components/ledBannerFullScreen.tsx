@@ -51,7 +51,7 @@ export const LedBannerFullScreen = ({
           style={{
             flex: 1,
             backgroundColor,
-            justifyContent: "center",
+            justifyContent: "flex-start",
             overflow: "hidden",
           }}
           onLayout={onContainerLayout}
@@ -75,9 +75,17 @@ export const LedBannerFullScreen = ({
               {displayText}
             </Text>
             <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textColor }}>
-              {displayText}
-            </Text>
+            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <View style={{ width: SPACER }} />
+            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <View style={{ width: SPACER }} />
+            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <View style={{ width: SPACER }} />
+            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <View style={{ width: SPACER }} />
+            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <View style={{ width: SPACER }} />
+            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
           </Animated.View>
         </View>
       </TouchableWithoutFeedback>
