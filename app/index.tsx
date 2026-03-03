@@ -3,33 +3,31 @@ import {
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
+import { BackgroundSection } from "@/components/settings/BackgroundSection";
+import { EffectSection } from "@/components/settings/EffectSection";
+import {
+  SettingsProvider,
+} from "@/components/settings/settingsContext";
+import { TextSection } from "@/components/settings/TextSection";
 import { btnStyles } from "@/constants/btnStyles";
+import {
+  backgroundColorPalette
+} from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
 import * as ScreenOrientation from "expo-screen-orientation";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-
-import { ColorPicker } from "@/components/colorPicker";
-import { SliderComponent } from "@/components/slider";
-import {
-  backgroundColorPalette,
-  textColorPalette,
-} from "@/constants/colorPalette";
-import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import {
   Dimensions,
-  Image,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { Dropdown } from "react-native-element-dropdown";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
+import PreviewPanel from "@/components/previewPanel";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
-import Animated from "react-native-reanimated";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -187,114 +185,24 @@ export default function Index() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* preview container */}
-      <View style={styles.previewContainer}>
-        {/* preview */}
-        <View
-          style={[
-            styles.preview,
-            {
-              overflow: "hidden",
-              justifyContent: "center",
-              backgroundColor,
-            },
-          ]}
-          onLayout={onPreviewLayout}
-        >
-          <Animated.View
-            style={[
-              {
-                flexDirection: "row",
-                position: "absolute",
-                alignItems: "center",
-              },
-              animatedStyle,
-            ]}
-          >
-            <Text
-              style={[styles.previewText, previewTextStyles]}
-              onTextLayout={onTextLayout}
-            >
-              {displayText}
-            </Text>
-            <View style={{ width: SPACER }} />
-            <Text style={[styles.previewText, previewTextStyles]}>
-              {displayText}
-            </Text>
-            <View style={{ width: SPACER }} />
-            <Text style={[styles.previewText, previewTextStyles]}>
-              {displayText}
-            </Text>
-            <View style={{ width: SPACER }} />
-            <Text style={[styles.previewText, previewTextStyles]}>
-              {displayText}
-            </Text>
-            <View style={{ width: SPACER }} />
-            <Text style={[styles.previewText, previewTextStyles]}>
-              {displayText}
-            </Text>
-          </Animated.View>
-        </View>
-        {/* preset buttons container */}
-        <View style={styles.presetButtonsContainer}>
-          {[1, 2, 3, 4, 5].map((num, index) => {
-            return (
-              <TouchableOpacity
-                key={index}
-                style={
-                  index === activePreset
-                    ? btnStyles.presetButtonActive
-                    : btnStyles.presetButton
-                }
-                onPress={() => onClickPreset(index)}
-              >
-                <LinearGradientExpo
-                  colors={
-                    index === activePreset
-                      ? ["white", "#CCCCCC"]
-                      : ["white", "#727272"]
-                  } // 시작색, 끝색
-                  start={{ x: 0, y: 0 }} // 왼쪽 위
-                  end={{ x: 0.1, y: 0.2 }} // 오른쪽 아래
-                  style={btnStyles.presetButtonGradient} // 기존 스타일 적용
-                >
-                  <Text
-                    style={
-                      index === activePreset
-                        ? btnStyles.presetButtonActiveText
-                        : btnStyles.presetButtonText
-                    }
-                  >
-                    {num}
-                  </Text>
-                </LinearGradientExpo>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        {/* contents input container */}
-        <View style={styles.contentsInputContainer}>
-          <TextInput
-            editable={true}
-            multiline={true}
-            numberOfLines={3}
-            style={styles.contentsInput}
-            placeholder="Enter your text here"
-            value={previewText}
-            onChangeText={handleTextChange}
-            textAlignVertical="top"
-          />
-          <View style={styles.contentsInputResetButtonContainer}>
-            <TouchableOpacity
-              onPress={() => {
-                setPreviewText("");
-              }}
-              style={btnStyles.contentsInputResetButton}
-            >
-              <Text style={btnStyles.contentsInputResetButtonText}>×</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <PreviewPanel
+        theme={{
+          backgroundColor,
+          previewTextStyles,
+        }}
+        marquee={{
+          displayText,
+          animatedStyle,
+          onTextLayout,
+          SPACER,
+        }}
+        input={{
+          previewText,
+          setPreviewText,
+          handleTextChange,
+        }}
+  onPreviewLayout={onPreviewLayout}
+/>
       {/* play bar container */}
       <View style={styles.playBarContainer}>
         {/* one line play button */}
@@ -340,253 +248,41 @@ export default function Index() {
           </TouchableOpacity>
         ))}
       </View>
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.settingsPanelContainer}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
-        {/* TEXT 섹션 시작 */}
-        <View
-          onLayout={(e) => {
-            sectionPositions.current.TEXT = e.nativeEvent.layout.y;
-          }}
-        >
-          {/* text - font select */}
-          <View style={styles.settingsRow}>
-            <Text style={styles.settingsRowLabel}>Font</Text>
-            <Dropdown
-              data={fontItems}
-              labelField="label"
-              valueField="value"
-              placeholder="Select font"
-              iconColor="black"
-              value={font}
-              onChange={(item) => setFont(item.value)}
-              style={styles.dropdownContainer}
-              containerStyle={styles.dropdownContainer}
-              selectedTextStyle={styles.dropdownSelectedTextStyle}
-              itemContainerStyle={styles.dropdownItemContainerStyle}
-              itemTextStyle={styles.dropdownItemTextStyle}
-              iconStyle={styles.dropdownIconStyle}
-              placeholderStyle={styles.dropdownPlaceholderStyle}
-            />
-          </View>
-
-          {/* text - speed slider */}
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0 },
-            ]}
-          >
-            <Text style={styles.settingsRowLabel}>Speed</Text>
-            <View style={styles.settingsRowValueContainer}>
-              <Text style={styles.settingsRowValue}>{textMoveSpeed}</Text>
-            </View>
-          </View>
-          <SliderComponent
-            value={textMoveSpeed}
-            onChange={setTextMoveSpeed}
-            minimumValue={0}
-            maximumValue={100}
-            step={5}
-          />
-
-          {/* text - size slider */}
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0 },
-            ]}
-          >
-            <Text style={styles.settingsRowLabel}>Size</Text>
-            <View style={styles.settingsRowValueContainer}>
-              <Text style={styles.settingsRowValue}>{fontSize}</Text>
-            </View>
-          </View>
-          <SliderComponent
-            value={fontSize}
-            onChange={setFontSize}
-            minimumValue={10}
-            maximumValue={100}
-            step={1}
-          />
-
-          {/* text - color picker */}
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0 },
-            ]}
-          >
-            <Text>Color</Text>
-          </View>
-          <View style={styles.colorPickerContainer}>
-            <ColorPicker
-              colorList={textColorPalette}
-              selectedColor={textSelectedColor}
-              onColorSelect={setTextSelectedColor}
-            />
-          </View>
-
-          {/* text - out line slider */}
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0 },
-            ]}
-          >
-            <Text style={styles.settingsRowLabel}>Out Line</Text>
-            <View style={styles.settingsRowValueContainer}>
-              <Text style={styles.settingsRowValue}>{outLine}</Text>
-            </View>
-          </View>
-          <SliderComponent
-            value={outLine}
-            onChange={setOutLine}
-            minimumValue={0}
-            maximumValue={100}
-            step={1}
-          />
-
-          {/* text - drop shadow slider */}
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0 },
-            ]}
-          >
-            <Text style={styles.settingsRowLabel}>Drop Shadow</Text>
-            <View style={styles.settingsRowValueContainer}>
-              <Text style={styles.settingsRowValue}>{dropShadow}</Text>
-            </View>
-          </View>
-          <SliderComponent
-            value={dropShadow}
-            onChange={setDropShadow}
-            minimumValue={0}
-            maximumValue={100}
-            step={1}
-          />
-        </View>
-
-        {/* BACKGROUND section start */}
-        <View
-          onLayout={(e) => {
-            sectionPositions.current.BACKGROUND = e.nativeEvent.layout.y;
-          }}
-        >
-          {/* background - color picker */}
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0 },
-            ]}
-          >
-            <Text style={styles.settingsRowLabel}>Background</Text>
-          </View>
-          <View style={styles.colorPickerContainer}>
-            <ColorPicker
-              colorList={backgroundColorPalette}
-              selectedColor={backgroundColor}
-              onColorSelect={setBackgroundColor}
-            />
-          </View>
-
-          {/* background - blur slider */}
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0 },
-            ]}
-          >
-            <Text style={styles.settingsRowLabel}>Background Blur</Text>
-            <View style={styles.settingsRowValueContainer}>
-              <Text style={styles.settingsRowValue}>{backgroundBlur}</Text>
-            </View>
-          </View>
-          <SliderComponent
-            value={backgroundBlur}
-            onChange={setBackgroundBlur}
-            minimumValue={0}
-            maximumValue={100}
-            step={1}
-          />
-        </View>
-
-        {/* EFFECT section start */}
-        <View
-          onLayout={(e) => {
-            sectionPositions.current.EFFECT = e.nativeEvent.layout.y;
-          }}
-        >
-          {/* effect - effect select */}
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0 },
-            ]}
-          >
-            <Text>Effect</Text>
-          </View>
-          <ScrollView
-            horizontal={true}
-            showsHorizontalScrollIndicator={false}
-            style={styles.effectContainer}
-          >
-            {effectItems.map((effect, index) => {
-              return (
-                <TouchableOpacity
-                  key={`effect-item-${index}`}
-                  style={[
-                    btnStyles.effectItemButton,
-                    effectSelectedItem === effect &&
-                      btnStyles.effectItemButtonActive,
-                  ]}
-                  onPress={() => setEffectSelectedItem(effect)}
-                >
-                  <Text
-                    style={[
-                      btnStyles.effectItemButtonText,
-                      effectSelectedItem === effect &&
-                        btnStyles.effectItemButtonTextActive,
-                    ]}
-                  >
-                    {effect}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* effect - background effect select */}
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0 },
-            ]}
-          >
-            <Text>Background Effect</Text>
-          </View>
-          <ScrollView
-            horizontal={true}
-            showsHorizontalScrollIndicator={false}
-            style={styles.effectImageContainer}
-          >
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num, index) => {
-              return (
-                <Image
-                  key={`effect-image-${index}`}
-                  source={require(`@/assets/images/effectSample.png`)}
-                  style={styles.effectImage}
-                />
-              );
-            })}
-          </ScrollView>
-        </View>
-      </ScrollView>
+      <SettingsProvider
+  value={{
+    fontItems, font, setFont,
+    textMoveSpeed, setTextMoveSpeed,
+    fontSize, setFontSize,
+    textSelectedColor, setTextSelectedColor,
+    outLine, setOutLine,
+    dropShadow, setDropShadow,
+    backgroundColorPalette, backgroundColor, setBackgroundColor,
+    backgroundBlur, setBackgroundBlur,
+    effectItems, effectSelectedItem, setEffectSelectedItem,
+  }}
+>
+  <ScrollView
+    ref={scrollViewRef}
+    onScroll={handleScroll}
+    scrollEventThrottle={16}
+  >
+    <TextSection
+      onLayout={(e) =>
+        (sectionPositions.current.TEXT = e.nativeEvent.layout.y)
+      }
+    />
+    <BackgroundSection
+      onLayout={(e) =>
+        (sectionPositions.current.BACKGROUND = e.nativeEvent.layout.y)
+      }
+    />
+    <EffectSection
+      onLayout={(e) =>
+        (sectionPositions.current.EFFECT = e.nativeEvent.layout.y)
+      }
+    />
+  </ScrollView>
+</SettingsProvider>
 
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen
