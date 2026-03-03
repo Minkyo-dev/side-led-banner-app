@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import Animated, {
+import { useEffect, useState } from "react";
+import {
   Easing,
   cancelAnimation,
   useAnimatedStyle,
@@ -22,20 +22,20 @@ export function useMarqueeAnimation({
   playOption,
 }: UseMarqueeAnimationParams) {
   const translateX = useSharedValue(0);
-  const textWidth = useSharedValue(0);
+  const [textWidth, setTextWidth] = useState(0)
   const containerWidth = useSharedValue(0);
 
   const displayText =
     playOption === "one" ? text.replace(/\n/g, "   ") : text;
 
   useEffect(() => {
-    if (speed === 0 || textWidth.value === 0) {
+    if (speed === 0 || textWidth === 0) {
       cancelAnimation(translateX);
       translateX.value = 0;
       return;
     }
 
-    const totalShift = textWidth.value + SPACER;
+    const totalShift = textWidth + SPACER;
     const duration = (totalShift / (speed * 2)) * 1000;
 
     translateX.value = 0;
@@ -61,8 +61,8 @@ export function useMarqueeAnimation({
     const maxLineWidth = Math.max(
       ...e.nativeEvent.lines.map((l) => l.width),
     );
-    if (maxLineWidth !== textWidth.value) {
-      textWidth.value = maxLineWidth;
+    if (maxLineWidth !== textWidth) {
+      setTextWidth(maxLineWidth);
     }
   };
 
