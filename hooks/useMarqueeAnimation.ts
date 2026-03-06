@@ -22,7 +22,7 @@ export function useMarqueeAnimation({
   playOption,
 }: UseMarqueeAnimationParams) {
   const translateX = useSharedValue(0);
-  const [textWidth, setTextWidth] = useState(0)
+  const [textWidth, setTextWidth] = useState(0);
   const containerWidth = useSharedValue(0);
 
   const displayText =
@@ -47,7 +47,7 @@ export function useMarqueeAnimation({
       -1,
       false,
     );
-  }, [speed, text, playOption]);
+  }, [speed, text, playOption, textWidth]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -62,7 +62,7 @@ export function useMarqueeAnimation({
       ...e.nativeEvent.lines.map((l) => l.width),
     );
     if (maxLineWidth !== textWidth) {
-      setTextWidth(maxLineWidth);
+        setTextWidth(maxLineWidth);
     }
   };
 
