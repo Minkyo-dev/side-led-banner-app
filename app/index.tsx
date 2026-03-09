@@ -3,26 +3,16 @@ import {
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
-import { BackgroundSection } from "@/components/settings/BackgroundSection";
-import { EffectSection } from "@/components/settings/EffectSection";
-import {
-  SettingsProvider,
-} from "@/components/settings/settingsContext";
-import { TextSection } from "@/components/settings/TextSection";
+import { BackgroundSection } from "@/components/settings/backgroundSection";
+import { EffectSection } from "@/components/settings/effectSection";
+import { TextSection } from "@/components/settings/textSection";
 import { btnStyles } from "@/constants/btnStyles";
-import {
-  backgroundColorPalette
-} from "@/constants/colorPalette";
+import { backgroundColorPalette } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
+import { SettingsProvider } from "@/contexts/settingsContext";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Dimensions,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Dimensions, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
@@ -48,30 +38,9 @@ export default function Index() {
     }
   }, [isPlaying]);
 
-  // scroll view ref
-  const scrollViewRef = useRef<ScrollView>(null);
-  const sectionPositions = useRef({ TEXT: 0, BACKGROUND: 0, EFFECT: 0 });
   // tab click scroll function
   const handleTabPress = (tab: "TEXT" | "BACKGROUND" | "EFFECT") => {
     setActiveTab(tab);
-    scrollViewRef.current?.scrollTo({
-      y: sectionPositions.current[tab],
-      animated: true,
-    });
-  };
-  // scroll event handler
-  const handleScroll = (event: any) => {
-    const scrollY = event.nativeEvent.contentOffset.y;
-    const positions = sectionPositions.current;
-
-    // determine tab based on current scroll position
-    if (scrollY >= positions.EFFECT - 50) {
-      setActiveTab("EFFECT");
-    } else if (scrollY >= positions.BACKGROUND - 50) {
-      setActiveTab("BACKGROUND");
-    } else {
-      setActiveTab("TEXT");
-    }
   };
 
   // preset button state
@@ -201,8 +170,8 @@ export default function Index() {
           setPreviewText,
           handleTextChange,
         }}
-  onPreviewLayout={onPreviewLayout}
-/>
+        onPreviewLayout={onPreviewLayout}
+      />
       {/* play bar container */}
       <View style={styles.playBarContainer}>
         {/* one line play button */}
@@ -249,40 +218,34 @@ export default function Index() {
         ))}
       </View>
       <SettingsProvider
-  value={{
-    fontItems, font, setFont,
-    textMoveSpeed, setTextMoveSpeed,
-    fontSize, setFontSize,
-    textSelectedColor, setTextSelectedColor,
-    outLine, setOutLine,
-    dropShadow, setDropShadow,
-    backgroundColorPalette, backgroundColor, setBackgroundColor,
-    backgroundBlur, setBackgroundBlur,
-    effectItems, effectSelectedItem, setEffectSelectedItem,
-  }}
->
-  <ScrollView
-    ref={scrollViewRef}
-    onScroll={handleScroll}
-    scrollEventThrottle={16}
-  >
-    <TextSection
-      onLayout={(e) =>
-        (sectionPositions.current.TEXT = e.nativeEvent.layout.y)
-      }
-    />
-    <BackgroundSection
-      onLayout={(e) =>
-        (sectionPositions.current.BACKGROUND = e.nativeEvent.layout.y)
-      }
-    />
-    <EffectSection
-      onLayout={(e) =>
-        (sectionPositions.current.EFFECT = e.nativeEvent.layout.y)
-      }
-    />
-  </ScrollView>
-</SettingsProvider>
+        value={{
+          fontItems,
+          font,
+          setFont,
+          textMoveSpeed,
+          setTextMoveSpeed,
+          fontSize,
+          setFontSize,
+          textSelectedColor,
+          setTextSelectedColor,
+          outLine,
+          setOutLine,
+          dropShadow,
+          setDropShadow,
+          backgroundColorPalette,
+          backgroundColor,
+          setBackgroundColor,
+          backgroundBlur,
+          setBackgroundBlur,
+          effectItems,
+          effectSelectedItem,
+          setEffectSelectedItem,
+        }}
+      >
+        {activeTab === "TEXT" && <TextSection />}
+        {activeTab === "BACKGROUND" && <BackgroundSection />}
+        {activeTab === "EFFECT" && <EffectSection />}
+      </SettingsProvider>
 
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen

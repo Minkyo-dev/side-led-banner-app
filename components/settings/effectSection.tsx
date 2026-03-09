@@ -4,22 +4,19 @@ import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSettings } from "../../contexts/settingsContext";
 
-interface EffectSectionProps {
-  onLayout: (e: any) => void;
-}
+interface EffectSectionProps {}
 
-export const EffectSection = ({ onLayout }: EffectSectionProps) => {
+export const EffectSection = ({}: EffectSectionProps) => {
   // Context에서 필요한 상태와 핸들러 가져오기
-  const {
-    effectItems,
-    effectSelectedItem,
-    setEffectSelectedItem
-  } = useSettings();
+  const { effectItems, effectSelectedItem, setEffectSelectedItem } =
+    useSettings();
 
   return (
-    <View onLayout={onLayout}>
+    <ScrollView showsVerticalScrollIndicator={false}>
       {/* effect - effect select */}
-      <View style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}>
+      <View
+        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+      >
         <Text>Effect</Text>
       </View>
       <ScrollView
@@ -39,7 +36,8 @@ export const EffectSection = ({ onLayout }: EffectSectionProps) => {
             <Text
               style={[
                 btnStyles.effectItemButtonText,
-                effectSelectedItem === effect && btnStyles.effectItemButtonTextActive,
+                effectSelectedItem === effect &&
+                  btnStyles.effectItemButtonTextActive,
               ]}
             >
               {effect}
@@ -49,7 +47,9 @@ export const EffectSection = ({ onLayout }: EffectSectionProps) => {
       </ScrollView>
 
       {/* effect - background effect select */}
-      <View style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}>
+      <View
+        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+      >
         <Text>Background Effect</Text>
       </View>
       <ScrollView
@@ -65,6 +65,6 @@ export const EffectSection = ({ onLayout }: EffectSectionProps) => {
           />
         ))}
       </ScrollView>
-    </View>
+    </ScrollView>
   );
 };

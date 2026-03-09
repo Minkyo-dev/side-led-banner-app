@@ -4,27 +4,32 @@ import { SliderComponent } from "@/components/slider";
 import { textColorPalette } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
 import React from "react";
-import { Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useSettings } from "../../contexts/settingsContext";
 
-interface TextSectionProps {
-  onLayout: (e: any) => void;
-}
+interface TextSectionProps {}
 
-export const TextSection = ({ onLayout }: TextSectionProps) => {
+export const TextSection = ({}: TextSectionProps) => {
   // Context fields
   const {
-    font, setFont, fontItems,
-    textMoveSpeed, setTextMoveSpeed,
-    fontSize, setFontSize,
-    textSelectedColor, setTextSelectedColor,
-    outLine, setOutLine,
-    dropShadow, setDropShadow
+    font,
+    setFont,
+    fontItems,
+    textMoveSpeed,
+    setTextMoveSpeed,
+    fontSize,
+    setFontSize,
+    textSelectedColor,
+    setTextSelectedColor,
+    outLine,
+    setOutLine,
+    dropShadow,
+    setDropShadow,
   } = useSettings();
 
   return (
-    <View onLayout={onLayout}>
+    <ScrollView showsVerticalScrollIndicator={false}>
       {/* text - font select */}
       <View style={styles.settingsRow}>
         <Text style={styles.settingsRowLabel}>Font</Text>
@@ -47,7 +52,9 @@ export const TextSection = ({ onLayout }: TextSectionProps) => {
       </View>
 
       {/* text - speed slider */}
-      <View style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}>
+      <View
+        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+      >
         <Text style={styles.settingsRowLabel}>Speed</Text>
         <View style={styles.settingsRowValueContainer}>
           <Text style={styles.settingsRowValue}>{textMoveSpeed}</Text>
@@ -62,7 +69,9 @@ export const TextSection = ({ onLayout }: TextSectionProps) => {
       />
 
       {/* text - size slider */}
-      <View style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}>
+      <View
+        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+      >
         <Text style={styles.settingsRowLabel}>Size</Text>
         <View style={styles.settingsRowValueContainer}>
           <Text style={styles.settingsRowValue}>{fontSize}</Text>
@@ -77,7 +86,9 @@ export const TextSection = ({ onLayout }: TextSectionProps) => {
       />
 
       {/* text - color picker */}
-      <View style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}>
+      <View
+        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+      >
         <Text>Color</Text>
       </View>
       <View style={styles.colorPickerContainer}>
@@ -89,7 +100,9 @@ export const TextSection = ({ onLayout }: TextSectionProps) => {
       </View>
 
       {/* text - out line slider */}
-      <View style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}>
+      <View
+        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+      >
         <Text style={styles.settingsRowLabel}>Out Line</Text>
         <View style={styles.settingsRowValueContainer}>
           <Text style={styles.settingsRowValue}>{outLine}</Text>
@@ -104,7 +117,9 @@ export const TextSection = ({ onLayout }: TextSectionProps) => {
       />
 
       {/* text - drop shadow slider */}
-      <View style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}>
+      <View
+        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+      >
         <Text style={styles.settingsRowLabel}>Drop Shadow</Text>
         <View style={styles.settingsRowValueContainer}>
           <Text style={styles.settingsRowValue}>{dropShadow}</Text>
@@ -117,6 +132,6 @@ export const TextSection = ({ onLayout }: TextSectionProps) => {
         maximumValue={100}
         step={1}
       />
-    </View>
+    </ScrollView>
   );
 };
