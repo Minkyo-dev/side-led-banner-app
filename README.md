@@ -46,6 +46,10 @@ side-led-banner-app/
 │ ├── layout.tsx # 루트 레이아웃 (테마, 네비게이션)
 │ └── index.tsx # 메인 화면 (배너 편집기)
 ├── components/
+| ├──settings/
+│ │ ├──backgroundSection.tsx # 배경 설정 화면
+│ │ ├──effectSection.tsx # 이펙트 설정 화면
+│ │ └──textSection.tsx # 텍스트 설정 화면
 │ ├── ledBannerFullScreen.tsx # 전체화면 LED 배너 모달
 │ ├── colorPicker.tsx # 색상 선택 컴포넌트
 │ └── slider.tsx # 슬라이더 컴포넌트
@@ -59,6 +63,8 @@ side-led-banner-app/
 │ ├── btnStyles.tsx # 버튼 스타일
 │ ├── colorPalette.tsx # 텍스트/배경 색상 팔레트
 │ └── theme.ts # 테마 정의
+├── contexts/
+| └── settingsContext.tsx # setting에서 설정하는 값 컨텍스트
 ├── assets/
 │ └── svg/
 │ ├── playOptionButton.tsx # 한줄/여러줄 재생 버튼 SVG
