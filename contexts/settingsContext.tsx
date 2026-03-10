@@ -1,191 +1,144 @@
-// contexts/LedBannerSettingsContext.tsx
 import React, { createContext, useContext, useMemo, useState } from "react";
 
-type TabType = "TEXT" | "BACKGROUND" | "EFFECT";
 
-type SettingsContextValue = {
-  // is playing state
+/**
+* SettingsContext 사용 매뉴얼
+ * 값 가져오기 (Getter)
+ * const { config, ui } = useSettings();
+ * const { fontSize, font } = config.appearance; // 특정 그룹에서 추출
+ * const { isPlaying } = ui; // UI 상태 추출
+ * [Context 업데이트 함수 사용법 가이드]
+ * 
+ * 값 수정하기 (Setter)
+ * * 1. 직접 업데이트 (Direct Update)
+ * - 특정 그룹의 여러 값을 동시에 변경할 때
+ * 예) updateConfig("appearance", { fontSize: 30, textSelectedColor: "#FF0000" })
+ * 예) updateUI({ activeTab: "BACKGROUND", isPlaying: true })
+ * 
+ * * 2. 개별 세터 함수 정의 (Setter Pattern)
+ * - 기존 useState의 set함수처럼 특정 필드 업데이트를 위한 함수를 미리 정의해두고 사용할 때
+ * const setFontSize = (value: number) => updateConfig("appearance", { fontSize: value });
+ * // <Slider onChange={setFontSize} />
+ * 
+ */
+//Banner content, appearance, background, motion 설정을 담는 context
+export interface BannerConfig {
+  content: {
+    previewText: string;
+    playOption: "one" | "multi";
+  };
+  appearance: {
+    font: string;
+    fontSize: number;
+    textSelectedColor: string;
+    outLine: number;
+    dropShadow: number;
+    effectSelectedItem: string;
+  };
+  background: {
+    backgroundColor: string; 
+    backgroundBlur: number;
+  };
+  motion: {
+    textMoveSpeed: number;
+  };
+}
+
+// UI State
+export type TabType = "TEXT" | "BACKGROUND" | "EFFECT";
+export interface UIState {
   isPlaying: boolean;
-  setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
-  // play option button state
-  playOption: "one" | "multi";
-  setPlayOption: React.Dispatch<React.SetStateAction<"one" | "multi">>;
-  // preset button state
-  activePreset: number;
-  setActivePreset: React.Dispatch<React.SetStateAction<number>>;
-  // tab state
   activeTab: TabType;
-  setActiveTab: React.Dispatch<React.SetStateAction<TabType>>;
-  // preview text state
-  previewText: string;
-  setPreviewText: React.Dispatch<React.SetStateAction<string>>;
-  handleTextChange: (text: string) => void; // RN TextInput용 핸들러
-  // font select items
+  activePreset: number;
+}
+//여기서 제공할 config 및 업데이트 함수 정의
+interface SettingsContextValue {
+  config: BannerConfig;
+  ui: UIState;
+  updateConfig: <K extends keyof BannerConfig>(group: K, updates: Partial<BannerConfig[K]>) => void;
+  updateUI: (updates: Partial<UIState>) => void;
+  handleTextChange: (text: string) => void;
   fontItems: { label: string; value: string }[];
-  // font select state
-  font: string;
-  setFont: React.Dispatch<React.SetStateAction<string>>;
-  // speed slider state
-  textMoveSpeed: number;
-  setTextMoveSpeed: React.Dispatch<React.SetStateAction<number>>;
-  // font size slider state
-  fontSize: number;
-  setFontSize: React.Dispatch<React.SetStateAction<number>>;
-  // out line slider state
-  outLine: number;
-  setOutLine: React.Dispatch<React.SetStateAction<number>>;
-  // drop shadow slider state
-  dropShadow: number;
-  setDropShadow: React.Dispatch<React.SetStateAction<number>>;
-  // background blur slider state
-  backgroundBlur: number;
-  setBackgroundBlur: React.Dispatch<React.SetStateAction<number>>;
-  // text color picker state
-  textSelectedColor: string;
-  setTextSelectedColor: React.Dispatch<React.SetStateAction<string>>;
-  // background color picker state
-  backgroundColor: string;
-  setBackgroundColor: React.Dispatch<React.SetStateAction<string>>;
-  // effect items state
-  effectSelectedItem: string;
-  setEffectSelectedItem: React.Dispatch<React.SetStateAction<string>>;
-  // effect items list
   effectItems: string[];
-};
-
-const SettingsContext = createContext<SettingsContextValue | null>(
-  null,
-);
-
+}
+const SettingsContext = createContext<SettingsContextValue | null>(null);
+//해당 context 값을 제공하는 provider 컴포넌트
 export const useSettings = () => {
   const ctx = useContext(SettingsContext);
-  if (!ctx) throw new Error("useSettings must be used within Provider");
+  if (!ctx) throw new Error("useSettings must be used within SettingsProvider");
   return ctx;
 };
 
-export function SettingsProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // is playing state
-  const [isPlaying, setIsPlaying] = useState(false);
+export function SettingsProvider({ children }: { children: React.ReactNode }) {
+  //위에서 정의한 config를 하나의 state로 관리
+  const [config, setConfig] = useState<BannerConfig>({
+    content: {
+      previewText: "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
+      playOption: "one",
+    },
+    appearance: {
+      font: "nanum_gothic",
+      fontSize: 50,
+      textSelectedColor: "#000000",
+      outLine: 50,
+      dropShadow: 50,
+      effectSelectedItem: "Bold",
+    },
+    background: {
+      backgroundColor: "#FFFFFF",
+      backgroundBlur: 50,
+    },
+    motion: {
+      textMoveSpeed: 50,
+    },
+  });
 
-  // play option button state
-  const [playOption, setPlayOption] = useState<"one" | "multi">("one");
+  const [ui, setUI] = useState<UIState>({
+    isPlaying: false,
+    activeTab: "TEXT",
+    activePreset: 1,
+  });
 
-  // preset button state
-  const [activePreset, setActivePreset] = useState(1);
+  // config 업데이트 함수
+  const updateConfig = <K extends keyof BannerConfig>(
+    group: K,
+    updates: Partial<BannerConfig[K]>
+  ) => {
+    setConfig((prev) => ({
+      ...prev,
+      [group]: { ...prev[group], ...updates },
+    }));
+  };
 
-  // tab state
-  const [activeTab, setActiveTab] = useState<TabType>("TEXT");
+  const updateUI = (updates: Partial<UIState>) => {
+    setUI((prev) => ({ ...prev, ...updates }));
+  };
 
-  // preview text state
-  const [previewText, setPreviewText] = useState(
-    "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
-  );
-
-  // RN TextInput 개행 제한 핸들러
   const handleTextChange = (text: string) => {
     const lines = text.split("\n");
-    if (lines.length > 3) {
-      setPreviewText(lines.slice(0, 3).join("\n"));
-    } else {
-      setPreviewText(text);
-    }
+    const filteredText = lines.length > 3 ? lines.slice(0, 3).join("\n") : text;
+    updateConfig("content", { previewText: filteredText });
   };
-
-  // font select items
-  const fontItems = useMemo(
-    () => [
-      { label: "Nanum Gothic", value: "nanum_gothic" },
-      { label: "Noto Sans KR", value: "noto_sans_kr" },
-      { label: "Roboto", value: "roboto" },
-      { label: "Montserrat", value: "montserrat" },
-      { label: "Open Sans", value: "open_sans" },
-    ],
-    [],
-  );
-
   // font select state
-  const [font, setFont] = useState("nanum_gothic");
-
-  // speed slider state
-  const [textMoveSpeed, setTextMoveSpeed] = useState(50);
-
-  // font size slider state
-  const [fontSize, setFontSize] = useState(50);
-
-  // out line slider state
-  const [outLine, setOutLine] = useState(50);
-
-  // drop shadow slider state
-  const [dropShadow, setDropShadow] = useState(50);
-
-  // background blur slider state
-  const [backgroundBlur, setBackgroundBlur] = useState(50);
-
-  // text color picker state
-  const [textSelectedColor, setTextSelectedColor] = useState("#000000");
-
-  // background color picker state
-  const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
-
-  // effect items state
-  const [effectSelectedItem, setEffectSelectedItem] = useState("Bold");
-
+  const fontItems = useMemo(() => [
+    { label: "Nanum Gothic", value: "nanum_gothic" },
+    { label: "Noto Sans KR", value: "noto_sans_kr" },
+    { label: "Roboto", value: "roboto" },
+    { label: "Montserrat", value: "montserrat" },
+    { label: "Open Sans", value: "open_sans" },
+  ], []);
   // effect items list
   const effectItems = useMemo(() => ["Bold", "Blink", "Pixel", "Glow", "Gradient"], []);
-
-  const value: SettingsContextValue = {
-    // is playing state
-    isPlaying,
-    setIsPlaying,
-    // play option button state
-    playOption,
-    setPlayOption,
-    // preset button state
-    activePreset,
-    setActivePreset,
-    // tab state
-    activeTab,
-    setActiveTab,
-    // preview text state
-    previewText,
-    setPreviewText,
+// value 객체는 config, ui, 업데이트 함수, 그리고 fontItems와 effectItems를 포함하여 memoize하여 제공
+  const value = useMemo(() => ({
+    config,
+    ui,
+    updateConfig,
+    updateUI,
     handleTextChange,
-    // font select items
     fontItems,
-    // font select state
-    font,
-    setFont,
-    // speed slider state
-    textMoveSpeed,
-    setTextMoveSpeed,
-    // font size slider state
-    fontSize,
-    setFontSize,
-    // out line slider state
-    outLine,
-    setOutLine,
-    // drop shadow slider state
-    dropShadow,
-    setDropShadow,
-    // background blur slider state
-    backgroundBlur,
-    setBackgroundBlur,
-    // text color picker state
-    textSelectedColor,
-    setTextSelectedColor,
-    // background color picker state
-    backgroundColor,
-    setBackgroundColor,
-    // effect items state
-    effectSelectedItem,
-    setEffectSelectedItem,
-    // effect items list
     effectItems,
-  };
+  }), [config, ui, fontItems, effectItems]);
 
   return (
     <SettingsContext.Provider value={value}>

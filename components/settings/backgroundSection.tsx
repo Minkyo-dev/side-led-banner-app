@@ -10,13 +10,10 @@ interface BackgroundSectionProps {}
 
 export const BackgroundSection = ({}: BackgroundSectionProps) => {
   // Context fields
-  const {
-    backgroundColor,
-    setBackgroundColor,
-    backgroundBlur,
-    setBackgroundBlur,
-  } = useSettings();
-
+  const { config, updateConfig } = useSettings();
+  const { backgroundColor, backgroundBlur } = config.background;
+  const setBackgroundColor = (color: string) => updateConfig("background", { backgroundColor: color });
+  const setBackgroundBlur = (value: number) => updateConfig("background", { backgroundBlur: value });
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       {/* background - color picker */}

@@ -8,8 +8,12 @@ interface EffectSectionProps {}
 
 export const EffectSection = ({}: EffectSectionProps) => {
   // Context에서 필요한 상태와 핸들러 가져오기
-  const { effectItems, effectSelectedItem, setEffectSelectedItem } =
-    useSettings();
+  const { config,
+    updateConfig,
+    effectItems
+   } = useSettings();
+   const { effectSelectedItem } = config.appearance;
+   const setEffectSelectedItem = (effect: string) => updateConfig("appearance", { effectSelectedItem: effect });
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
