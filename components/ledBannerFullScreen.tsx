@@ -1,3 +1,4 @@
+import { BannerConfig } from "@/contexts/settingsContext";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import React from "react";
 import {
@@ -12,31 +13,28 @@ import Animated from "react-native-reanimated";
 interface LedBannerFullScreenProps {
   visible: boolean;
   onClose: () => void;
-  text: string;
-  speed: number;
-  playOption: "one" | "multi";
-  fontSize: number;
-  textColor: string;
-  backgroundColor: string;
+  config: BannerConfig;
 }
 
 export const LedBannerFullScreen = ({
   visible,
   onClose,
-  text,
-  speed,
-  playOption,
-  fontSize,
-  textColor,
-  backgroundColor,
+  config,
 }: LedBannerFullScreenProps) => {
+  const { previewText, playOption } = config.content;
+  const { fontSize, textSelectedColor, outLine, dropShadow, font } = config.appearance;
+  const { backgroundColor } = config.background;
+  const { textMoveSpeed } = config.motion;
   const {
     displayText,
     animatedStyle,
     onContainerLayout,
     onTextLayout,
     SPACER,
-  } = useMarqueeAnimation({ text, speed, playOption });
+  } = useMarqueeAnimation({
+    text: previewText, 
+    speed: textMoveSpeed, 
+    playOption});
 
   return (
     <Modal
@@ -69,23 +67,29 @@ export const LedBannerFullScreen = ({
             ]}
           >
             <Text
-              style={{ fontSize, color: textColor }}
+              style={{ fontSize, color: textSelectedColor }}
               onTextLayout={onTextLayout}
             >
               {displayText}
             </Text>
             <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
             <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
             <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
             <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
             <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
             <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textColor }}>{displayText}</Text>
+            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
+            <View style={{ width: SPACER }} />
+            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
+            <View style={{ width: SPACER }} />
+            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
+            <View style={{ width: SPACER }} />
+            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
           </Animated.View>
         </View>
       </TouchableWithoutFeedback>

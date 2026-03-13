@@ -7,9 +7,8 @@ import { BackgroundSection } from "@/components/settings/backgroundSection";
 import { EffectSection } from "@/components/settings/effectSection";
 import { TextSection } from "@/components/settings/textSection";
 import { btnStyles } from "@/constants/btnStyles";
-import { backgroundColorPalette } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
-import { SettingsProvider } from "@/contexts/settingsContext";
+import { TabType, useSettings } from "@/contexts/settingsContext";
 import * as ScreenOrientation from "expo-screen-orientation";
 import React, { useEffect, useMemo, useState } from "react";
 import { Dimensions, Text, TouchableOpacity, View } from "react-native";
@@ -24,8 +23,19 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 export default function Index() {
   const insets = useSafeAreaInsets();
 
-  // is playing state
-  const [isPlaying, setIsPlaying] = useState(false);
+
+  const { 
+    config, ui, 
+    updateConfig, updateUI, handleTextChange,
+    fontItems, effectItems 
+  } = useSettings();
+  console.log(config);
+  // config에서 index에 필요한 값들 추출
+  const { previewText, playOption } = config.content;
+  const { fontSize, textSelectedColor, outLine, dropShadow } = config.appearance;
+  const { backgroundColor } = config.background;
+  const { textMoveSpeed } = config.motion;
+  const { isPlaying, activeTab, activePreset } = ui;
 
   // 메인 화면은 portrait 고정, 전체화면 모달은 landscape 허용
   useEffect(() => {
@@ -39,62 +49,13 @@ export default function Index() {
   }, [isPlaying]);
 
   // tab click scroll function
-  const handleTabPress = (tab: "TEXT" | "BACKGROUND" | "EFFECT") => {
-    setActiveTab(tab);
-  };
-
-  // preset button state
-  const [activePreset, setActivePreset] = useState(1);
-  const onClickPreset = (index: number) => {
-    setActivePreset(index);
-  };
+  const handleTabPress = (tab: TabType) => updateUI({ activeTab: tab });
+  const onClickPreset = (index: number) => updateUI({ activePreset: index });
   const [previewHeight, setPreviewHeight] = useState(0);
-  const [previewText, setPreviewText] = useState(
-    "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
-  );
 
-  const handleTextChange = (text: string) => {
-    const lines = text.split("\n");
-    if (lines.length > 3) {
-      setPreviewText(lines.slice(0, 3).join("\n"));
-    } else {
-      setPreviewText(text);
-    }
-  };
-  // play option button state
-  const [playOption, setPlayOption] = useState<"one" | "multi">("one");
-  // tab state
-  const [activeTab, setActiveTab] = useState<"TEXT" | "BACKGROUND" | "EFFECT">(
-    "TEXT",
-  );
-  // font select items
-  const fontItems = [
-    { label: "Nanum Gothic", value: "nanum_gothic" },
-    { label: "Noto Sans KR", value: "noto_sans_kr" },
-    { label: "Roboto", value: "roboto" },
-    { label: "Montserrat", value: "montserrat" },
-    { label: "Open Sans", value: "open_sans" },
-  ];
-  // font select state
-  const [font, setFont] = useState("nanum_gothic");
-  // speed slider state
-  const [textMoveSpeed, setTextMoveSpeed] = useState(50);
-  // font size slider state
-  const [fontSize, setFontSize] = useState(50);
-  // out line slider state
-  const [outLine, setOutLine] = useState(50);
-  // drop shadow slider state
-  const [dropShadow, setDropShadow] = useState(50);
-  // background blur slider state
-  const [backgroundBlur, setBackgroundBlur] = useState(50);
-  // text color picker state
-  const [textSelectedColor, setTextSelectedColor] = useState("#000000");
-  // background color picker state
-  const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
-  // effect items state
-  const [effectSelectedItem, setEffectSelectedItem] = useState("Bold");
-  // effect items list
-  const effectItems = ["Bold", "Blink", "Pixel", "Glow", "Gradient"];
+
+ 
+
 
   // marquee animation hook
   const {
@@ -123,25 +84,16 @@ export default function Index() {
   }, [previewHeight, playOption, previewText, fontSize]);
 
   const previewTextStyles = useMemo(() => {
-    const result: any = {
+    const outlineRadius = (outLine / 100) * 3;
+    const shadowScale = dropShadow / 100;
+    return {
       fontSize: previewFontSize,
       flexShrink: 0,
       color: textSelectedColor,
+      textShadowColor: (outLine > 0 || dropShadow > 0) ? "rgba(0,0,0,0.7)" : undefined,
+      textShadowOffset: (outLine > 0 || dropShadow > 0) ? { width: shadowScale * 4, height: shadowScale * 4 } : undefined,
+      textShadowRadius: (outLine > 0 || dropShadow > 0) ? outlineRadius + shadowScale * 8 : undefined,
     };
-
-    const outlineRadius = (outLine / 100) * 3;
-    const shadowScale = dropShadow / 100;
-
-    if (outLine > 0 || dropShadow > 0) {
-      result.textShadowColor = "rgba(0,0,0,0.7)";
-      result.textShadowOffset = {
-        width: shadowScale * 4,
-        height: shadowScale * 4,
-      };
-      result.textShadowRadius = outlineRadius + shadowScale * 8;
-    }
-
-    return result;
   }, [previewFontSize, textSelectedColor, outLine, dropShadow]);
 
   const onPreviewLayout = (e: {
@@ -167,7 +119,7 @@ export default function Index() {
         }}
         input={{
           previewText,
-          setPreviewText,
+          setPreviewText : (text) => updateConfig("content", { previewText: text }),
           handleTextChange,
         }}
         onPreviewLayout={onPreviewLayout}
@@ -177,21 +129,21 @@ export default function Index() {
         {/* one line play button */}
         <TouchableOpacity
           style={{ flex: 0.15 }}
-          onPress={() => setPlayOption("one")}
+          onPress={() => updateConfig("content", { playOption: "one" })}
         >
           <OneLinePlayButton isActive={playOption === "one"} />
         </TouchableOpacity>
         {/* multiple line play button */}
         <TouchableOpacity
           style={{ flex: 0.15 }}
-          onPress={() => setPlayOption("multi")}
+          onPress={() => updateConfig("content", { playOption: "multi" })}
         >
           <MultipleLinePlayButton isActive={playOption === "multi"} />
         </TouchableOpacity>
         {/* stop/resume button */}
         <TouchableOpacity
           style={btnStyles.playResumeButton}
-          onPress={() => setIsPlaying(true)}
+          onPress={() => updateUI({ isPlaying: true })}
         >
           <PlayResumeButton isPlaying={isPlaying} />
         </TouchableOpacity>
@@ -217,46 +169,17 @@ export default function Index() {
           </TouchableOpacity>
         ))}
       </View>
-      <SettingsProvider
-        value={{
-          fontItems,
-          font,
-          setFont,
-          textMoveSpeed,
-          setTextMoveSpeed,
-          fontSize,
-          setFontSize,
-          textSelectedColor,
-          setTextSelectedColor,
-          outLine,
-          setOutLine,
-          dropShadow,
-          setDropShadow,
-          backgroundColorPalette,
-          backgroundColor,
-          setBackgroundColor,
-          backgroundBlur,
-          setBackgroundBlur,
-          effectItems,
-          effectSelectedItem,
-          setEffectSelectedItem,
-        }}
-      >
+      <View style={{ flex: 1 }}>
         {activeTab === "TEXT" && <TextSection />}
         {activeTab === "BACKGROUND" && <BackgroundSection />}
         {activeTab === "EFFECT" && <EffectSection />}
-      </SettingsProvider>
+      </View>
 
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen
         visible={isPlaying}
-        onClose={() => setIsPlaying(false)}
-        text={previewText}
-        speed={textMoveSpeed}
-        playOption={playOption}
-        fontSize={fontSize}
-        textColor={textSelectedColor}
-        backgroundColor={backgroundColor}
+        onClose={() => updateUI({ isPlaying: false })}
+        config={config}
       />
     </View>
   );

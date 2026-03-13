@@ -13,21 +13,18 @@ interface TextSectionProps {}
 export const TextSection = ({}: TextSectionProps) => {
   // Context fields
   const {
-    font,
-    setFont,
-    fontItems,
-    textMoveSpeed,
-    setTextMoveSpeed,
-    fontSize,
-    setFontSize,
-    textSelectedColor,
-    setTextSelectedColor,
-    outLine,
-    setOutLine,
-    dropShadow,
-    setDropShadow,
+    config,
+    updateConfig,
+    fontItems
   } = useSettings();
-
+  const { font, fontSize, textSelectedColor, outLine, dropShadow } = config.appearance;
+  const { textMoveSpeed } = config.motion;
+  const setFont = (font: string) => () => updateConfig("appearance", { font });
+  const setTextMoveSpeed = (value: number) => updateConfig("motion", { textMoveSpeed: value });
+  const setFontSize = (value: number) => updateConfig("appearance", { fontSize: value });
+  const setTextSelectedColor = (color: string) => updateConfig("appearance", { textSelectedColor: color });
+  const setOutLine = (value: number) => updateConfig("appearance", { outLine: value });
+  const setDropShadow = (value: number) => updateConfig("appearance", { dropShadow: value });
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       {/* text - font select */}
@@ -40,7 +37,7 @@ export const TextSection = ({}: TextSectionProps) => {
           placeholder="Select font"
           iconColor="black"
           value={font}
-          onChange={(item) => setFont(item.value)}
+          onChange={setFont}
           style={styles.dropdownContainer}
           containerStyle={styles.dropdownContainer}
           selectedTextStyle={styles.dropdownSelectedTextStyle}

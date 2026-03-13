@@ -1,13 +1,12 @@
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
-import type { Dispatch, SetStateAction } from "react";
 import React, { useState } from "react";
 import {
-    Text,
-    TextInput,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  Text,
+  TextInput,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 import type { AnimatedStyle } from "react-native-reanimated";
 import Animated from "react-native-reanimated";
@@ -37,7 +36,7 @@ type MarqueeProps = {
 
 type InputProps = {
   previewText: string;
-  setPreviewText: Dispatch<SetStateAction<string>>;
+  setPreviewText: (text: string) => void;
   handleTextChange: (text: string) => void;
 };
 
@@ -80,29 +79,17 @@ export default function PreviewPanel({
             marquee.animatedStyle,
           ]}
         >
-          <Text
-            style={[styles.previewText, theme.previewTextStyles]}
-            onTextLayout={marquee.onTextLayout}
-          >
-            {marquee.displayText}
-          </Text>
-
-          <View style={{ width: marquee.SPACER }} />
-          <Text style={[styles.previewText, theme.previewTextStyles]}>
-            {marquee.displayText}
-          </Text>
-          <View style={{ width: marquee.SPACER }} />
-          <Text style={[styles.previewText, theme.previewTextStyles]}>
-            {marquee.displayText}
-          </Text>
-          <View style={{ width: marquee.SPACER }} />
-          <Text style={[styles.previewText, theme.previewTextStyles]}>
-            {marquee.displayText}
-          </Text>
-          <View style={{ width: marquee.SPACER }} />
-          <Text style={[styles.previewText, theme.previewTextStyles]}>
-            {marquee.displayText}
-          </Text>
+          {[...Array(5)].map((_, i) => (
+                        <React.Fragment key={i}>
+                            <Text
+                                style={[styles.previewText, theme.previewTextStyles]}
+                                onTextLayout={i === 0 ? marquee.onTextLayout : undefined}
+                            >
+                                {marquee.displayText}
+                            </Text>
+                            <View style={{ width: marquee.SPACER }} />
+                        </React.Fragment>
+                    ))}
         </Animated.View>
       </View>
 
