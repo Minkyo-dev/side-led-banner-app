@@ -25,6 +25,7 @@ type TextLayoutEvent = {
 type PreviewTheme = {
   backgroundColor: string;
   previewTextStyles: TextStyle;
+  playOption: "one" | "multi"
 };
 
 type MarqueeProps = {
@@ -54,7 +55,22 @@ export default function PreviewPanel({
   onPreviewLayout,
 }: PreviewPanelParams) {
   const [activePreset, setActivePreset] = useState(0);
+  const [inputText, setInputText] = useState(input.previewText);
+ //입력창에 보이는 텍스트
+  const getDisplayText = (text:String) => {
+  if (!text) return "";
+  // 이미 있는 기호들을 다 지우고 다시 깨끗하게 줄바꿈에 ↵ 붙임
+  const cleanText = text.replace(/↵/g, ""); 
+  return theme.playOption === "multi" 
+    ? cleanText.replace(/\n/g, "↵\n") 
+    : cleanText;
+};
 
+// 실제 데이터로 전환하기 위해 ↵ 지우는 함수
+const handleTextChangeWithIcon = (e :any) => {
+  const rawText = e.replace(/↵/g, ""); 
+  input.handleTextChange(rawText);     // previewText에는 \n만 붙임
+};
   return (
     <View style={styles.previewContainer}>
       {/* preview */}
@@ -137,8 +153,8 @@ export default function PreviewPanel({
           numberOfLines={3}
           style={styles.contentsInput}
           placeholder="Enter your text here"
-          value={input.previewText}
-          onChangeText={input.handleTextChange}
+          value={getDisplayText(input.previewText)}
+          onChangeText={handleTextChangeWithIcon}
           textAlignVertical="top"
         />
         <View style={styles.contentsInputResetButtonContainer}>

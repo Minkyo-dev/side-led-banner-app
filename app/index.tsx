@@ -110,6 +110,7 @@ export default function Index() {
         theme={{
           backgroundColor,
           previewTextStyles,
+          playOption,
         }}
         marquee={{
           displayText,
