@@ -22,7 +22,14 @@ export const LedBannerFullScreen = ({
   config,
 }: LedBannerFullScreenProps) => {
   const { previewText, playOption } = config.content;
-  const { fontSize, textSelectedColor, outLine, dropShadow, font } = config.appearance;
+  const {
+    fontSize,
+    textSelectedColor,
+    outLine,
+    dropShadow,
+    font,
+    lineSpacing,
+  } = config.appearance;
   const { backgroundColor } = config.background;
   const { textMoveSpeed } = config.motion;
   const {
@@ -32,9 +39,10 @@ export const LedBannerFullScreen = ({
     onTextLayout,
     SPACER,
   } = useMarqueeAnimation({
-    text: previewText, 
-    speed: textMoveSpeed, 
-    playOption});
+    text: previewText,
+    speed: textMoveSpeed,
+    playOption,
+  });
 
   return (
     <Modal
@@ -66,30 +74,22 @@ export const LedBannerFullScreen = ({
               animatedStyle,
             ]}
           >
-            <Text
-              style={{ fontSize, color: textSelectedColor }}
-              onTextLayout={onTextLayout}
-            >
-              {displayText}
-            </Text>
-            <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
-            <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
-            <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
-            <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
-            <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
-            <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
-            <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
-            <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
-            <View style={{ width: SPACER }} />
-            <Text style={{ fontSize, color: textSelectedColor }}>{displayText}</Text>
+            {[...Array(10)].map((_, i) => (
+              <React.Fragment key={i}>
+                <Text
+                  style={{
+                    fontSize,
+                    color: textSelectedColor,
+                    lineHeight: fontSize * (1.2 + lineSpacing / 100),
+                  }}
+                  onTextLayout={onTextLayout}
+                  allowFontScaling={false}
+                >
+                  {displayText}
+                </Text>
+                <View style={{ width: SPACER }} />
+              </React.Fragment>
+            ))}
           </Animated.View>
         </View>
       </TouchableWithoutFeedback>

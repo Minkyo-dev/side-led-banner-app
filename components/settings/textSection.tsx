@@ -12,19 +12,30 @@ interface TextSectionProps {}
 
 export const TextSection = ({}: TextSectionProps) => {
   // Context fields
+  const { config, updateConfig, fontItems } = useSettings();
+  const { playOption } = config.content;
   const {
-    config,
-    updateConfig,
-    fontItems
-  } = useSettings();
-  const { font, fontSize, textSelectedColor, outLine, dropShadow } = config.appearance;
+    font,
+    fontSize,
+    lineSpacing,
+    textSelectedColor,
+    outLine,
+    dropShadow,
+  } = config.appearance;
   const { textMoveSpeed } = config.motion;
   const setFont = (font: string) => () => updateConfig("appearance", { font });
-  const setTextMoveSpeed = (value: number) => updateConfig("motion", { textMoveSpeed: value });
-  const setFontSize = (value: number) => updateConfig("appearance", { fontSize: value });
-  const setTextSelectedColor = (color: string) => updateConfig("appearance", { textSelectedColor: color });
-  const setOutLine = (value: number) => updateConfig("appearance", { outLine: value });
-  const setDropShadow = (value: number) => updateConfig("appearance", { dropShadow: value });
+  const setTextMoveSpeed = (value: number) =>
+    updateConfig("motion", { textMoveSpeed: value });
+  const setFontSize = (value: number) =>
+    updateConfig("appearance", { fontSize: value });
+  const setLineSpacing = (value: number) =>
+    updateConfig("appearance", { lineSpacing: value });
+  const setTextSelectedColor = (color: string) =>
+    updateConfig("appearance", { textSelectedColor: color });
+  const setOutLine = (value: number) =>
+    updateConfig("appearance", { outLine: value });
+  const setDropShadow = (value: number) =>
+    updateConfig("appearance", { dropShadow: value });
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       {/* text - font select */}
@@ -62,7 +73,7 @@ export const TextSection = ({}: TextSectionProps) => {
         onChange={setTextMoveSpeed}
         minimumValue={0}
         maximumValue={100}
-        step={5}
+        step={1}
       />
 
       {/* text - size slider */}
@@ -80,6 +91,24 @@ export const TextSection = ({}: TextSectionProps) => {
         minimumValue={10}
         maximumValue={100}
         step={1}
+      />
+
+      {/* text - line spacing slider */}
+      <View
+        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+      >
+        <Text style={styles.settingsRowLabel}>Line Spacing</Text>
+        <View style={styles.settingsRowValueContainer}>
+          <Text style={styles.settingsRowValue}>{lineSpacing}</Text>
+        </View>
+      </View>
+      <SliderComponent
+        value={lineSpacing}
+        onChange={setLineSpacing}
+        minimumValue={0}
+        maximumValue={100}
+        step={1}
+        disabled={playOption === "one"}
       />
 
       {/* text - color picker */}
