@@ -23,16 +23,20 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 export default function Index() {
   const insets = useSafeAreaInsets();
 
-
-  const { 
-    config, ui, 
-    updateConfig, updateUI, handleTextChange,
-    fontItems, effectItems 
+  const {
+    config,
+    ui,
+    updateConfig,
+    updateUI,
+    handleTextChange,
+    fontItems,
+    effectItems,
   } = useSettings();
   console.log(config);
   // config에서 index에 필요한 값들 추출
   const { previewText, playOption } = config.content;
-  const { fontSize, textSelectedColor, outLine, dropShadow } = config.appearance;
+  const { fontSize, textSelectedColor, outLine, dropShadow, lineSpacing } =
+    config.appearance;
   const { backgroundColor } = config.background;
   const { textMoveSpeed } = config.motion;
   const { isPlaying, activeTab, activePreset } = ui;
@@ -53,10 +57,6 @@ export default function Index() {
   const onClickPreset = (index: number) => updateUI({ activePreset: index });
   const [previewHeight, setPreviewHeight] = useState(0);
 
-
- 
-
-
   // marquee animation hook
   const {
     displayText,
@@ -76,23 +76,32 @@ export default function Index() {
       playOption === "one"
         ? 1
         : Math.min((previewText.match(/\n/g) || []).length + 1, 3);
-    const lineHeightRatio = 1.2;
+    const lineHeightRatio = 1.2 + lineSpacing / 100;
     const maxFontSize = Math.floor(
       previewHeight / (lineCount * lineHeightRatio),
     );
     return Math.floor(maxFontSize * (fontSize / 100));
-  }, [previewHeight, playOption, previewText, fontSize]);
+  }, [previewHeight, playOption, previewText, fontSize, lineSpacing]);
 
   const previewTextStyles = useMemo(() => {
     const outlineRadius = (outLine / 100) * 3;
     const shadowScale = dropShadow / 100;
+    const lineHeightRatio = 1.2 + lineSpacing / 100;
     return {
       fontSize: previewFontSize,
+      lineHeight: previewFontSize * lineHeightRatio,
       flexShrink: 0,
       color: textSelectedColor,
-      textShadowColor: (outLine > 0 || dropShadow > 0) ? "rgba(0,0,0,0.7)" : undefined,
-      textShadowOffset: (outLine > 0 || dropShadow > 0) ? { width: shadowScale * 4, height: shadowScale * 4 } : undefined,
-      textShadowRadius: (outLine > 0 || dropShadow > 0) ? outlineRadius + shadowScale * 8 : undefined,
+      textShadowColor:
+        outLine > 0 || dropShadow > 0 ? "rgba(0,0,0,0.7)" : undefined,
+      textShadowOffset:
+        outLine > 0 || dropShadow > 0
+          ? { width: shadowScale * 4, height: shadowScale * 4 }
+          : undefined,
+      textShadowRadius:
+        outLine > 0 || dropShadow > 0
+          ? outlineRadius + shadowScale * 8
+          : undefined,
     };
   }, [previewFontSize, textSelectedColor, outLine, dropShadow]);
 
@@ -120,7 +129,8 @@ export default function Index() {
         }}
         input={{
           previewText,
-          setPreviewText : (text) => updateConfig("content", { previewText: text }),
+          setPreviewText: (text) =>
+            updateConfig("content", { previewText: text }),
           handleTextChange,
         }}
         onPreviewLayout={onPreviewLayout}
@@ -164,6 +174,7 @@ export default function Index() {
                 styles.tabText,
                 activeTab === tab && styles.activeTabText,
               ]}
+              allowFontScaling={false}
             >
               {tab}
             </Text>

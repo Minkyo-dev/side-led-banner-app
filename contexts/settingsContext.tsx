@@ -1,25 +1,24 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 
-
 /**
-* SettingsContext 사용 매뉴얼
+ * SettingsContext 사용 매뉴얼
  * 값 가져오기 (Getter)
  * const { config, ui } = useSettings();
  * const { fontSize, font } = config.appearance; // 특정 그룹에서 추출
  * const { isPlaying } = ui; // UI 상태 추출
  * [Context 업데이트 함수 사용법 가이드]
- * 
+ *
  * 값 수정하기 (Setter)
  * * 1. 직접 업데이트 (Direct Update)
  * - 특정 그룹의 여러 값을 동시에 변경할 때
  * 예) updateConfig("appearance", { fontSize: 30, textSelectedColor: "#FF0000" })
  * 예) updateUI({ activeTab: "BACKGROUND", isPlaying: true })
- * 
+ *
  * * 2. 개별 세터 함수 정의 (Setter Pattern)
  * - 기존 useState의 set함수처럼 특정 필드 업데이트를 위한 함수를 미리 정의해두고 사용할 때
  * const setFontSize = (value: number) => updateConfig("appearance", { fontSize: value });
  * // <Slider onChange={setFontSize} />
- * 
+ *
  */
 //Banner content, appearance, background, motion 설정을 담는 context
 export interface BannerConfig {
@@ -30,13 +29,14 @@ export interface BannerConfig {
   appearance: {
     font: string;
     fontSize: number;
+    lineSpacing: number;
     textSelectedColor: string;
     outLine: number;
     dropShadow: number;
     effectSelectedItem: string;
   };
   background: {
-    backgroundColor: string; 
+    backgroundColor: string;
     backgroundBlur: number;
   };
   motion: {
@@ -55,7 +55,10 @@ export interface UIState {
 interface SettingsContextValue {
   config: BannerConfig;
   ui: UIState;
-  updateConfig: <K extends keyof BannerConfig>(group: K, updates: Partial<BannerConfig[K]>) => void;
+  updateConfig: <K extends keyof BannerConfig>(
+    group: K,
+    updates: Partial<BannerConfig[K]>,
+  ) => void;
   updateUI: (updates: Partial<UIState>) => void;
   handleTextChange: (text: string) => void;
   fontItems: { label: string; value: string }[];
@@ -73,12 +76,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   //위에서 정의한 config를 하나의 state로 관리
   const [config, setConfig] = useState<BannerConfig>({
     content: {
-      previewText: "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
+      previewText:
+        "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
       playOption: "one",
     },
     appearance: {
       font: "nanum_gothic",
       fontSize: 50,
+      lineSpacing: 10,
       textSelectedColor: "#000000",
       outLine: 50,
       dropShadow: 50,
@@ -102,7 +107,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   // config 업데이트 함수
   const updateConfig = <K extends keyof BannerConfig>(
     group: K,
-    updates: Partial<BannerConfig[K]>
+    updates: Partial<BannerConfig[K]>,
   ) => {
     setConfig((prev) => ({
       ...prev,
@@ -120,25 +125,34 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     updateConfig("content", { previewText: filteredText });
   };
   // font select state
-  const fontItems = useMemo(() => [
-    { label: "Nanum Gothic", value: "nanum_gothic" },
-    { label: "Noto Sans KR", value: "noto_sans_kr" },
-    { label: "Roboto", value: "roboto" },
-    { label: "Montserrat", value: "montserrat" },
-    { label: "Open Sans", value: "open_sans" },
-  ], []);
+  const fontItems = useMemo(
+    () => [
+      { label: "Nanum Gothic", value: "nanum_gothic" },
+      { label: "Noto Sans KR", value: "noto_sans_kr" },
+      { label: "Roboto", value: "roboto" },
+      { label: "Montserrat", value: "montserrat" },
+      { label: "Open Sans", value: "open_sans" },
+    ],
+    [],
+  );
   // effect items list
-  const effectItems = useMemo(() => ["Bold", "Blink", "Pixel", "Glow", "Gradient"], []);
-// value 객체는 config, ui, 업데이트 함수, 그리고 fontItems와 effectItems를 포함하여 memoize하여 제공
-  const value = useMemo(() => ({
-    config,
-    ui,
-    updateConfig,
-    updateUI,
-    handleTextChange,
-    fontItems,
-    effectItems,
-  }), [config, ui, fontItems, effectItems]);
+  const effectItems = useMemo(
+    () => ["Bold", "Blink", "Pixel", "Glow", "Gradient"],
+    [],
+  );
+  // value 객체는 config, ui, 업데이트 함수, 그리고 fontItems와 effectItems를 포함하여 memoize하여 제공
+  const value = useMemo(
+    () => ({
+      config,
+      ui,
+      updateConfig,
+      updateUI,
+      handleTextChange,
+      fontItems,
+      effectItems,
+    }),
+    [config, ui, fontItems, effectItems],
+  );
 
   return (
     <SettingsContext.Provider value={value}>
