@@ -115,9 +115,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleTextChange = (text: string) => {
-    const lines = text.split("\n");
-    const filteredText = lines.length > 3 ? lines.slice(0, 3).join("\n") : text;
-    updateConfig("content", { previewText: filteredText });
+    const normalizedText = text.replace(/\n{2,}/g, "\n");
+
+   const lines = normalizedText.split("\n");
+   const filteredText = lines.slice(0, 3).join("\n")
   };
   // font select state
   const fontItems = useMemo(() => [
