@@ -138,6 +138,7 @@ export default function PreviewPanel({
                     ? btnStyles.presetButtonActiveText
                     : btnStyles.presetButtonText
                 }
+                allowFontScaling={false}
               >
                 {num}
               </Text>
@@ -164,7 +165,12 @@ export default function PreviewPanel({
             onPress={() => input.setPreviewText("")}
             style={btnStyles.contentsInputResetButton}
           >
-            <Text style={btnStyles.contentsInputResetButtonText}>×</Text>
+            <Text
+              style={btnStyles.contentsInputResetButtonText}
+              allowFontScaling={false}
+            >
+              ×
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

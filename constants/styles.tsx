@@ -3,6 +3,9 @@ import { Dimensions, StyleSheet } from "react-native";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
+  scrollViewContainer: {
+    paddingBottom: 30,
+  },
   container: {
     flex: 1,
     backgroundColor: "#F6F6F6",
@@ -28,7 +31,6 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 8,
-    marginHorizontal: 10,
   },
   contentsInputContainer: {
     flex: 0.3,

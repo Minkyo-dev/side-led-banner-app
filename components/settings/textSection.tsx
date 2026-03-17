@@ -37,10 +37,15 @@ export const TextSection = ({}: TextSectionProps) => {
   const setDropShadow = (value: number) =>
     updateConfig("appearance", { dropShadow: value });
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollViewContainer}
+    >
       {/* text - font select */}
       <View style={styles.settingsRow}>
-        <Text style={styles.settingsRowLabel}>Font</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          Font
+        </Text>
         <Dropdown
           data={fontItems}
           labelField="label"
@@ -63,9 +68,13 @@ export const TextSection = ({}: TextSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text style={styles.settingsRowLabel}>Speed</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          Speed
+        </Text>
         <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue}>{textMoveSpeed}</Text>
+          <Text style={styles.settingsRowValue} allowFontScaling={false}>
+            {textMoveSpeed}
+          </Text>
         </View>
       </View>
       <SliderComponent
@@ -80,9 +89,13 @@ export const TextSection = ({}: TextSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text style={styles.settingsRowLabel}>Size</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          Size
+        </Text>
         <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue}>{fontSize}</Text>
+          <Text style={styles.settingsRowValue} allowFontScaling={false}>
+            {fontSize}
+          </Text>
         </View>
       </View>
       <SliderComponent
@@ -97,9 +110,13 @@ export const TextSection = ({}: TextSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text style={styles.settingsRowLabel}>Line Spacing</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          Line Spacing
+        </Text>
         <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue}>{lineSpacing}</Text>
+          <Text style={styles.settingsRowValue} allowFontScaling={false}>
+            {lineSpacing}
+          </Text>
         </View>
       </View>
       <SliderComponent
@@ -115,7 +132,7 @@ export const TextSection = ({}: TextSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text>Color</Text>
+        <Text allowFontScaling={false}>Color</Text>
       </View>
       <View style={styles.colorPickerContainer}>
         <ColorPicker
@@ -129,9 +146,13 @@ export const TextSection = ({}: TextSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text style={styles.settingsRowLabel}>Out Line</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          Out Line
+        </Text>
         <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue}>{outLine}</Text>
+          <Text style={styles.settingsRowValue} allowFontScaling={false}>
+            {outLine}
+          </Text>
         </View>
       </View>
       <SliderComponent
@@ -146,9 +167,13 @@ export const TextSection = ({}: TextSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text style={styles.settingsRowLabel}>Drop Shadow</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          Drop Shadow
+        </Text>
         <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue}>{dropShadow}</Text>
+          <Text style={styles.settingsRowValue} allowFontScaling={false}>
+            {dropShadow}
+          </Text>
         </View>
       </View>
       <SliderComponent
