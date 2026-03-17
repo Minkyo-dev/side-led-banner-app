@@ -39,7 +39,7 @@ export const SliderComponent = ({
         }}
         minimumTrackTintColor="#FF6E00"
         maximumTrackTintColor="#8F8D8A"
-        thumbImage={require("@/assets/images/sliderThumbButton.png")}
+        thumbImage={require("@/assets/images/sliderThumbBtn.png")}
       />
       <TouchableOpacity
         style={styles.sliderButton}

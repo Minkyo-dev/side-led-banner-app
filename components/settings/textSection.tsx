@@ -57,6 +57,7 @@ export const TextSection = ({}: TextSectionProps) => {
           style={styles.dropdownContainer}
           containerStyle={styles.dropdownContainer}
           selectedTextStyle={styles.dropdownSelectedTextStyle}
+          selectedTextProps={{ allowFontScaling: false }}
           itemContainerStyle={styles.dropdownItemContainerStyle}
           itemTextStyle={styles.dropdownItemTextStyle}
           iconStyle={styles.dropdownIconStyle}
