@@ -24,7 +24,9 @@ export const SliderComponent = ({
         style={styles.sliderButton}
         onPress={() => onChange(Math.max(minimumValue, value - step))}
       >
-        <Text style={styles.sliderButtonText}>−</Text>
+        <Text style={styles.sliderButtonText} allowFontScaling={false}>
+          −
+        </Text>
       </TouchableOpacity>
       <Slider
         disabled={disabled}
@@ -43,7 +45,9 @@ export const SliderComponent = ({
         style={styles.sliderButton}
         onPress={() => onChange(Math.min(maximumValue, value + step))}
       >
-        <Text style={styles.sliderButtonText}>+</Text>
+        <Text style={styles.sliderButtonText} allowFontScaling={false}>
+          +
+        </Text>
       </TouchableOpacity>
     </View>
   );

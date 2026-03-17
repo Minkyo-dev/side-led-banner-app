@@ -12,15 +12,22 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
   // Context fields
   const { config, updateConfig } = useSettings();
   const { backgroundColor, backgroundBlur } = config.background;
-  const setBackgroundColor = (color: string) => updateConfig("background", { backgroundColor: color });
-  const setBackgroundBlur = (value: number) => updateConfig("background", { backgroundBlur: value });
+  const setBackgroundColor = (color: string) =>
+    updateConfig("background", { backgroundColor: color });
+  const setBackgroundBlur = (value: number) =>
+    updateConfig("background", { backgroundBlur: value });
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollViewContainer}
+    >
       {/* background - color picker */}
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text style={styles.settingsRowLabel}>Background</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          Background
+        </Text>
       </View>
       <View style={styles.colorPickerContainer}>
         <ColorPicker
@@ -34,9 +41,13 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text style={styles.settingsRowLabel}>Background Blur</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          Background Blur
+        </Text>
         <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue}>{backgroundBlur}</Text>
+          <Text style={styles.settingsRowValue} allowFontScaling={false}>
+            {backgroundBlur}
+          </Text>
         </View>
       </View>
       <SliderComponent

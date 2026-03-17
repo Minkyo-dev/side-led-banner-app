@@ -8,20 +8,21 @@ interface EffectSectionProps {}
 
 export const EffectSection = ({}: EffectSectionProps) => {
   // Context에서 필요한 상태와 핸들러 가져오기
-  const { config,
-    updateConfig,
-    effectItems
-   } = useSettings();
-   const { effectSelectedItem } = config.appearance;
-   const setEffectSelectedItem = (effect: string) => updateConfig("appearance", { effectSelectedItem: effect });
+  const { config, updateConfig, effectItems } = useSettings();
+  const { effectSelectedItem } = config.appearance;
+  const setEffectSelectedItem = (effect: string) =>
+    updateConfig("appearance", { effectSelectedItem: effect });
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollViewContainer}
+    >
       {/* effect - effect select */}
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text>Effect</Text>
+        <Text allowFontScaling={false}>Effect</Text>
       </View>
       <ScrollView
         horizontal={true}
@@ -43,6 +44,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
                 effectSelectedItem === effect &&
                   btnStyles.effectItemButtonTextActive,
               ]}
+              allowFontScaling={false}
             >
               {effect}
             </Text>
@@ -54,7 +56,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text>Background Effect</Text>
+        <Text allowFontScaling={false}>Background Effect</Text>
       </View>
       <ScrollView
         horizontal={true}
