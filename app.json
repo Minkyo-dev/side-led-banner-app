@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "icon": "./assets/images/Logo_IOS.png",
       "bundleIdentifier": "com.minkyokim.sideledbannerapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
