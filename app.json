@@ -4,7 +4,7 @@
     "slug": "side-led-banner-app",
     "version": "1.0.0",
     "orientation": "default",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/splash-icon.png",
     "scheme": "sideledbannerapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -43,7 +43,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,

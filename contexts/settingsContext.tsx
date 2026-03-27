@@ -34,6 +34,10 @@ export interface BannerConfig {
     outLine: number;
     dropShadow: number;
     effectSelectedItem: string;
+    blurIntensity: number;
+    glowIntensity: number;
+    blinkSpeed : number;
+    fontWeight: "normal" | "bold";
   };
   background: {
     backgroundColor: string;
@@ -88,6 +92,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       outLine: 50,
       dropShadow: 50,
       effectSelectedItem: "Bold",
+      blurIntensity: 0,
+      fontWeight: "normal",
+    glowIntensity : 50,
+    blinkSpeed: 50,
     },
     background: {
       backgroundColor: "#FFFFFF",
@@ -137,7 +145,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   );
   // effect items list
   const effectItems = useMemo(
-    () => ["Bold", "Blink", "Pixel", "Glow", "Gradient"],
+    () => ["Bold", "Blur", "Blink", "Pixel", "Glow", "Gradient"],
     [],
   );
   // value 객체는 config, ui, 업데이트 함수, 그리고 fontItems와 effectItems를 포함하여 memoize하여 제공

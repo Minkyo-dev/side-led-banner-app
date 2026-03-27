@@ -1,3 +1,6 @@
+import { btnStyles } from "@/constants/btnStyles";
+import { styles } from "@/constants/styles";
+import { useSettings } from "@/contexts/settingsContext";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
@@ -6,13 +9,10 @@ import {
   TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle,
+  ViewStyle
 } from "react-native";
 import type { AnimatedStyle } from "react-native-reanimated";
 import Animated from "react-native-reanimated";
-
-import { btnStyles } from "@/constants/btnStyles";
-import { styles } from "@/constants/styles";
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
@@ -56,21 +56,44 @@ export default function PreviewPanel({
 }: PreviewPanelParams) {
   const [activePreset, setActivePreset] = useState(0);
   const [inputText, setInputText] = useState(input.previewText);
-  //입력창에 보이는 텍스트
-  const getDisplayText = (text: String) => {
-    if (!text) return "";
-    // 이미 있는 기호들을 다 지우고 다시 깨끗하게 줄바꿈에 ↵ 붙임
-    const cleanText = text.replace(/↵/g, "");
-    return theme.playOption === "multi"
-      ? cleanText.replace(/\n/g, "↵\n")
-      : cleanText;
-  };
+  const {
+      config,
+    } = useSettings();
+    
+    const {lineSpacing,
+    blurIntensity,
+    glowIntensity,
+    blinkSpeed,
+    fontWeight,
+  textSelectedColor} = config.appearance
+ //입력창에 보이는 텍스트
+  const getDisplayText = (text:String) => {
+  if (!text) return "";
+  // 이미 있는 기호들을 다 지우고 다시 깨끗하게 줄바꿈에 ↵ 붙임
+  const cleanText = text.replace(/↵/g, ""); 
+  return theme.playOption === "multi" 
+    ? cleanText.replace(/\n/g, "↵\n") 
+    : cleanText;
+};
+const blurColor = (hex: string, amount: number) => {
+  const num = parseInt(hex.replace("#", ""), 16);
 
-  // 실제 데이터로 전환하기 위해 ↵ 지우는 함수
-  const handleTextChangeWithIcon = (e: any) => {
-    const rawText = e.replace(/↵/g, "");
-    input.handleTextChange(rawText); // previewText에는 \n만 붙임
-  };
+  const r = num >> 16;
+  const g = (num >> 8) & 0x00ff;
+  const b = num & 0x0000ff;
+
+  const newR = Math.round(r + (255 - r) * amount);
+  const newG = Math.round(g + (255 - g) * amount);
+  const newB = Math.round(b + (255 - b) * amount);
+
+  return `rgb(${newR}, ${newG}, ${newB})`;
+};
+
+// 실제 데이터로 전환하기 위해 ↵ 지우는 함수
+const handleTextChangeWithIcon = (e :any) => {
+  const rawText = e.replace(/↵/g, ""); 
+  input.handleTextChange(rawText);     // previewText에는 \n만 붙임
+};
   return (
     <View style={styles.previewContainer}>
       {/* preview */}
@@ -85,29 +108,39 @@ export default function PreviewPanel({
         ]}
         onLayout={onPreviewLayout}
       >
+        
         <Animated.View
           style={[
             {
               flexDirection: "row",
               position: "absolute",
               alignItems: "center",
+              flexShrink : 0,
             },
             marquee.animatedStyle,
           ]}
         >
-          {[...Array(10)].map((_, i) => (
-            <React.Fragment key={i}>
-              <Text
-                style={[styles.previewText, theme.previewTextStyles]}
-                onTextLayout={marquee.onTextLayout}
-                allowFontScaling={false}
-              >
-                {marquee.displayText}
-              </Text>
-              <View style={{ width: marquee.SPACER }} />
-            </React.Fragment>
-          ))}
+          {[...Array(5)].map((_, i) => (
+                        <React.Fragment key={i}>
+                            <Text
+                                style={[styles.previewText,
+                                   theme.previewTextStyles,
+                                    { letterSpacing : lineSpacing,
+                                      textShadowColor: blurColor(textSelectedColor, 0.1),
+                                      textShadowRadius: blurIntensity,
+                                      fontWeight,
+                                     }]}
+                                onTextLayout={i === 0 ? marquee.onTextLayout : undefined}
+                            >
+                                {marquee.displayText}
+                            </Text>
+                            <View style={{ width: marquee.SPACER }} />
+                            {/*Todo :Blurview 값 조절 slider 설정 필요*/}
+                            {/* <BlurView intensity={blurIntensity} tint="light" style={StyleSheet.absoluteFill} /> */}
+                        </React.Fragment>
+                    ))}
         </Animated.View>
+     
       </View>
 
       {/* preset buttons container */}
@@ -127,10 +160,10 @@ export default function PreviewPanel({
                 index === activePreset
                   ? ["white", "#CCCCCC"]
                   : ["white", "#727272"]
-              } // 시작색, 끝색
-              start={{ x: 0, y: 0 }} //왼쪽 위
-              end={{ x: 0.1, y: 0.2 }} //오른쪽 아래
-              style={btnStyles.presetButtonGradient} //기존 스타일 적용
+              }// 시작색, 끝색
+              start={{ x: 0, y: 0 }}//왼쪽 위
+              end={{ x: 0.1, y: 0.2 }}//오른쪽 아래
+              style={btnStyles.presetButtonGradient}//기존 스타일 적용
             >
               <Text
                 style={
@@ -138,7 +171,6 @@ export default function PreviewPanel({
                     ? btnStyles.presetButtonActiveText
                     : btnStyles.presetButtonText
                 }
-                allowFontScaling={false}
               >
                 {num}
               </Text>
@@ -153,7 +185,6 @@ export default function PreviewPanel({
           editable
           multiline
           numberOfLines={3}
-          allowFontScaling={false}
           style={styles.contentsInput}
           placeholder="Enter your text here"
           value={getDisplayText(input.previewText)}
@@ -165,12 +196,7 @@ export default function PreviewPanel({
             onPress={() => input.setPreviewText("")}
             style={btnStyles.contentsInputResetButton}
           >
-            <Text
-              style={btnStyles.contentsInputResetButtonText}
-              allowFontScaling={false}
-            >
-              ×
-            </Text>
+            <Text style={btnStyles.contentsInputResetButtonText}>×</Text>
           </TouchableOpacity>
         </View>
       </View>
