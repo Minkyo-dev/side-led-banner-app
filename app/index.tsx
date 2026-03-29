@@ -3,21 +3,20 @@ import {
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
+import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
+import PreviewPanel from "@/components/previewPanel";
 import { BackgroundSection } from "@/components/settings/backgroundSection";
 import { EffectSection } from "@/components/settings/effectSection";
 import { TextSection } from "@/components/settings/textSection";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
+import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
+import * as NavigationBar from "expo-navigation-bar";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Dimensions, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
-import PreviewPanel from "@/components/previewPanel";
-import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
-
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function Index() {
@@ -42,15 +41,21 @@ export default function Index() {
   const { isPlaying, activeTab, activePreset } = ui;
 
   // 메인 화면은 portrait 고정, 전체화면 모달은 landscape 허용
-  useEffect(() => {
-    if (isPlaying) {
-      ScreenOrientation.unlockAsync();
-    } else {
-      ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP,
-      );
-    }
-  }, [isPlaying]);
+
+  const handlePlay = async () => {
+      await NavigationBar.setVisibilityAsync("hidden");
+      // await NavigationBar.setBehaviorAsync("sticky-immersive");
+      await ScreenOrientation.unlockAsync();
+      updateUI({ isPlaying: true });
+    };
+const handleStop = async () => {
+
+    await NavigationBar.setVisibilityAsync("visible");
+    await ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.PORTRAIT_UP,
+    );
+    updateUI({ isPlaying: false });
+  };
 
   // tab click scroll function
   const handleTabPress = (tab: TabType) => updateUI({ activeTab: tab });
@@ -153,11 +158,11 @@ export default function Index() {
         </TouchableOpacity>
         {/* stop/resume button */}
         <TouchableOpacity
-          style={btnStyles.playResumeButton}
-          onPress={() => updateUI({ isPlaying: true })}
-        >
-          <PlayResumeButton isPlaying={isPlaying} />
-        </TouchableOpacity>
+        style={btnStyles.playResumeButton}
+        onPress={handlePlay}
+      >
+        <PlayResumeButton isPlaying={isPlaying} />
+      </TouchableOpacity>
       </View>
       {/* tab container */}
       <View style={styles.tabContainer}>
@@ -190,7 +195,7 @@ export default function Index() {
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen
         visible={isPlaying}
-        onClose={() => updateUI({ isPlaying: false })}
+        onClose={handleStop}
         config={config}
       />
     </View>
