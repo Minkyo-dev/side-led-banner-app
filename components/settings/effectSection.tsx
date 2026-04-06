@@ -4,7 +4,10 @@ import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { useSettings } from "../../contexts/settingsContext";
-import { SliderComponent } from "../slider";
+import {
+  SettingsSliderBlock,
+  type SettingsSliderBlockProps,
+} from "./settingsSliderBlock";
 
 interface EffectSectionProps {}
 
@@ -16,7 +19,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
     blurIntensity,
     glowIntensity,
     blinkSpeed,
-    fontWeight,
+    pixelBlockSize,
   } = config.appearance;
 
   const setEffectSelectedItem = (effect: string) =>
@@ -30,83 +33,59 @@ export const EffectSection = ({}: EffectSectionProps) => {
 
   const setBlinkSpeed = (value: number) =>
     updateConfig("appearance", { blinkSpeed: value });
-const setFontWeight = (value:  "normal" | "bold") =>
+
+  const setPixelBlockSize = (value: number) =>
+    updateConfig("appearance", { pixelBlockSize: value });
+
+  const setFontWeight = (value: "normal" | "bold") =>
     updateConfig("appearance", { fontWeight: value });
 
-  const renderEffectSlider = () => {
-    switch (effectSelectedItem) {
-      
-      case "Blur":
-        return (
-          <View style={{ marginTop: 12 }}>
-            <View
-              style={[
-                styles.settingsRow,
-                { borderBottomWidth: 0, marginBottom: 0 },
-              ]}
-            >
-              <Text allowFontScaling={false}>Blur Intensity</Text>
-              <Text allowFontScaling={false}>{blurIntensity}</Text>
-            </View>
-            <SliderComponent
-              value={blurIntensity}
-              onChange={setBlurIntensity}
-              minimumValue={0}
-              maximumValue={100}
-              step={1}
-            />
-          </View>
-        );
+  const getEffectSliderProps =
+    (): Omit<SettingsSliderBlockProps, "containerStyle"> | null => {
+      switch (effectSelectedItem) {
+        case "Blur":
+          return {
+            label: "Blur Intensity",
+            value: blurIntensity,
+            onChange: setBlurIntensity,
+            minimumValue: 0,
+            maximumValue: 100,
+            step: 1,
+          };
+        case "Glow":
+        case "Pixel Glow":
+          return {
+            label: "Glow Intensity",
+            value: glowIntensity,
+            onChange: setGlowIntensity,
+            minimumValue: 0,
+            maximumValue: 100,
+            step: 1,
+          };
+        case "Blink":
+          return {
+            label: "Blink frequency",
+            value: blinkSpeed,
+            onChange: setBlinkSpeed,
+            minimumValue: 1,
+            maximumValue: 10,
+            step: 1,
+          };
+        case "Pixel":
+          return {
+            label: "Pixel block size",
+            value: pixelBlockSize,
+            onChange: setPixelBlockSize,
+            minimumValue: 2,
+            maximumValue: 24,
+            step: 1,
+          };
+        default:
+          return null;
+      }
+    };
 
-      case "Glow":
-      case "Pixel Glow":
-        return (
-          <View style={{ marginTop: 12 }}>
-            <View
-              style={[
-                styles.settingsRow,
-                { borderBottomWidth: 0, marginBottom: 0 },
-              ]}
-            >
-              <Text allowFontScaling={false}>Glow Intensity</Text>
-              <Text allowFontScaling={false}>{glowIntensity}</Text>
-            </View>
-            <SliderComponent
-              value={glowIntensity}
-              onChange={setGlowIntensity}
-              minimumValue={0}
-              maximumValue={100}
-              step={1}
-            />
-          </View>
-        );
-
-      case "Blink":
-        return (
-          <View style={{ marginTop: 12 }}>
-            <View
-              style={[
-                styles.settingsRow,
-                { borderBottomWidth: 0, marginBottom: 0 },
-              ]}
-            >
-              <Text allowFontScaling={false}>Blink Speed</Text>
-              <Text allowFontScaling={false}>{blinkSpeed}</Text>
-            </View>
-            <SliderComponent
-              value={blinkSpeed}
-              onChange={setBlinkSpeed}
-              minimumValue={1}
-              maximumValue={10}
-              step={1}
-            />
-          </View>
-        );
-
-      default:
-        return null;
-    }
-  };
+  const effectSliderProps = getEffectSliderProps();
 
   return (
     <ScrollView
@@ -133,16 +112,14 @@ const setFontWeight = (value:  "normal" | "bold") =>
               effectSelectedItem === effect && btnStyles.effectItemButtonActive,
             ]}
             onPress={() => {
-  const isSame = effectSelectedItem === effect;
+              const isSame = effectSelectedItem === effect;
 
-  // 1. 선택 toggle
-  setEffectSelectedItem(isSame ? "" : effect);
+              setEffectSelectedItem(isSame ? "" : effect);
 
-  // 2. bold 처리
-  if (effect === "Bold") {
-    setFontWeight(isSame ? "normal" : "bold");
-  }
-}}
+              if (effect === "Bold") {
+                setFontWeight(isSame ? "normal" : "bold");
+              }
+            }}
           >
             <Text
               style={[
@@ -158,7 +135,12 @@ const setFontWeight = (value:  "normal" | "bold") =>
         ))}
       </ScrollView>
 
-      {renderEffectSlider()}
+      {effectSliderProps ? (
+        <SettingsSliderBlock
+          {...effectSliderProps}
+          containerStyle={{ marginTop: 12 }}
+        />
+      ) : null}
 
       {/* effect - background effect select */}
       <View

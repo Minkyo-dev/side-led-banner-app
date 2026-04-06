@@ -1,6 +1,8 @@
+import { PixelatedBackdrop } from "@/components/PixelatedBackdrop";
 import { BannerConfig } from "@/contexts/settingsContext";
+import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
-import React from "react";
+import React, { useMemo, useRef } from "react";
 import {
   Modal,
   StatusBar,
@@ -9,7 +11,6 @@ import {
   View,
 } from "react-native";
 import Animated from "react-native-reanimated";
-
 interface LedBannerFullScreenProps {
   visible: boolean;
   onClose: () => void;
@@ -21,15 +22,23 @@ export const LedBannerFullScreen = ({
   onClose,
   config,
 }: LedBannerFullScreenProps) => {
+  const pixelCaptureRef = useRef<View>(null);
   const { previewText, playOption } = config.content;
   const {
     fontSize,
     textSelectedColor,
-    outLine,
-    dropShadow,
-    font,
     lineSpacing,
+    fontWeight,
+    blurIntensity,
+    effectSelectedItem,
+    blinkSpeed,
+    pixelBlockSize,
   } = config.appearance;
+
+  const blinkStyle = useBlinkOpacityStyle(
+    effectSelectedItem === "Blink",
+    blinkSpeed,
+  );
   const { backgroundColor } = config.background;
   const { textMoveSpeed } = config.motion;
   const {
@@ -44,6 +53,22 @@ export const LedBannerFullScreen = ({
     playOption,
   });
 
+  const blurShadowStyle = useMemo(() => {
+    if (blurIntensity <= 0) return {};
+    const amount = 0.1;
+    const num = parseInt(textSelectedColor.replace("#", ""), 16);
+    const r = num >> 16;
+    const g = (num >> 8) & 0x00ff;
+    const b = num & 0x0000ff;
+    const newR = Math.round(r + (255 - r) * amount);
+    const newG = Math.round(g + (255 - g) * amount);
+    const newB = Math.round(b + (255 - b) * amount);
+    return {
+      textShadowColor: `rgb(${newR}, ${newG}, ${newB})`,
+      textShadowRadius: blurIntensity,
+    };
+  }, [textSelectedColor, blurIntensity]);
+
   return (
     <Modal
       visible={visible}
@@ -53,27 +78,36 @@ export const LedBannerFullScreen = ({
     >
       <StatusBar hidden />
       <TouchableWithoutFeedback onPress={onClose}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor,
-            justifyContent: "flex-start",
-            overflow: "hidden",
-          }}
-          onLayout={onContainerLayout}
+        <PixelatedBackdrop
+          active={effectSelectedItem === "Pixel"}
+          pixelSize={pixelBlockSize}
+          captureRef={pixelCaptureRef}
+          style={{ flex: 1 }}
         >
-          <Animated.View
-            style={[
-              {
-                flexDirection: "row",
-                position: "absolute",
-                top: 0,
-                bottom: 0,
-                alignItems: "center",
-              },
-              animatedStyle,
-            ]}
+          <View
+            ref={pixelCaptureRef}
+            collapsable={false}
+            style={{
+              flex: 1,
+              backgroundColor,
+              justifyContent: "flex-start",
+              overflow: "hidden",
+            }}
+            onLayout={onContainerLayout}
           >
+            <Animated.View
+              style={[
+                {
+                  flexDirection: "row",
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  alignItems: "center",
+                },
+                animatedStyle,
+                blinkStyle,
+              ]}
+            >
             {[...Array(10)].map((_, i) => (
               <React.Fragment key={i}>
                 <Text
@@ -81,6 +115,8 @@ export const LedBannerFullScreen = ({
                     fontSize,
                     color: textSelectedColor,
                     lineHeight: fontSize * (1.2 + lineSpacing / 100),
+                    fontWeight,
+                    ...blurShadowStyle,
                   }}
                   onTextLayout={onTextLayout}
                   allowFontScaling={false}
@@ -90,8 +126,9 @@ export const LedBannerFullScreen = ({
                 <View style={{ width: SPACER }} />
               </React.Fragment>
             ))}
-          </Animated.View>
-        </View>
+            </Animated.View>
+          </View>
+        </PixelatedBackdrop>
       </TouchableWithoutFeedback>
     </Modal>
   );

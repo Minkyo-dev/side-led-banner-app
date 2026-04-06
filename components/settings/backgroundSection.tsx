@@ -1,10 +1,10 @@
 import { ColorPicker } from "@/components/colorPicker";
-import { SliderComponent } from "@/components/slider";
 import { backgroundColorPalette } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
 import React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useSettings } from "../../contexts/settingsContext";
+import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 interface BackgroundSectionProps {}
 
@@ -37,20 +37,8 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
         />
       </View>
 
-      {/* background - blur slider */}
-      <View
-        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
-      >
-        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          Background Blur
-        </Text>
-        <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue} allowFontScaling={false}>
-            {backgroundBlur}
-          </Text>
-        </View>
-      </View>
-      <SliderComponent
+      <SettingsSliderBlock
+        label="Background Blur"
         value={backgroundBlur}
         onChange={setBackgroundBlur}
         minimumValue={0}

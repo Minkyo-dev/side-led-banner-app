@@ -25,6 +25,7 @@ export interface BannerConfig {
   content: {
     previewText: string;
     playOption: "one" | "multi";
+    blurColor : string;
   };
   appearance: {
     font: string;
@@ -37,6 +38,8 @@ export interface BannerConfig {
     blurIntensity: number;
     glowIntensity: number;
     blinkSpeed : number;
+    /** Pixel 효과 시 모자이크 블록 크기(px) */
+    pixelBlockSize: number;
     fontWeight: "normal" | "bold";
   };
   background: {
@@ -83,6 +86,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       previewText:
         "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
       playOption: "one",
+      blurColor: "",
     },
     appearance: {
       font: "nanum_gothic",
@@ -95,7 +99,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       blurIntensity: 0,
       fontWeight: "normal",
     glowIntensity : 50,
-    blinkSpeed: 50,
+    blinkSpeed: 5,
+    pixelBlockSize: 6,
     },
     background: {
       backgroundColor: "#FFFFFF",

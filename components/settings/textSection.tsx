@@ -1,17 +1,16 @@
 // components/TextSection.tsx
 import { ColorPicker } from "@/components/colorPicker";
-import { SliderComponent } from "@/components/slider";
 import { textColorPalette } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
 import React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useSettings } from "../../contexts/settingsContext";
+import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 interface TextSectionProps {}
 
 export const TextSection = ({}: TextSectionProps) => {
-  // Context fields
   const { config, updateConfig, fontItems } = useSettings();
   const { playOption } = config.content;
   const {
@@ -65,20 +64,8 @@ export const TextSection = ({}: TextSectionProps) => {
         />
       </View>
 
-      {/* text - speed slider */}
-      <View
-        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
-      >
-        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          Speed
-        </Text>
-        <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue} allowFontScaling={false}>
-            {textMoveSpeed}
-          </Text>
-        </View>
-      </View>
-      <SliderComponent
+      <SettingsSliderBlock
+        label="Speed"
         value={textMoveSpeed}
         onChange={setTextMoveSpeed}
         minimumValue={0}
@@ -86,20 +73,8 @@ export const TextSection = ({}: TextSectionProps) => {
         step={1}
       />
 
-      {/* text - size slider */}
-      <View
-        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
-      >
-        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          Size
-        </Text>
-        <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue} allowFontScaling={false}>
-            {fontSize}
-          </Text>
-        </View>
-      </View>
-      <SliderComponent
+      <SettingsSliderBlock
+        label="Size"
         value={fontSize}
         onChange={setFontSize}
         minimumValue={10}
@@ -107,20 +82,8 @@ export const TextSection = ({}: TextSectionProps) => {
         step={1}
       />
 
-      {/* text - line spacing slider */}
-      <View
-        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
-      >
-        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          Line Spacing
-        </Text>
-        <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue} allowFontScaling={false}>
-            {lineSpacing}
-          </Text>
-        </View>
-      </View>
-      <SliderComponent
+      <SettingsSliderBlock
+        label="Line Spacing"
         value={lineSpacing}
         onChange={setLineSpacing}
         minimumValue={0}
@@ -143,20 +106,8 @@ export const TextSection = ({}: TextSectionProps) => {
         />
       </View>
 
-      {/* text - out line slider */}
-      <View
-        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
-      >
-        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          Out Line
-        </Text>
-        <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue} allowFontScaling={false}>
-            {outLine}
-          </Text>
-        </View>
-      </View>
-      <SliderComponent
+      <SettingsSliderBlock
+        label="Out Line"
         value={outLine}
         onChange={setOutLine}
         minimumValue={0}
@@ -164,20 +115,8 @@ export const TextSection = ({}: TextSectionProps) => {
         step={1}
       />
 
-      {/* text - drop shadow slider */}
-      <View
-        style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
-      >
-        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          Drop Shadow
-        </Text>
-        <View style={styles.settingsRowValueContainer}>
-          <Text style={styles.settingsRowValue} allowFontScaling={false}>
-            {dropShadow}
-          </Text>
-        </View>
-      </View>
-      <SliderComponent
+      <SettingsSliderBlock
+        label="Drop Shadow"
         value={dropShadow}
         onChange={setDropShadow}
         minimumValue={0}

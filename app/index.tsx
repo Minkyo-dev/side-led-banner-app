@@ -28,20 +28,21 @@ export default function Index() {
     updateConfig,
     updateUI,
     handleTextChange,
-    fontItems,
-    effectItems,
   } = useSettings();
-  console.log(config);
   // config에서 index에 필요한 값들 추출
   const { previewText, playOption } = config.content;
-  const { fontSize, textSelectedColor, outLine, dropShadow, lineSpacing } =
-    config.appearance;
+  const {
+    fontSize,
+    textSelectedColor,
+    outLine,
+    dropShadow,
+    lineSpacing,
+  } = config.appearance;
   const { backgroundColor } = config.background;
   const { textMoveSpeed } = config.motion;
   const { isPlaying, activeTab, activePreset } = ui;
 
   // 메인 화면은 portrait 고정, 전체화면 모달은 landscape 허용
-
   const handlePlay = async () => {
       await NavigationBar.setVisibilityAsync("hidden");
       // await NavigationBar.setBehaviorAsync("sticky-immersive");
@@ -119,7 +120,7 @@ const handleStop = async () => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* preview container */}
+      {/* preview container — Pixel 효과는 PreviewPanel 안 미리보기 영역만 (전체 화면 Backdrop는 UI 먹통 유발) */}
       <PreviewPanel
         theme={{
           backgroundColor,
@@ -158,11 +159,11 @@ const handleStop = async () => {
         </TouchableOpacity>
         {/* stop/resume button */}
         <TouchableOpacity
-        style={btnStyles.playResumeButton}
-        onPress={handlePlay}
-      >
-        <PlayResumeButton isPlaying={isPlaying} />
-      </TouchableOpacity>
+          style={btnStyles.playResumeButton}
+          onPress={handlePlay}
+        >
+          <PlayResumeButton isPlaying={isPlaying} />
+        </TouchableOpacity>
       </View>
       {/* tab container */}
       <View style={styles.tabContainer}>
