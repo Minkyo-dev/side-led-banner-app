@@ -46,34 +46,38 @@ side-led-banner-app/
 │ ├── layout.tsx # 루트 레이아웃 (테마, 네비게이션)
 │ └── index.tsx # 메인 화면 (배너 편집기)
 ├── components/
-| ├──settings/
-│ │ ├──backgroundSection.tsx # 배경 설정 화면
-│ │ ├──effectSection.tsx # 이펙트 설정 화면
-│ │ └──textSection.tsx # 텍스트 설정 화면
-│ ├── ledBannerFullScreen.tsx # 전체화면 LED 배너 모달
-│ ├── colorPicker.tsx # 색상 선택 컴포넌트
-│ └── slider.tsx # 슬라이더 컴포넌트
+│   ├── settings/
+│   │   ├── backgroundSection.tsx   # 배경 설정 UI
+│   │   ├── effectSection.tsx       # 이펙트 설정 UI
+│   │   ├── textSection.tsx         # 텍스트 설정 UI
+│   │   └── settingsSliderBlock.tsx # 설정용 슬라이더 블록
+│   ├── PixelatedBackdrop.tsx    # 픽셀/배경 연출용 백드롭
+│   ├── previewPanel.tsx         # 미리보기 패널
+│   ├── ledBannerFullScreen.tsx  # 전체화면 LED 배너 모달
+│   ├── colorPicker.tsx          # 색상 선택 컴포넌트
+│   └── slider.tsx               # 슬라이더 컴포넌트
 ├── hooks/
-│ ├── useMarqueeAnimation.ts # 마키 스크롤 애니메이션 로직
-│ ├── use-color-scheme.ts # 다크/라이트 모드 감지
-│ ├── use-color-scheme.web.ts # 웹용 컬러 스킴
-│ └── use-theme-color.ts # 테마 색상 유틸
+│   ├── useMarqueeAnimation.ts   # 마키 스크롤 애니메이션 로직
+│   ├── useBlinkOpacityStyle.ts  # 깜빡임(불투명도) 스타일 훅
+│   ├── use-color-scheme.ts      # 다크/라이트 모드 감지
+│   ├── use-color-scheme.web.ts  # 웹용 컬러 스킴
+│   └── use-theme-color.ts       # 테마 색상 유틸
 ├── constants/
-│ ├── styles.tsx # 공통 스타일
-│ ├── btnStyles.tsx # 버튼 스타일
-│ ├── colorPalette.tsx # 텍스트/배경 색상 팔레트
-│ └── theme.ts # 테마 정의
+│   ├── styles.tsx               # 공통 스타일
+│   ├── btnStyles.tsx            # 버튼 스타일
+│   ├── colorPalette.tsx         # 텍스트/배경 색상 팔레트
+│   └── theme.ts                 # 테마 정의
 ├── contexts/
-| └── settingsContext.tsx # setting에서 설정하는 값 컨텍스트
+│   └── settingsContext.tsx      # 설정 값 컨텍스트
 ├── assets/
-│ └── svg/
-│ ├── playOptionButton.tsx # 한줄/여러줄 재생 버튼 SVG
-│ ├── playResumeButton.tsx # 재생/정지 버튼 SVG
-│ └── sliderThumbButton.tsx # 슬라이더 썸 SVG
+│   └── svg/
+│       ├── playOptionButton.tsx # 한줄/여러줄 재생 버튼 SVG
+│       ├── playResumeButton.tsx # 재생/정지 버튼 SVG
+│       └── sliderThumbButton.tsx # 슬라이더 썸 SVG
 ├── scripts/
-│ └── reset-project.js # 프로젝트 초기화 스크립트
-├── app.json # Expo 앱 설정
-├── eas.json # EAS 빌드/배포 설정
+│   └── reset-project.js         # 프로젝트 초기화 스크립트
+├── app.json                     # Expo 앱 설정
+├── eas.json                     # EAS 빌드/배포 설정
 ├── package.json
 ├── tsconfig.json
 └── eslint.config.js
