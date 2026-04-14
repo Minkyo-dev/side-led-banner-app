@@ -34,12 +34,12 @@ export interface BannerConfig {
     textSelectedColor: string;
     outLine: number;
     dropShadow: number;
-    effectSelectedItem: string;
+    effectSelectedItems: string[];
     blurIntensity: number;
     glowIntensity: number;
+    glowColor: string;
     blinkSpeed : number;
-    /** Pixel 효과 시 모자이크 블록 크기(px) */
-    pixelBlockSize: number;
+    pixelSize: number;
     fontWeight: "normal" | "bold";
   };
   background: {
@@ -93,14 +93,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       fontSize: 50,
       lineSpacing: 10,
       textSelectedColor: "#000000",
-      outLine: 50,
+      outLine: 0,
       dropShadow: 50,
-      effectSelectedItem: "Bold",
+      effectSelectedItems: ["Bold"],
       blurIntensity: 0,
-      fontWeight: "normal",
+      fontWeight: "bold",
     glowIntensity : 50,
+      glowColor: "#FFD700",
     blinkSpeed: 5,
-    pixelBlockSize: 6,
+    pixelSize: 6,
     },
     background: {
       backgroundColor: "#FFFFFF",

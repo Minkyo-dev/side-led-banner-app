@@ -3,37 +3,49 @@ import { Dimensions, StyleSheet } from "react-native";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
-  scrollViewContainer: {
-    paddingBottom: 30,
-  },
   container: {
     flex: 1,
     backgroundColor: "#F6F6F6",
   },
+
+  // ===
+  scrollViewContainer: {
+    paddingBottom: 30,
+  },
+
+  
   previewContainer: {
     height: (SCREEN_WIDTH - 18) * (355 / 373),
-    padding: 5,
+    flexDirection: "column",
+    padding: 10,
     marginHorizontal: 9,
     backgroundColor: "black",
     borderRadius: 20,
+    overflow: "hidden",
   },
   preview: {
-    flex: 0.55,
+    flex: 1,
     borderRadius: 15,
     backgroundColor: "#D9D9D9",
+    overflow: "hidden",
   },
   previewText: {
     textAlign: "left",
     textAlignVertical: "center",
   },
+
+  // ===
   presetButtonsContainer: {
-    flex: 0.15,
+    // flex: 0.15,
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 8,
   },
+
+  // ===
   contentsInputContainer: {
-    flex: 0.3,
+    // flex: 0.3,
+    height: 90,
     flexDirection: "row",
     marginHorizontal: 10,
     marginTop: 8,
@@ -44,11 +56,15 @@ export const styles = StyleSheet.create({
     flex: 0.8,
     color: "white",
   },
+
+  // ===
   contentsInputResetButtonContainer: {
     flex: 0.2,
     justifyContent: "center",
     alignItems: "center",
   },
+
+  // ===
   playBarContainer: {
     flexDirection: "row",
     justifyContent: "space-evenly",
@@ -60,6 +76,8 @@ export const styles = StyleSheet.create({
     backgroundColor: "black",
     borderRadius: 20,
   },
+
+  // ===
   tabContainer: {
     height: 50,
     flexDirection: "row",
@@ -84,6 +102,8 @@ export const styles = StyleSheet.create({
   activeTabText: {
     color: "#FF6E00",
   },
+
+  // ===
   settingsPanelContainer: {
     flex: 1,
     marginBottom: 20,
@@ -104,6 +124,8 @@ export const styles = StyleSheet.create({
     color: "black",
     fontWeight: "400",
   },
+
+  // ===
   settingsRowValueContainer: {
     minWidth: 45,
     justifyContent: "center",
@@ -118,10 +140,14 @@ export const styles = StyleSheet.create({
     color: "black",
     fontWeight: "400",
   },
+
+  // ===
   colorPickerContainer: {
     borderBottomWidth: 2,
     borderBottomColor: "#DDDDDD",
   },
+
+  // ===
   dropdownContainer: {
     // 드롭다운 컨테이너 스타일
     width: "40%",
@@ -130,11 +156,18 @@ export const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: "#E7E7E7",
   },
+
+  // ===
   dropdownPlaceholderStyle: {},
   dropdownSelectedTextStyle: {
     // 선택된 텍스트 스타일
     fontSize: 16,
   },
+  dropdownIconStyle: {
+    width: 30,
+  },
+
+  // ===
   dropdownItemContainerStyle: {
     // 아이템 컨테이너 스타일
     borderRadius: 0,
@@ -143,18 +176,21 @@ export const styles = StyleSheet.create({
     // 아이템 텍스트 스타일
     fontSize: 16,
   },
-  dropdownIconStyle: {
-    width: 30,
-  },
+
+  // ===
   slider: {
     flex: 1,
     height: 40,
   },
+
+  // ===
   effectContainer: {
     flex: 1,
     gap: 10,
     marginHorizontal: 15,
   },
+
+  // ===
   effectImageContainer: {
     flex: 1,
     flexDirection: "row",

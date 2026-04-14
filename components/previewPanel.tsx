@@ -1,170 +1,235 @@
-import { PixelatedBackdrop } from "@/components/PixelatedBackdrop";
+import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
+import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
-import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
-import React, { useRef, useState } from "react";
+import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
+import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
+  Blur,
+  Canvas,
+  Group,
+  Paint,
+  RuntimeShader,
+  Skia,
+  Text as SkiaText,
+} from "@shopify/react-native-skia";
+import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
+import React, { useMemo, useState } from "react";
+import {
+  StyleSheet,
   Text,
   TextInput,
-  TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle
 } from "react-native";
-import type { AnimatedStyle } from "react-native-reanimated";
-import Animated from "react-native-reanimated";
-
-/** Text shadow tint for blur effect; must not trigger state updates (used during render). */
-function mixBlurShadowColor(hex: string, amount: number): string {
-  const num = parseInt(hex.replace("#", ""), 16);
-  const r = num >> 16;
-  const g = (num >> 8) & 0x00ff;
-  const b = num & 0x0000ff;
-  const newR = Math.round(r + (255 - r) * amount);
-  const newG = Math.round(g + (255 - g) * amount);
-  const newB = Math.round(b + (255 - b) * amount);
-  return `rgb(${newR}, ${newG}, ${newB})`;
-}
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
 };
 
-type TextLayoutEvent = {
-  nativeEvent: { lines: { width: number }[] };
-};
-
-type PreviewTheme = {
-  backgroundColor: string;
-  previewTextStyles: TextStyle;
-  playOption: "one" | "multi";
-};
-
-type MarqueeProps = {
-  displayText: string;
-  animatedStyle: AnimatedStyle<ViewStyle>;
-  onTextLayout: (e: TextLayoutEvent) => void;
-  SPACER: number;
-};
-
-type InputProps = {
-  previewText: string;
-  setPreviewText: (text: string) => void;
-  handleTextChange: (text: string) => void;
-};
-
-interface PreviewPanelParams {
-  theme: PreviewTheme;
-  marquee: MarqueeProps;
-  input: InputProps;
-  onPreviewLayout: (e: LayoutEvent) => void;
-}
-
-export default function PreviewPanel({
-  theme,
-  marquee,
-  input,
-  onPreviewLayout,
-}: PreviewPanelParams) {
+export default function PreviewPanel() {
   const [activePreset, setActivePreset] = useState(0);
-  const [inputText, setInputText] = useState(input.previewText);
-  const pixelCaptureRef = useRef<View>(null);
-  const { config } = useSettings();
-    
-    const {
-    lineSpacing,
-    blurIntensity,
-    fontWeight,
-    textSelectedColor,
-    effectSelectedItem,
-    blinkSpeed,
-    pixelBlockSize,
-  } = config.appearance;
+  const [previewHeight, setPreviewHeight] = useState(0);
+  const { config, handleTextChange, updateConfig } = useSettings();
 
-  const blinkStyle = useBlinkOpacityStyle(
-    effectSelectedItem === "Blink",
+  const { previewText, playOption } = config.content;
+  const {
+    font,
+    fontSize,
+    textSelectedColor,
+    outLine,
+    lineSpacing,
+    fontWeight,
+    effectSelectedItems,
+    blinkSpeed,
+    pixelSize: configPixelSize,
+    glowIntensity,
+    glowColor,
+  } = config.appearance;
+  const { backgroundColor } = config.background;
+  const { textMoveSpeed } = config.motion;
+
+  const {
+    displayText,
+    translateX,
+    onContainerLayout,
+    onTextLayout,
+    SPACER,
+  } = useMarqueeAnimation({
+    text: previewText,
+    speed: textMoveSpeed,
+    playOption,
+  });
+
+  const previewFontSize = useMemo(() => {
+    if (previewHeight === 0) return 100;
+    const lineCount =
+      playOption === "one"
+        ? 1
+        : Math.min((previewText.match(/\n/g) || []).length + 1, 3);
+    const lineHeightRatio = 1.2;
+    const maxFontSize = Math.floor(
+      previewHeight / (lineCount * lineHeightRatio),
+    );
+    return Math.floor(maxFontSize * (fontSize / 100));
+  }, [previewHeight, playOption, previewText, fontSize]);
+
+  const previewTextColor = textSelectedColor;
+
+  const isPixelEffect = effectSelectedItems.includes("Pixel");
+  const isGlowEffect = effectSelectedItems.includes("Glow");
+  const pixelShaderSize = isPixelEffect ? Math.max(2, configPixelSize) : 1;
+  const skiaStrokeWidth = (outLine / 100) * 24;
+
+  const source = Skia.RuntimeEffect.Make(`
+  uniform shader content;
+  uniform float pixelSize;
+
+  half4 main(vec2 pos) {
+    vec2 p = floor(pos / pixelSize) * pixelSize + (pixelSize / 2.0);
+    return content.eval(p);
+  }
+`)!;
+
+  
+  const glowBlurRadius = useMemo(
+    () => Math.max(2, Math.min(18, 2 + (glowIntensity / 100) * 16)),
+    [glowIntensity],
+  );
+  const glowLayerColor = useMemo(
+    () => glowColorToSkiaRgba(glowColor, glowIntensity),
+    [glowColor, glowIntensity],
+  );
+
+  const canvas = usePreviewPanelCanvas({
+    displayText,
+    translateX,
+    onTextLayout,
+    previewFontSize,
+    appearanceFont: font,
+    fontWeight,
+    letterSpacing: lineSpacing,
+  });
+
+  const { opacity: blinkOpacity } = useBlinkOpacityStyle(
+    effectSelectedItems.includes("Blink"),
     blinkSpeed,
   );
- //입력창에 보이는 텍스트
-  const getDisplayText = (text:String) => {
-  if (!text) return "";
-  // 이미 있는 기호들을 다 지우고 다시 깨끗하게 줄바꿈에 ↵ 붙임
-  const cleanText = text.replace(/↵/g, ""); 
-  return theme.playOption === "multi" 
-    ? cleanText.replace(/\n/g, "↵\n") 
-    : cleanText;
-};
 
-// 실제 데이터로 전환하기 위해 ↵ 지우는 함수
-const handleTextChangeWithIcon = (e :any) => {
-  const rawText = e.replace(/↵/g, ""); 
-  input.handleTextChange(rawText);     // previewText에는 \n만 붙임
-};
+  const onPreviewLayout = (e: LayoutEvent) => {
+    setPreviewHeight(e.nativeEvent.layout.height);
+    onContainerLayout(e);
+  };
+
+  //입력창에 보이는 텍스트
+  const getDisplayText = (text: string) => {
+    if (!text) return "";
+    const cleanText = text.replace(/↵/g, "");
+    return playOption === "multi"
+      ? cleanText.replace(/\n/g, "\↵\n")
+      : cleanText;
+  };
+
+  // ↵ 기호 제거 및 줄바꿈 처리
+  // 입력창에서 텍스트 변경 시 ↵ 기호 제거 및 줄바꿈 처리
+  const handleTextChangeWithIcon = (e: string) => {
+    const rawText = e.replace(/↵/g, "");
+    handleTextChange(rawText);// previewText에는 \n만 붙임
+  };
+
+  const setPreviewText = (text: string) =>
+    updateConfig("content", { previewText: text });
+
   return (
     <View style={styles.previewContainer}>
-      {/* preview — Pixel은 이 박스만 (전체 화면 Backdrop는 설정 UI 먹통) */}
-      <PixelatedBackdrop
-        active={effectSelectedItem === "Pixel"}
-        pixelSize={pixelBlockSize}
-        captureRef={pixelCaptureRef}
-        style={[styles.preview, { overflow: "hidden" }]}
+
+      <View
+        collapsable={false}
+        style={[
+          styles.preview,
+          {
+            justifyContent: "center",
+            backgroundColor,
+          },
+        ]}
+        onLayout={onPreviewLayout}
       >
         <View
-          ref={pixelCaptureRef}
-          collapsable={false}
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            backgroundColor: theme.backgroundColor,
-          }}
-          onLayout={onPreviewLayout}
+          style={StyleSheet.absoluteFill}
+          onLayout={canvas.onSkiaCanvasLayout}
         >
-          <Animated.View
-            style={[
-              {
-                flexDirection: "row",
-                position: "absolute",
-                alignItems: "center",
-                flexShrink: 0,
-              },
-              marquee.animatedStyle,
-              blinkStyle,
-            ]}
-          >
-            {[...Array(5)].map((_, i) => (
-              <React.Fragment key={i}>
-                <Text
-                  style={[
-                    styles.previewText,
-                    theme.previewTextStyles,
-                    {
-                      letterSpacing: lineSpacing,
-                      fontWeight,
-                      ...(blurIntensity > 0
-                        ? {
-                            textShadowColor: mixBlurShadowColor(
-                              textSelectedColor,
-                              0.1,
-                            ),
-                            textShadowRadius: blurIntensity,
-                          }
-                        : {}),
-                    },
-                  ]}
-                  onTextLayout={i === 0 ? marquee.onTextLayout : undefined}
-                >
-                  {marquee.displayText}
-                </Text>
-                <View style={{ width: marquee.SPACER }} />
-              </React.Fragment>
-            ))}
-          </Animated.View>
+          <Canvas style={{ flex: 1 }}>
+            <Group
+              opacity={blinkOpacity}
+              transform={canvas.skiaMarqueeTransform}
+              layer={
+                isPixelEffect ? (
+                  <Paint>
+                    <RuntimeShader
+                      source={source}
+                      uniforms={{ pixelSize: pixelShaderSize }}
+                    />
+                  </Paint>
+                ) : undefined
+              }
+            >
+              {[...Array(5)].map((_, seg) => {
+                const segment = canvas.skiaTextWidth + SPACER;
+                const baseX = seg * segment;
+                return (
+                  <Group key={`marquee-${seg}`}>
+                    {isGlowEffect ? (
+                      <Group
+                        layer={
+                          <Paint>
+                            <Blur blur={glowBlurRadius} mode="clamp" />
+                          </Paint>
+                        }
+                      >
+                        {canvas.skiaGlyphs.map((g, gi) => (
+                          <SkiaText
+                            key={`glow-${gi}`}
+                            x={baseX + g.x}
+                            y={g.y}
+                            text={g.text}
+                            font={canvas.skiaFont}
+                            color={glowLayerColor}
+                          />
+                        ))}
+                      </Group>
+                    ) : null}
+                    {canvas.skiaGlyphs.map((g, gi) => (
+                      <Group key={`${seg}-${gi}`}>
+                        {skiaStrokeWidth > 0 ? (
+                          <SkiaText
+                            x={baseX + g.x}
+                            y={g.y}
+                            text={g.text}
+                            font={canvas.skiaFont}
+                            color="gray"
+                            style="stroke"
+                            strokeWidth={skiaStrokeWidth}
+                          />
+                        ) : null}
+                        <SkiaText
+                          x={baseX + g.x}
+                          y={g.y}
+                          text={g.text}
+                          font={canvas.skiaFont}
+                          color={previewTextColor}
+                        />
+                      </Group>
+                    ))}
+                  </Group>
+                );
+              })}
+            </Group>
+          </Canvas>
         </View>
-      </PixelatedBackdrop>
+      </View>
 
-      {/* preset buttons container */}
       <View style={styles.presetButtonsContainer}>
         {[1, 2, 3, 4, 5].map((num, index) => (
           <TouchableOpacity
@@ -181,10 +246,10 @@ const handleTextChangeWithIcon = (e :any) => {
                 index === activePreset
                   ? ["white", "#CCCCCC"]
                   : ["white", "#727272"]
-              }// 시작색, 끝색
-              start={{ x: 0, y: 0 }}//왼쪽 위
-              end={{ x: 0.1, y: 0.2 }}//오른쪽 아래
-              style={btnStyles.presetButtonGradient}//기존 스타일 적용
+              } // 시작색, 끝색
+              start={{ x: 0, y: 0 }} //왼쪽 위
+              end={{ x: 0.1, y: 0.2 }} //오른쪽 아래
+              style={btnStyles.presetButtonGradient} //기존 스타일 적용
             >
               <Text
                 style={
@@ -199,22 +264,32 @@ const handleTextChangeWithIcon = (e :any) => {
           </TouchableOpacity>
         ))}
       </View>
-
       {/* contents input container */}
-      <View style={styles.contentsInputContainer}>
+      <View id="contentsInputContainer" style={styles.contentsInputContainer}>
         <TextInput
           editable
           multiline
           numberOfLines={3}
-          style={styles.contentsInput}
+          style={[
+            styles.contentsInput,
+            {
+              fontFamily: appFontFamilyForText(
+                font,
+                fontWeight === "bold" ? "bold" : "normal",
+              ),
+            },
+          ]}
           placeholder="Enter your text here"
-          value={getDisplayText(input.previewText)}
+          value={getDisplayText(previewText)}
           onChangeText={handleTextChangeWithIcon}
           textAlignVertical="top"
         />
-        <View style={styles.contentsInputResetButtonContainer}>
+        <View
+          id="contentsInputResetButtonContainer"
+          style={styles.contentsInputResetButtonContainer}
+        >
           <TouchableOpacity
-            onPress={() => input.setPreviewText("")}
+            onPress={() => setPreviewText("")}
             style={btnStyles.contentsInputResetButton}
           >
             <Text style={btnStyles.contentsInputResetButtonText}>×</Text>
