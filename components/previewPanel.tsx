@@ -16,7 +16,7 @@ import {
   Text as SkiaText,
 } from "@shopify/react-native-skia";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
-import React, { useMemo, useState } from "react";
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -29,9 +29,57 @@ type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
 };
 
+
+const INTENTIONAL_NEWLINE_MARKER = "↵";
+
+
+function formatMultiLineInputDisplay(stored: string): string {
+  const clean = stored.replace(/↵/g, "");
+  return clean.replace(/\n/g, `${INTENTIONAL_NEWLINE_MARKER}\n`);
+}
+
+function stripMarkersForStorage(s: string): string {
+  const M = INTENTIONAL_NEWLINE_MARKER;
+  const withoutOrphanMarker = s.replace(
+    new RegExp(`${M}(?!\\n)`, "g"),
+    "",
+  );
+  return withoutOrphanMarker.split(M).join("");
+}
+
+function storageIndexToDisplayIndex(stored: string, storageIdx: number): number {
+  const prefix = stored.slice(0, storageIdx);
+  return storageIdx + (prefix.match(/\n/g) || []).length;
+}
+
+
+function mergeWhenOnlyMarkerBeforeNewlineRemoved(
+  prevDisplay: string,
+  newInput: string,
+): { text: string; cursorInMerged?: number } {
+  if (newInput.length >= prevDisplay.length) return { text: newInput };
+  for (let i = 0; i < prevDisplay.length; i++) {
+    const oneRemoved =
+      prevDisplay.slice(0, i) + prevDisplay.slice(i + 1);
+    if (oneRemoved !== newInput) continue;
+    if (
+      prevDisplay[i] === INTENTIONAL_NEWLINE_MARKER &&
+      prevDisplay[i + 1] === "\n"
+    ) {
+      const merged = prevDisplay.slice(0, i) + prevDisplay.slice(i + 2);
+      return { text: merged, cursorInMerged: i };
+    }
+    return { text: newInput };
+  }
+  return { text: newInput };
+}
+
 export default function PreviewPanel() {
   const [activePreset, setActivePreset] = useState(0);
   const [previewHeight, setPreviewHeight] = useState(0);
+  const [pendingSelection, setPendingSelection] = useState<
+    { start: number; end: number } | undefined
+  >(undefined);
   const { config, handleTextChange, updateConfig } = useSettings();
 
   const { previewText, playOption } = config.content;
@@ -123,20 +171,44 @@ export default function PreviewPanel() {
     onContainerLayout(e);
   };
 
-  //입력창에 보이는 텍스트
   const getDisplayText = (text: string) => {
     if (!text) return "";
-    const cleanText = text.replace(/↵/g, "");
     return playOption === "multi"
-      ? cleanText.replace(/\n/g, "\↵\n")
-      : cleanText;
+      ? formatMultiLineInputDisplay(text)
+      : text.replace(/\u21B5/g, "");
   };
 
-  // ↵ 기호 제거 및 줄바꿈 처리
-  // 입력창에서 텍스트 변경 시 ↵ 기호 제거 및 줄바꿈 처리
+  const prevMultiLineDisplayRef = useRef<string>("");
+  useLayoutEffect(() => {
+    prevMultiLineDisplayRef.current = getDisplayText(previewText);
+  }, [previewText, playOption]);
+
+  useLayoutEffect(() => {
+    if (pendingSelection === undefined) return;
+    const id = requestAnimationFrame(() => setPendingSelection(undefined));
+    return () => cancelAnimationFrame(id);
+  }, [pendingSelection]);
+
   const handleTextChangeWithIcon = (e: string) => {
-    const rawText = e.replace(/↵/g, "");
-    handleTextChange(rawText);// previewText에는 \n만 붙임
+    const merged =
+      playOption === "multi"
+        ? mergeWhenOnlyMarkerBeforeNewlineRemoved(
+            prevMultiLineDisplayRef.current,
+            e,
+          )
+        : { text: e };
+
+    const working = merged.text;
+    const forStorage = stripMarkersForStorage(working);
+    handleTextChange(forStorage);
+
+    if (playOption === "multi" && merged.cursorInMerged !== undefined) {
+      const storageIdx = stripMarkersForStorage(
+        working.slice(0, merged.cursorInMerged),
+      ).length;
+      const displayIdx = storageIndexToDisplayIndex(forStorage, storageIdx);
+      setPendingSelection({ start: displayIdx, end: displayIdx });
+    }
   };
 
   const setPreviewText = (text: string) =>
@@ -281,6 +353,7 @@ export default function PreviewPanel() {
           ]}
           placeholder="Enter your text here"
           value={getDisplayText(previewText)}
+          selection={pendingSelection}
           onChangeText={handleTextChangeWithIcon}
           textAlignVertical="top"
         />
