@@ -18,10 +18,14 @@ import {
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
+  NativeSyntheticEvent,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TextLayoutEventData,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -31,6 +35,9 @@ type LayoutEvent = {
 
 
 const INTENTIONAL_NEWLINE_MARKER = "↵";
+
+const TEXT_MEASURE_MAX_WIDTH = 100_000;
+const INPUT_WIDTH_CURSOR_PAD = 28;
 
 
 function formatMultiLineInputDisplay(stored: string): string {
@@ -77,6 +84,8 @@ function mergeWhenOnlyMarkerBeforeNewlineRemoved(
 export default function PreviewPanel() {
   const [activePreset, setActivePreset] = useState(0);
   const [previewHeight, setPreviewHeight] = useState(0);
+  const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
+  const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
   const [pendingSelection, setPendingSelection] = useState<
     { start: number; end: number } | undefined
   >(undefined);
@@ -98,6 +107,7 @@ export default function PreviewPanel() {
   } = config.appearance;
   const { backgroundColor } = config.background;
   const { textMoveSpeed } = config.motion;
+  const { width: windowWidth } = useWindowDimensions();
 
   const {
     displayText,
@@ -177,6 +187,13 @@ export default function PreviewPanel() {
       ? formatMultiLineInputDisplay(text)
       : text.replace(/\u21B5/g, "");
   };
+  const displayInputText = getDisplayText(previewText);
+
+  const inputHorizontalCanvasWidth = useMemo(() => {
+    const minWidth = Math.max(inputScrollViewportW, windowWidth * 0.8);
+    const measuredWidth = measuredTextMaxW + INPUT_WIDTH_CURSOR_PAD;
+    return Math.max(minWidth, measuredWidth);
+  }, [inputScrollViewportW, measuredTextMaxW, windowWidth]);
 
   const prevMultiLineDisplayRef = useRef<string>("");
   useLayoutEffect(() => {
@@ -213,6 +230,16 @@ export default function PreviewPanel() {
 
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
+
+  const handleInputMeasureLayout = (
+    e: NativeSyntheticEvent<TextLayoutEventData>,
+  ) => {
+    const maxWidth = e.nativeEvent.lines.reduce(
+      (widest, line) => Math.max(widest, line.width),
+      0,
+    );
+    setMeasuredTextMaxW(maxWidth);
+  };
 
   return (
     <View style={styles.previewContainer}>
@@ -338,25 +365,57 @@ export default function PreviewPanel() {
       </View>
       {/* contents input container */}
       <View id="contentsInputContainer" style={styles.contentsInputContainer}>
-        <TextInput
-          editable
-          multiline
-          numberOfLines={3}
+        <Text
           style={[
             styles.contentsInput,
             {
+              position: "absolute",
+              opacity: 0,
+              left: -TEXT_MEASURE_MAX_WIDTH,
+              width: TEXT_MEASURE_MAX_WIDTH,
               fontFamily: appFontFamilyForText(
                 font,
                 fontWeight === "bold" ? "bold" : "normal",
               ),
             },
           ]}
-          placeholder="Enter your text here"
-          value={getDisplayText(previewText)}
-          selection={pendingSelection}
-          onChangeText={handleTextChangeWithIcon}
-          textAlignVertical="top"
-        />
+          onTextLayout={handleInputMeasureLayout}
+          pointerEvents="none"
+        >
+          {displayInputText || " "}
+        </Text>
+        <ScrollView
+          horizontal
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="handled"
+          showsHorizontalScrollIndicator
+          style={{ flex: 0.8 }}
+          contentContainerStyle={{ flexGrow: 1 }}
+          onLayout={(e) => setInputScrollViewportW(e.nativeEvent.layout.width)}
+        >
+          <TextInput
+            editable
+            multiline={playOption === "multi"}
+            scrollEnabled
+            style={[
+              styles.contentsInput,
+              {
+                flex: 0,
+                width: inputHorizontalCanvasWidth,
+                minHeight: 72,
+                fontFamily: appFontFamilyForText(
+                  font,
+                  fontWeight === "bold" ? "bold" : "normal",
+                ),
+              },
+            ]}
+            placeholder="Enter your text here"
+            value={displayInputText}
+            selection={pendingSelection}
+            onChangeText={handleTextChangeWithIcon}
+            textAlignVertical="top"
+          />
+        </ScrollView>
         <View
           id="contentsInputResetButtonContainer"
           style={styles.contentsInputResetButtonContainer}

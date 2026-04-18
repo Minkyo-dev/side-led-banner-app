@@ -32,11 +32,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <SettingsProvider>
         {fontsLoaded ? (
-          <Stack
-            screenOptions={{
-              contentStyle: { paddingBottom: insets.bottom },
-            }}
-          >
+          <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
           </Stack>
         ) : null}

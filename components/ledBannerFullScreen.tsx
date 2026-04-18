@@ -4,21 +4,21 @@ import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
-  Blur,
-  Canvas,
-  Group,
-  Paint,
-  RuntimeShader,
-  Skia,
-  Text as SkiaText,
+    Blur,
+    Canvas,
+    Group,
+    Paint,
+    RuntimeShader,
+    Skia,
+    Text as SkiaText,
 } from "@shopify/react-native-skia";
 import React, { useMemo } from "react";
 import {
-  Modal,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  View
+    Modal,
+    Pressable,
+    StatusBar,
+    StyleSheet,
+    View
 } from "react-native";
 
 interface LedBannerFullScreenProps {

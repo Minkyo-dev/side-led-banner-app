@@ -97,11 +97,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       dropShadow: 50,
       effectSelectedItems: ["Bold"],
       blurIntensity: 0,
+      glowIntensity: 50,
       fontWeight: "bold",
-    glowIntensity : 50,
       glowColor: "#FFD700",
-    blinkSpeed: 5,
-    pixelSize: 6,
+      blinkSpeed: 5,
+      pixelSize: 6,
     },
     background: {
       backgroundColor: "#FFFFFF",
@@ -151,7 +151,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   );
   // effect items list
   const effectItems = useMemo(
-    () => ["Bold", "Blur", "Blink", "Pixel", "Glow", "Gradient"],
+    () => ["Bold", "Blink", "Pixel", "Glow", "Gradient"],
     [],
   );
   // value 객체는 config, ui, 업데이트 함수, 그리고 fontItems와 effectItems를 포함하여 memoize하여 제공

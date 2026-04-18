@@ -16,28 +16,17 @@ interface EffectSectionProps {}
 function getSliderPropsForEffect(
   effect: string,
   values: {
-    blurIntensity: number;
     glowIntensity: number;
     blinkSpeed: number;
     pixelSize: number;
   },
   setters: {
-    setBlurIntensity: (v: number) => void;
     setGlowIntensity: (v: number) => void;
     setBlinkSpeed: (v: number) => void;
     setPixelSize: (v: number) => void;
   },
 ): Omit<SettingsSliderBlockProps, "containerStyle"> | null {
   switch (effect) {
-    case "Blur":
-      return {
-        label: "Blur Intensity",
-        value: values.blurIntensity,
-        onChange: setters.setBlurIntensity,
-        minimumValue: 0,
-        maximumValue: 100,
-        step: 1,
-      };
     case "Glow":
     case "Pixel Glow":
       return {
@@ -76,21 +65,13 @@ export const EffectSection = ({}: EffectSectionProps) => {
 
   const {
     effectSelectedItems,
-    blurIntensity,
     glowIntensity,
-    glowColor,
     blinkSpeed,
     pixelSize,
   } = config.appearance;
 
-  const setBlurIntensity = (value: number) =>
-    updateConfig("appearance", { blurIntensity: value });
-
   const setGlowIntensity = (value: number) =>
     updateConfig("appearance", { glowIntensity: value });
-
-  const setGlowColor = (color: string) =>
-    updateConfig("appearance", { glowColor: color });
 
   const setBlinkSpeed = (value: number) =>
     updateConfig("appearance", { blinkSpeed: value });
@@ -101,9 +82,8 @@ export const EffectSection = ({}: EffectSectionProps) => {
   const setFontWeight = (value: "normal" | "bold") =>
     updateConfig("appearance", { fontWeight: value });
 
-  const values = { blurIntensity, glowIntensity, blinkSpeed, pixelSize };
+  const values = { glowIntensity, blinkSpeed, pixelSize };
   const setters = {
-    setBlurIntensity,
     setGlowIntensity,
     setBlinkSpeed,
     setPixelSize,
@@ -173,26 +153,6 @@ export const EffectSection = ({}: EffectSectionProps) => {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      {effectSelectedItems.includes("Glow") ? (
-        <>
-          <View
-            style={[
-              styles.settingsRow,
-              { borderBottomWidth: 0, marginBottom: 0, marginTop: 12 },
-            ]}
-          >
-            <Text allowFontScaling={false}>Glow color</Text>
-          </View>
-          <View style={styles.colorPickerContainer}>
-            <ColorPicker
-              colorList={textColorPalette}
-              selectedColor={glowColor}
-              onColorSelect={setGlowColor}
-            />
-          </View>
-        </>
-      ) : null}
 
       {stackedSliderBlocks.length > 0 ? (
         <View style={{ marginTop: 12 }}>

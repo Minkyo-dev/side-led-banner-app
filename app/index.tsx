@@ -24,15 +24,17 @@ export default function Index() {
   const { playOption } = config.content;
   const { isPlaying, activeTab } = ui;
 
+ 
+    NavigationBar.setVisibilityAsync("hidden");
+  
+  
   // 메인 화면은 portrait 고정, 전체화면 모달은 landscape 허용
   const handlePlay = async () => {
-    await NavigationBar.setVisibilityAsync("hidden");
     await ScreenOrientation.unlockAsync();
     updateUI({ isPlaying: true });
   };
 
   const handleStop = async () => {
-    await NavigationBar.setVisibilityAsync("visible");
     await ScreenOrientation.lockAsync(
       ScreenOrientation.OrientationLock.PORTRAIT_UP,
     );
@@ -96,7 +98,9 @@ export default function Index() {
         {activeTab === "BACKGROUND" && <BackgroundSection />}
         {activeTab === "EFFECT" && <EffectSection />}
       </View>
-
+        <View style={{ height: 50 }}>
+        {/* Banner Ad */}
+      </View>
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen
         visible={isPlaying}
