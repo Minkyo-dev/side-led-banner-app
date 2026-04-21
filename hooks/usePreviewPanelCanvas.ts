@@ -82,6 +82,10 @@ export interface UsePreviewPanelCanvasParams {
   appearanceFont: string;
   fontWeight: "normal" | "bold" | string;
   letterSpacing: number;
+  /**
+   * 글리프·그라데이션 크기 보정용
+   */
+  fallbackLayout?: { width: number; height: number };
 }
 
 /**
@@ -95,6 +99,7 @@ export function usePreviewPanelCanvas({
   appearanceFont,
   fontWeight,
   letterSpacing,
+  fallbackLayout,
 }: UsePreviewPanelCanvasParams) {
   const skiaFont = useSkiaAppearanceFont(
     appearanceFont,
@@ -120,21 +125,26 @@ export function usePreviewPanelCanvas({
     height: 0,
   });
 
+  const fbW = fallbackLayout?.width ?? 0;
+  const fbH = fallbackLayout?.height ?? 0;
+  const drawW = skiaCanvasLayout.width > 0 ? skiaCanvasLayout.width : fbW;
+  const drawH = skiaCanvasLayout.height > 0 ? skiaCanvasLayout.height : fbH;
+
   const skiaGlyphs = useMemo(() => {
-    if (!skiaFont || skiaCanvasLayout.height <= 0) return [];
+    if (!skiaFont || drawH <= 0) return [];
     return layoutMultilineSkiaGlyphs(
       skiaFont,
       displayText,
       letterSpacing,
       previewFontSize,
-      skiaCanvasLayout.height,
+      drawH,
     );
   }, [
     displayText,
     skiaFont,
     letterSpacing,
     previewFontSize,
-    skiaCanvasLayout.height,
+    drawH,
   ]);
 
   const skiaMarqueeTransform = useDerivedValue(() => [
@@ -165,6 +175,8 @@ export function usePreviewPanelCanvas({
     skiaTextWidth,
     skiaGlyphs,
     skiaMarqueeTransform,
+    /** 글리프·그라데이션에 쓸 실제 그리기 크기 (fallback 반영) */
+    skiaCanvasLayout: { width: drawW, height: drawH },
     onSkiaCanvasLayout,
   };
 }

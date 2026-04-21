@@ -1,11 +1,16 @@
-import { ColorPicker } from "@/components/colorPicker";
 import { btnStyles } from "@/constants/btnStyles";
-import { textColorPalette } from "@/constants/colorPalette";
+import {
+  DEFAULT_GRADIENT_BACKGROUND_PRESET_ID,
+  GRADIENT_BACKGROUND_PRESETS,
+} from "@/constants/gradientBackgroundPresets";
 import { styles } from "@/constants/styles";
 import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
-import { useSettings } from "../../contexts/settingsContext";
+import {
+  type BannerConfig,
+  useSettings,
+} from "../../contexts/settingsContext";
 import {
   SettingsSliderBlock,
   type SettingsSliderBlockProps,
@@ -65,19 +70,32 @@ export const EffectSection = ({}: EffectSectionProps) => {
 
   const {
     effectSelectedItems,
+    effectParamValues,
+    gradientBackgroundPreset,
     glowIntensity,
     blinkSpeed,
     pixelSize,
   } = config.appearance;
 
+  const fxVals = effectParamValues ?? {};
+
   const setGlowIntensity = (value: number) =>
-    updateConfig("appearance", { glowIntensity: value });
+    updateConfig("appearance", {
+      glowIntensity: value,
+      effectParamValues: { ...fxVals, Glow: value },
+    });
 
   const setBlinkSpeed = (value: number) =>
-    updateConfig("appearance", { blinkSpeed: value });
+    updateConfig("appearance", {
+      blinkSpeed: value,
+      effectParamValues: { ...fxVals, Blink: value },
+    });
 
   const setPixelSize = (value: number) =>
-    updateConfig("appearance", { pixelSize: value });
+    updateConfig("appearance", {
+      pixelSize: value,
+      effectParamValues: { ...fxVals, Pixel: value },
+    });
 
   const setFontWeight = (value: "normal" | "bold") =>
     updateConfig("appearance", { fontWeight: value });
@@ -129,7 +147,26 @@ export const EffectSection = ({}: EffectSectionProps) => {
                 ? effectSelectedItems.filter((e) => e !== effect)
                 : [...effectSelectedItems, effect];
 
-              updateConfig("appearance", { effectSelectedItems: next });
+              if (isOn) {
+                updateConfig("appearance", { effectSelectedItems: next });
+              } else {
+                const fx = fxVals;
+                const patch: Partial<BannerConfig["appearance"]> = {
+                  effectSelectedItems: next,
+                };
+                if (effect === "Glow") {
+                  patch.glowIntensity = fx.Glow ?? glowIntensity;
+                } else if (effect === "Blink") {
+                  patch.blinkSpeed = fx.Blink ?? blinkSpeed;
+                } else if (effect === "Pixel") {
+                  patch.pixelSize = fx.Pixel ?? pixelSize;
+                } else if (effect === "Gradient") {
+                  patch.gradientBackgroundPreset =
+                    gradientBackgroundPreset ??
+                    DEFAULT_GRADIENT_BACKGROUND_PRESET_ID;
+                }
+                updateConfig("appearance", patch);
+              }
 
               if (effect === "Bold") {
                 setFontWeight(next.includes("Bold") ? "bold" : "normal");
@@ -163,6 +200,48 @@ export const EffectSection = ({}: EffectSectionProps) => {
               containerStyle={{ marginTop: i === 0 ? 0 : 10 }}
             />
           ))}
+        </View>
+      ) : null}
+
+      {effectSelectedItems.includes("Gradient") ? (
+        <View style={{ marginTop: 14, marginHorizontal: 15 }}>
+          <Text allowFontScaling={false} style={{ marginBottom: 8 }}>
+            Gradient background
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.effectContainer}
+          >
+            {GRADIENT_BACKGROUND_PRESETS.map((p) => {
+              const selected = gradientBackgroundPreset === p.id;
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[
+                    btnStyles.effectItemButton,
+                    selected && btnStyles.effectItemButtonActive,
+                    { minWidth: 76, paddingVertical: 8 },
+                  ]}
+                  onPress={() =>
+                    updateConfig("appearance", {
+                      gradientBackgroundPreset: p.id,
+                    })
+                  }
+                >
+                  <Text
+                    style={[
+                      btnStyles.effectItemButtonText,
+                      selected && btnStyles.effectItemButtonTextActive,
+                    ]}
+                    allowFontScaling={false}
+                  >
+                    {p.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
       ) : null}
 

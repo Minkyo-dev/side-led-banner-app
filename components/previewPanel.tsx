@@ -1,3 +1,8 @@
+import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
+import {
+  GRADIENT_BACKDROP_IDS,
+  type GradientBackdropId,
+} from "@/constants/gradientBackgroundPresets";
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
@@ -15,10 +20,12 @@ import {
   Skia,
   Text as SkiaText,
 } from "@shopify/react-native-skia";
+import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   NativeSyntheticEvent,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,7 +43,7 @@ type LayoutEvent = {
 
 const INTENTIONAL_NEWLINE_MARKER = "↵";
 
-const TEXT_MEASURE_MAX_WIDTH = 100_000;
+const TEXT_MAX_WIDTH = 100_000;
 const INPUT_WIDTH_CURSOR_PAD = 28;
 
 
@@ -82,14 +89,24 @@ function mergeWhenOnlyMarkerBeforeNewlineRemoved(
 }
 
 export default function PreviewPanel() {
-  const [activePreset, setActivePreset] = useState(0);
   const [previewHeight, setPreviewHeight] = useState(0);
+  /** 미리보기 박스 전체 크기 — Skia 내부 onLayout이 0일 때 글리프·그라데이션 보정 */
+  const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
   const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
   const [pendingSelection, setPendingSelection] = useState<
     { start: number; end: number } | undefined
   >(undefined);
-  const { config, handleTextChange, updateConfig } = useSettings();
+  const {
+    config,
+    handleTextChange,
+    updateConfig,
+    ui,
+    savePreset,
+    loadPreset,
+    resetPresetSlot,
+  } = useSettings();
+  const { activePreset } = ui;
 
   const { previewText, playOption } = config.content;
   const {
@@ -100,12 +117,15 @@ export default function PreviewPanel() {
     lineSpacing,
     fontWeight,
     effectSelectedItems,
+    gradientBackgroundPreset,
     blinkSpeed,
     pixelSize: configPixelSize,
     glowIntensity,
     glowColor,
   } = config.appearance;
-  const { backgroundColor } = config.background;
+  const { backgroundColor, backgroundImageUri } = config.background;
+  const hasBgPhoto =
+    backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
   const { width: windowWidth } = useWindowDimensions();
 
@@ -138,6 +158,11 @@ export default function PreviewPanel() {
 
   const isPixelEffect = effectSelectedItems.includes("Pixel");
   const isGlowEffect = effectSelectedItems.includes("Glow");
+  const showGradientBackdrop =
+    effectSelectedItems.includes("Gradient") &&
+    GRADIENT_BACKDROP_IDS.includes(
+      gradientBackgroundPreset as GradientBackdropId,
+    );
   const pixelShaderSize = isPixelEffect ? Math.max(2, configPixelSize) : 1;
   const skiaStrokeWidth = (outLine / 100) * 24;
 
@@ -169,6 +194,7 @@ export default function PreviewPanel() {
     appearanceFont: font,
     fontWeight,
     letterSpacing: lineSpacing,
+    fallbackLayout: previewBox,
   });
 
   const { opacity: blinkOpacity } = useBlinkOpacityStyle(
@@ -177,7 +203,9 @@ export default function PreviewPanel() {
   );
 
   const onPreviewLayout = (e: LayoutEvent) => {
-    setPreviewHeight(e.nativeEvent.layout.height);
+    const { width, height } = e.nativeEvent.layout;
+    setPreviewBox({ width, height });
+    setPreviewHeight(height);
     onContainerLayout(e);
   };
 
@@ -250,16 +278,33 @@ export default function PreviewPanel() {
           styles.preview,
           {
             justifyContent: "center",
-            backgroundColor,
+            overflow: "hidden",
+            backgroundColor: hasBgPhoto ? undefined : backgroundColor,
           },
         ]}
         onLayout={onPreviewLayout}
       >
+        {hasBgPhoto ? (
+          <Image
+            source={{ uri: backgroundImageUri }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+          />
+        ) : null}
         <View
           style={StyleSheet.absoluteFill}
           onLayout={canvas.onSkiaCanvasLayout}
         >
-          <Canvas style={{ flex: 1 }}>
+          <Canvas style={{ flex: 1 }} opaque={false}>
+            {showGradientBackdrop ? (
+              <GradientBackdrop
+                key={`gradient-${gradientBackgroundPreset}`}
+                preset={gradientBackgroundPreset as GradientBackdropId}
+                width={canvas.skiaCanvasLayout.width}
+                height={canvas.skiaCanvasLayout.height}
+                opacity={hasBgPhoto ? 0.4 : 1}
+              />
+            ) : null}
             <Group
               opacity={blinkOpacity}
               transform={canvas.skiaMarqueeTransform}
@@ -338,7 +383,11 @@ export default function PreviewPanel() {
                 ? btnStyles.presetButtonActive
                 : btnStyles.presetButton
             }
-            onPress={() => setActivePreset(index)}
+            onPress={() => loadPreset(index)}
+            onLongPress={() => savePreset(index)}
+            delayLongPress={380}
+            accessibilityLabel={`Preset ${index + 1}`}
+            accessibilityHint="Tap to switch preset; the previous slot is saved automatically. Long press to save to this slot."
           >
             <LinearGradientExpo
               colors={
@@ -363,6 +412,17 @@ export default function PreviewPanel() {
           </TouchableOpacity>
         ))}
       </View>
+      <TouchableOpacity
+        onPress={() => resetPresetSlot(activePreset)}
+        accessibilityRole="button"
+        accessibilityLabel="Reset current preset slot"
+        style={{ alignSelf: "flex-end", marginTop: 6, marginRight: 2 }}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={{ fontSize: 13, color: "#888" }} allowFontScaling={false}>
+          Reset slot
+        </Text>
+      </TouchableOpacity>
       {/* contents input container */}
       <View id="contentsInputContainer" style={styles.contentsInputContainer}>
         <Text
@@ -371,8 +431,8 @@ export default function PreviewPanel() {
             {
               position: "absolute",
               opacity: 0,
-              left: -TEXT_MEASURE_MAX_WIDTH,
-              width: TEXT_MEASURE_MAX_WIDTH,
+              left: -TEXT_MAX_WIDTH,
+              width: TEXT_MAX_WIDTH,
               fontFamily: appFontFamilyForText(
                 font,
                 fontWeight === "bold" ? "bold" : "normal",
@@ -392,6 +452,13 @@ export default function PreviewPanel() {
           style={{ flex: 0.8 }}
           contentContainerStyle={{ flexGrow: 1 }}
           onLayout={(e) => setInputScrollViewportW(e.nativeEvent.layout.width)}
+          {...(Platform.OS === "ios"
+            ? {
+                scrollIndicatorInsets: { right: 1 },
+                indicatorStyle: "white" as const,
+              }
+            : {})}
+          {...(Platform.OS === "android" ? { persistentScrollbar: true } : {})}
         >
           <TextInput
             editable

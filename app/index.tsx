@@ -13,8 +13,8 @@ import { styles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
 import * as NavigationBar from "expo-navigation-bar";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect } from "react";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {
@@ -24,11 +24,11 @@ export default function Index() {
   const { playOption } = config.content;
   const { isPlaying, activeTab } = ui;
 
- 
-    NavigationBar.setVisibilityAsync("hidden");
-  
-  
-  // 메인 화면은 portrait 고정, 전체화면 모달은 landscape 허용
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    void NavigationBar.setVisibilityAsync("hidden");
+  }, []);
+
   const handlePlay = async () => {
     await ScreenOrientation.unlockAsync();
     updateUI({ isPlaying: true });

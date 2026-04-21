@@ -34,6 +34,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set the banner background.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use the camera for the banner background."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",

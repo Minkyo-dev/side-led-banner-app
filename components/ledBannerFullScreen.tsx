@@ -1,4 +1,10 @@
+import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
+import {
+  GRADIENT_BACKDROP_IDS,
+  type GradientBackdropId,
+} from "@/constants/gradientBackgroundPresets";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
+import { Image } from "expo-image";
 import { BannerConfig } from "@/contexts/settingsContext";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
@@ -18,7 +24,8 @@ import {
     Pressable,
     StatusBar,
     StyleSheet,
-    View
+    useWindowDimensions,
+    View,
 } from "react-native";
 
 interface LedBannerFullScreenProps {
@@ -43,6 +50,7 @@ export const LedBannerFullScreen = ({
     glowIntensity,
     glowColor,
     effectSelectedItems,
+    gradientBackgroundPreset,
     blinkSpeed,
     outLine,
     pixelSize: configPixelSize,
@@ -50,6 +58,11 @@ export const LedBannerFullScreen = ({
 
   const isPixelEffect = effectSelectedItems.includes("Pixel");
   const isGlowEffect = effectSelectedItems.includes("Glow");
+  const showGradientBackdrop =
+    effectSelectedItems.includes("Gradient") &&
+    GRADIENT_BACKDROP_IDS.includes(
+      gradientBackgroundPreset as GradientBackdropId,
+    );
   const pixelShaderSize = isPixelEffect ? Math.max(2, configPixelSize) : 1;
   const skiaStrokeWidth = (outLine / 100) * 24;
 
@@ -64,7 +77,9 @@ export const LedBannerFullScreen = ({
 
   const { animatedStyle: blinkStyle, opacity: blinkOpacity } =
     useBlinkOpacityStyle(effectSelectedItems.includes("Blink"), blinkSpeed);
-  const { backgroundColor } = config.background;
+  const { backgroundColor, backgroundImageUri } = config.background;
+  const hasBgPhoto =
+    backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
   const {
     displayText,
@@ -78,6 +93,8 @@ export const LedBannerFullScreen = ({
     playOption,
   });
 
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
   const canvas = usePreviewPanelCanvas({
     displayText,
     translateX,
@@ -86,6 +103,7 @@ export const LedBannerFullScreen = ({
     appearanceFont: font,
     fontWeight,
     letterSpacing: lineSpacing,
+    fallbackLayout: { width: windowWidth, height: windowHeight },
   });
   const source = Skia.RuntimeEffect.Make(`
     uniform shader content;
@@ -130,7 +148,7 @@ export const LedBannerFullScreen = ({
               style={[
                 styles.flex,
                 {
-                  backgroundColor,
+                  backgroundColor: hasBgPhoto ? undefined : backgroundColor,
                   justifyContent: "flex-start",
                   overflow: "hidden",
                 },
@@ -138,7 +156,23 @@ export const LedBannerFullScreen = ({
               onLayout={canvas.onSkiaCanvasLayout}
               pointerEvents="box-none"
             >
-              <Canvas style={styles.flex}>
+              {hasBgPhoto ? (
+                <Image
+                  source={{ uri: backgroundImageUri }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                />
+              ) : null}
+              <Canvas style={styles.flex} opaque={false}>
+                {showGradientBackdrop ? (
+                  <GradientBackdrop
+                    key={`gradient-${gradientBackgroundPreset}`}
+                    preset={gradientBackgroundPreset as GradientBackdropId}
+                    width={canvas.skiaCanvasLayout.width}
+                    height={canvas.skiaCanvasLayout.height}
+                    opacity={hasBgPhoto ? 0.4 : 1}
+                  />
+                ) : null}
                 <Group
                   opacity={blinkOpacity}
                   transform={canvas.skiaMarqueeTransform}
