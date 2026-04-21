@@ -1,3 +1,16 @@
+export function glowColorToSkiaRgba(
+  hex: string,
+  glowIntensity: number,
+): string {
+  const raw = hex.replace("#", "").trim();
+  const safe = raw.length === 6 ? raw : "FFD700";
+  const r = Number.parseInt(safe.slice(0, 2), 16);
+  const g = Number.parseInt(safe.slice(2, 4), 16);
+  const b = Number.parseInt(safe.slice(4, 6), 16);
+  const a = 0.28 + (glowIntensity / 100) * 0.52;
+  return `rgba(${r},${g},${b},${a})`;
+}
+
 export const textColorPalette = [
     "#FFFFFF",
     "#C4C4C4",

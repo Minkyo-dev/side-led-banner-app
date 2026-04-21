@@ -1,170 +1,379 @@
-import { PixelatedBackdrop } from "@/components/PixelatedBackdrop";
+import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
+import {
+  GRADIENT_BACKDROP_IDS,
+  type GradientBackdropId,
+} from "@/constants/gradientBackgroundPresets";
+import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
+import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
-import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
-import React, { useRef, useState } from "react";
+import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
+import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
+  Blur,
+  Canvas,
+  Group,
+  Paint,
+  RuntimeShader,
+  Skia,
+  Text as SkiaText,
+} from "@shopify/react-native-skia";
+import { Image } from "expo-image";
+import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  NativeSyntheticEvent,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
-  TextStyle,
+  TextLayoutEventData,
   TouchableOpacity,
+  useWindowDimensions,
   View,
-  ViewStyle
 } from "react-native";
-import type { AnimatedStyle } from "react-native-reanimated";
-import Animated from "react-native-reanimated";
-
-/** Text shadow tint for blur effect; must not trigger state updates (used during render). */
-function mixBlurShadowColor(hex: string, amount: number): string {
-  const num = parseInt(hex.replace("#", ""), 16);
-  const r = num >> 16;
-  const g = (num >> 8) & 0x00ff;
-  const b = num & 0x0000ff;
-  const newR = Math.round(r + (255 - r) * amount);
-  const newG = Math.round(g + (255 - g) * amount);
-  const newB = Math.round(b + (255 - b) * amount);
-  return `rgb(${newR}, ${newG}, ${newB})`;
-}
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
 };
 
-type TextLayoutEvent = {
-  nativeEvent: { lines: { width: number }[] };
-};
 
-type PreviewTheme = {
-  backgroundColor: string;
-  previewTextStyles: TextStyle;
-  playOption: "one" | "multi";
-};
+const INTENTIONAL_NEWLINE_MARKER = "↵";
 
-type MarqueeProps = {
-  displayText: string;
-  animatedStyle: AnimatedStyle<ViewStyle>;
-  onTextLayout: (e: TextLayoutEvent) => void;
-  SPACER: number;
-};
+const TEXT_MAX_WIDTH = 100_000;
+const INPUT_WIDTH_CURSOR_PAD = 28;
 
-type InputProps = {
-  previewText: string;
-  setPreviewText: (text: string) => void;
-  handleTextChange: (text: string) => void;
-};
 
-interface PreviewPanelParams {
-  theme: PreviewTheme;
-  marquee: MarqueeProps;
-  input: InputProps;
-  onPreviewLayout: (e: LayoutEvent) => void;
+function formatMultiLineInputDisplay(stored: string): string {
+  const clean = stored.replace(/↵/g, "");
+  return clean.replace(/\n/g, `${INTENTIONAL_NEWLINE_MARKER}\n`);
 }
 
-export default function PreviewPanel({
-  theme,
-  marquee,
-  input,
-  onPreviewLayout,
-}: PreviewPanelParams) {
-  const [activePreset, setActivePreset] = useState(0);
-  const [inputText, setInputText] = useState(input.previewText);
-  const pixelCaptureRef = useRef<View>(null);
-  const { config } = useSettings();
-    
-    const {
-    lineSpacing,
-    blurIntensity,
-    fontWeight,
-    textSelectedColor,
-    effectSelectedItem,
-    blinkSpeed,
-    pixelBlockSize,
-  } = config.appearance;
+function stripMarkersForStorage(s: string): string {
+  const M = INTENTIONAL_NEWLINE_MARKER;
+  const withoutOrphanMarker = s.replace(
+    new RegExp(`${M}(?!\\n)`, "g"),
+    "",
+  );
+  return withoutOrphanMarker.split(M).join("");
+}
 
-  const blinkStyle = useBlinkOpacityStyle(
-    effectSelectedItem === "Blink",
+function storageIndexToDisplayIndex(stored: string, storageIdx: number): number {
+  const prefix = stored.slice(0, storageIdx);
+  return storageIdx + (prefix.match(/\n/g) || []).length;
+}
+
+
+function mergeWhenOnlyMarkerBeforeNewlineRemoved(
+  prevDisplay: string,
+  newInput: string,
+): { text: string; cursorInMerged?: number } {
+  if (newInput.length >= prevDisplay.length) return { text: newInput };
+  for (let i = 0; i < prevDisplay.length; i++) {
+    const oneRemoved =
+      prevDisplay.slice(0, i) + prevDisplay.slice(i + 1);
+    if (oneRemoved !== newInput) continue;
+    if (
+      prevDisplay[i] === INTENTIONAL_NEWLINE_MARKER &&
+      prevDisplay[i + 1] === "\n"
+    ) {
+      const merged = prevDisplay.slice(0, i) + prevDisplay.slice(i + 2);
+      return { text: merged, cursorInMerged: i };
+    }
+    return { text: newInput };
+  }
+  return { text: newInput };
+}
+
+export default function PreviewPanel() {
+  const [previewHeight, setPreviewHeight] = useState(0);
+  /** 미리보기 박스 전체 크기 — Skia 내부 onLayout이 0일 때 글리프·그라데이션 보정 */
+  const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
+  const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
+  const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
+  const [pendingSelection, setPendingSelection] = useState<
+    { start: number; end: number } | undefined
+  >(undefined);
+  const {
+    config,
+    handleTextChange,
+    updateConfig,
+    ui,
+    savePreset,
+    loadPreset,
+    resetPresetSlot,
+  } = useSettings();
+  const { activePreset } = ui;
+
+  const { previewText, playOption } = config.content;
+  const {
+    font,
+    fontSize,
+    textSelectedColor,
+    outLine,
+    lineSpacing,
+    fontWeight,
+    effectSelectedItems,
+    gradientBackgroundPreset,
+    blinkSpeed,
+    pixelSize: configPixelSize,
+    glowIntensity,
+    glowColor,
+  } = config.appearance;
+  const { backgroundColor, backgroundImageUri } = config.background;
+  const hasBgPhoto =
+    backgroundImageUri != null && backgroundImageUri.length > 0;
+  const { textMoveSpeed } = config.motion;
+  const { width: windowWidth } = useWindowDimensions();
+
+  const {
+    displayText,
+    translateX,
+    onContainerLayout,
+    onTextLayout,
+    SPACER,
+  } = useMarqueeAnimation({
+    text: previewText,
+    speed: textMoveSpeed,
+    playOption,
+  });
+
+  const previewFontSize = useMemo(() => {
+    if (previewHeight === 0) return 100;
+    const lineCount =
+      playOption === "one"
+        ? 1
+        : Math.min((previewText.match(/\n/g) || []).length + 1, 3);
+    const lineHeightRatio = 1.2;
+    const maxFontSize = Math.floor(
+      previewHeight / (lineCount * lineHeightRatio),
+    );
+    return Math.floor(maxFontSize * (fontSize / 100));
+  }, [previewHeight, playOption, previewText, fontSize]);
+
+  const previewTextColor = textSelectedColor;
+
+  const isPixelEffect = effectSelectedItems.includes("Pixel");
+  const isGlowEffect = effectSelectedItems.includes("Glow");
+  const showGradientBackdrop =
+    effectSelectedItems.includes("Gradient") &&
+    GRADIENT_BACKDROP_IDS.includes(
+      gradientBackgroundPreset as GradientBackdropId,
+    );
+  const pixelShaderSize = isPixelEffect ? Math.max(2, configPixelSize) : 1;
+  const skiaStrokeWidth = (outLine / 100) * 24;
+
+  const source = Skia.RuntimeEffect.Make(`
+  uniform shader content;
+  uniform float pixelSize;
+
+  half4 main(vec2 pos) {
+    vec2 p = floor(pos / pixelSize) * pixelSize + (pixelSize / 2.0);
+    return content.eval(p);
+  }
+`)!;
+
+  
+  const glowBlurRadius = useMemo(
+    () => Math.max(2, Math.min(18, 2 + (glowIntensity / 100) * 16)),
+    [glowIntensity],
+  );
+  const glowLayerColor = useMemo(
+    () => glowColorToSkiaRgba(glowColor, glowIntensity),
+    [glowColor, glowIntensity],
+  );
+
+  const canvas = usePreviewPanelCanvas({
+    displayText,
+    translateX,
+    onTextLayout,
+    previewFontSize,
+    appearanceFont: font,
+    fontWeight,
+    letterSpacing: lineSpacing,
+    fallbackLayout: previewBox,
+  });
+
+  const { opacity: blinkOpacity } = useBlinkOpacityStyle(
+    effectSelectedItems.includes("Blink"),
     blinkSpeed,
   );
- //입력창에 보이는 텍스트
-  const getDisplayText = (text:String) => {
-  if (!text) return "";
-  // 이미 있는 기호들을 다 지우고 다시 깨끗하게 줄바꿈에 ↵ 붙임
-  const cleanText = text.replace(/↵/g, ""); 
-  return theme.playOption === "multi" 
-    ? cleanText.replace(/\n/g, "↵\n") 
-    : cleanText;
-};
 
-// 실제 데이터로 전환하기 위해 ↵ 지우는 함수
-const handleTextChangeWithIcon = (e :any) => {
-  const rawText = e.replace(/↵/g, ""); 
-  input.handleTextChange(rawText);     // previewText에는 \n만 붙임
-};
+  const onPreviewLayout = (e: LayoutEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setPreviewBox({ width, height });
+    setPreviewHeight(height);
+    onContainerLayout(e);
+  };
+
+  const getDisplayText = (text: string) => {
+    if (!text) return "";
+    return playOption === "multi"
+      ? formatMultiLineInputDisplay(text)
+      : text.replace(/\u21B5/g, "");
+  };
+  const displayInputText = getDisplayText(previewText);
+
+  const inputHorizontalCanvasWidth = useMemo(() => {
+    const minWidth = Math.max(inputScrollViewportW, windowWidth * 0.8);
+    const measuredWidth = measuredTextMaxW + INPUT_WIDTH_CURSOR_PAD;
+    return Math.max(minWidth, measuredWidth);
+  }, [inputScrollViewportW, measuredTextMaxW, windowWidth]);
+
+  const prevMultiLineDisplayRef = useRef<string>("");
+  useLayoutEffect(() => {
+    prevMultiLineDisplayRef.current = getDisplayText(previewText);
+  }, [previewText, playOption]);
+
+  useLayoutEffect(() => {
+    if (pendingSelection === undefined) return;
+    const id = requestAnimationFrame(() => setPendingSelection(undefined));
+    return () => cancelAnimationFrame(id);
+  }, [pendingSelection]);
+
+  const handleTextChangeWithIcon = (e: string) => {
+    const merged =
+      playOption === "multi"
+        ? mergeWhenOnlyMarkerBeforeNewlineRemoved(
+            prevMultiLineDisplayRef.current,
+            e,
+          )
+        : { text: e };
+
+    const working = merged.text;
+    const forStorage = stripMarkersForStorage(working);
+    handleTextChange(forStorage);
+
+    if (playOption === "multi" && merged.cursorInMerged !== undefined) {
+      const storageIdx = stripMarkersForStorage(
+        working.slice(0, merged.cursorInMerged),
+      ).length;
+      const displayIdx = storageIndexToDisplayIndex(forStorage, storageIdx);
+      setPendingSelection({ start: displayIdx, end: displayIdx });
+    }
+  };
+
+  const setPreviewText = (text: string) =>
+    updateConfig("content", { previewText: text });
+
+  const handleInputMeasureLayout = (
+    e: NativeSyntheticEvent<TextLayoutEventData>,
+  ) => {
+    const maxWidth = e.nativeEvent.lines.reduce(
+      (widest, line) => Math.max(widest, line.width),
+      0,
+    );
+    setMeasuredTextMaxW(maxWidth);
+  };
+
   return (
     <View style={styles.previewContainer}>
-      {/* preview — Pixel은 이 박스만 (전체 화면 Backdrop는 설정 UI 먹통) */}
-      <PixelatedBackdrop
-        active={effectSelectedItem === "Pixel"}
-        pixelSize={pixelBlockSize}
-        captureRef={pixelCaptureRef}
-        style={[styles.preview, { overflow: "hidden" }]}
-      >
-        <View
-          ref={pixelCaptureRef}
-          collapsable={false}
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            backgroundColor: theme.backgroundColor,
-          }}
-          onLayout={onPreviewLayout}
-        >
-          <Animated.View
-            style={[
-              {
-                flexDirection: "row",
-                position: "absolute",
-                alignItems: "center",
-                flexShrink: 0,
-              },
-              marquee.animatedStyle,
-              blinkStyle,
-            ]}
-          >
-            {[...Array(5)].map((_, i) => (
-              <React.Fragment key={i}>
-                <Text
-                  style={[
-                    styles.previewText,
-                    theme.previewTextStyles,
-                    {
-                      letterSpacing: lineSpacing,
-                      fontWeight,
-                      ...(blurIntensity > 0
-                        ? {
-                            textShadowColor: mixBlurShadowColor(
-                              textSelectedColor,
-                              0.1,
-                            ),
-                            textShadowRadius: blurIntensity,
-                          }
-                        : {}),
-                    },
-                  ]}
-                  onTextLayout={i === 0 ? marquee.onTextLayout : undefined}
-                >
-                  {marquee.displayText}
-                </Text>
-                <View style={{ width: marquee.SPACER }} />
-              </React.Fragment>
-            ))}
-          </Animated.View>
-        </View>
-      </PixelatedBackdrop>
 
-      {/* preset buttons container */}
+      <View
+        collapsable={false}
+        style={[
+          styles.preview,
+          {
+            justifyContent: "center",
+            overflow: "hidden",
+            backgroundColor: hasBgPhoto ? undefined : backgroundColor,
+          },
+        ]}
+        onLayout={onPreviewLayout}
+      >
+        {hasBgPhoto ? (
+          <Image
+            source={{ uri: backgroundImageUri }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+          />
+        ) : null}
+        <View
+          style={StyleSheet.absoluteFill}
+          onLayout={canvas.onSkiaCanvasLayout}
+        >
+          <Canvas style={{ flex: 1 }} opaque={false}>
+            {showGradientBackdrop ? (
+              <GradientBackdrop
+                key={`gradient-${gradientBackgroundPreset}`}
+                preset={gradientBackgroundPreset as GradientBackdropId}
+                width={canvas.skiaCanvasLayout.width}
+                height={canvas.skiaCanvasLayout.height}
+                opacity={hasBgPhoto ? 0.4 : 1}
+              />
+            ) : null}
+            <Group
+              opacity={blinkOpacity}
+              transform={canvas.skiaMarqueeTransform}
+              layer={
+                isPixelEffect ? (
+                  <Paint>
+                    <RuntimeShader
+                      source={source}
+                      uniforms={{ pixelSize: pixelShaderSize }}
+                    />
+                  </Paint>
+                ) : undefined
+              }
+            >
+              {[...Array(5)].map((_, seg) => {
+                const segment = canvas.skiaTextWidth + SPACER;
+                const baseX = seg * segment;
+                return (
+                  <Group key={`marquee-${seg}`}>
+                    {isGlowEffect ? (
+                      <Group
+                        layer={
+                          <Paint>
+                            <Blur blur={glowBlurRadius} mode="clamp" />
+                          </Paint>
+                        }
+                      >
+                        {canvas.skiaGlyphs.map((g, gi) => (
+                          <SkiaText
+                            key={`glow-${gi}`}
+                            x={baseX + g.x}
+                            y={g.y}
+                            text={g.text}
+                            font={canvas.skiaFont}
+                            color={glowLayerColor}
+                          />
+                        ))}
+                      </Group>
+                    ) : null}
+                    {canvas.skiaGlyphs.map((g, gi) => (
+                      <Group key={`${seg}-${gi}`}>
+                        {skiaStrokeWidth > 0 ? (
+                          <SkiaText
+                            x={baseX + g.x}
+                            y={g.y}
+                            text={g.text}
+                            font={canvas.skiaFont}
+                            color="gray"
+                            style="stroke"
+                            strokeWidth={skiaStrokeWidth}
+                          />
+                        ) : null}
+                        <SkiaText
+                          x={baseX + g.x}
+                          y={g.y}
+                          text={g.text}
+                          font={canvas.skiaFont}
+                          color={previewTextColor}
+                        />
+                      </Group>
+                    ))}
+                  </Group>
+                );
+              })}
+            </Group>
+          </Canvas>
+        </View>
+      </View>
+
       <View style={styles.presetButtonsContainer}>
         {[1, 2, 3, 4, 5].map((num, index) => (
           <TouchableOpacity
@@ -174,17 +383,21 @@ const handleTextChangeWithIcon = (e :any) => {
                 ? btnStyles.presetButtonActive
                 : btnStyles.presetButton
             }
-            onPress={() => setActivePreset(index)}
+            onPress={() => loadPreset(index)}
+            onLongPress={() => savePreset(index)}
+            delayLongPress={380}
+            accessibilityLabel={`Preset ${index + 1}`}
+            accessibilityHint="Tap to switch preset; the previous slot is saved automatically. Long press to save to this slot."
           >
             <LinearGradientExpo
               colors={
                 index === activePreset
                   ? ["white", "#CCCCCC"]
                   : ["white", "#727272"]
-              }// 시작색, 끝색
-              start={{ x: 0, y: 0 }}//왼쪽 위
-              end={{ x: 0.1, y: 0.2 }}//오른쪽 아래
-              style={btnStyles.presetButtonGradient}//기존 스타일 적용
+              } // 시작색, 끝색
+              start={{ x: 0, y: 0 }} //왼쪽 위
+              end={{ x: 0.1, y: 0.2 }} //오른쪽 아래
+              style={btnStyles.presetButtonGradient} //기존 스타일 적용
             >
               <Text
                 style={
@@ -199,22 +412,83 @@ const handleTextChangeWithIcon = (e :any) => {
           </TouchableOpacity>
         ))}
       </View>
-
+      <TouchableOpacity
+        onPress={() => resetPresetSlot(activePreset)}
+        accessibilityRole="button"
+        accessibilityLabel="Reset current preset slot"
+        style={{ alignSelf: "flex-end", marginTop: 6, marginRight: 2 }}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={{ fontSize: 13, color: "#888" }} allowFontScaling={false}>
+          Reset slot
+        </Text>
+      </TouchableOpacity>
       {/* contents input container */}
-      <View style={styles.contentsInputContainer}>
-        <TextInput
-          editable
-          multiline
-          numberOfLines={3}
-          style={styles.contentsInput}
-          placeholder="Enter your text here"
-          value={getDisplayText(input.previewText)}
-          onChangeText={handleTextChangeWithIcon}
-          textAlignVertical="top"
-        />
-        <View style={styles.contentsInputResetButtonContainer}>
+      <View id="contentsInputContainer" style={styles.contentsInputContainer}>
+        <Text
+          style={[
+            styles.contentsInput,
+            {
+              position: "absolute",
+              opacity: 0,
+              left: -TEXT_MAX_WIDTH,
+              width: TEXT_MAX_WIDTH,
+              fontFamily: appFontFamilyForText(
+                font,
+                fontWeight === "bold" ? "bold" : "normal",
+              ),
+            },
+          ]}
+          onTextLayout={handleInputMeasureLayout}
+          pointerEvents="none"
+        >
+          {displayInputText || " "}
+        </Text>
+        <ScrollView
+          horizontal
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="handled"
+          showsHorizontalScrollIndicator
+          style={{ flex: 0.8 }}
+          contentContainerStyle={{ flexGrow: 1 }}
+          onLayout={(e) => setInputScrollViewportW(e.nativeEvent.layout.width)}
+          {...(Platform.OS === "ios"
+            ? {
+                scrollIndicatorInsets: { right: 1 },
+                indicatorStyle: "white" as const,
+              }
+            : {})}
+          {...(Platform.OS === "android" ? { persistentScrollbar: true } : {})}
+        >
+          <TextInput
+            editable
+            multiline={playOption === "multi"}
+            scrollEnabled
+            style={[
+              styles.contentsInput,
+              {
+                flex: 0,
+                width: inputHorizontalCanvasWidth,
+                minHeight: 72,
+                fontFamily: appFontFamilyForText(
+                  font,
+                  fontWeight === "bold" ? "bold" : "normal",
+                ),
+              },
+            ]}
+            placeholder="Enter your text here"
+            value={displayInputText}
+            selection={pendingSelection}
+            onChangeText={handleTextChangeWithIcon}
+            textAlignVertical="top"
+          />
+        </ScrollView>
+        <View
+          id="contentsInputResetButtonContainer"
+          style={styles.contentsInputResetButtonContainer}
+        >
           <TouchableOpacity
-            onPress={() => input.setPreviewText("")}
+            onPress={() => setPreviewText("")}
             style={btnStyles.contentsInputResetButton}
           >
             <Text style={btnStyles.contentsInputResetButtonText}>×</Text>
