@@ -10,7 +10,7 @@ export const btnStyles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    height: 40,
+    height: 28,
   },
   presetButton: {
     flex: 1,
@@ -19,7 +19,7 @@ export const btnStyles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    height: 40,
+    height: 28,
   },
   presetButtonGradient: {
     flex: 1,

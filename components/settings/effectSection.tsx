@@ -1,9 +1,16 @@
 import { btnStyles } from "@/constants/btnStyles";
+import {
+  DEFAULT_GRADIENT_BACKGROUND_PRESET_ID,
+  GRADIENT_BACKGROUND_PRESETS,
+} from "@/constants/gradientBackgroundPresets";
 import { styles } from "@/constants/styles";
 import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
-import { useSettings } from "../../contexts/settingsContext";
+import {
+  type BannerConfig,
+  useSettings,
+} from "../../contexts/settingsContext";
 import {
   SettingsSliderBlock,
   type SettingsSliderBlockProps,
@@ -11,84 +18,106 @@ import {
 
 interface EffectSectionProps {}
 
+function getSliderPropsForEffect(
+  effect: string,
+  values: {
+    glowIntensity: number;
+    blinkSpeed: number;
+    pixelSize: number;
+  },
+  setters: {
+    setGlowIntensity: (v: number) => void;
+    setBlinkSpeed: (v: number) => void;
+    setPixelSize: (v: number) => void;
+  },
+): Omit<SettingsSliderBlockProps, "containerStyle"> | null {
+  switch (effect) {
+    case "Glow":
+    case "Pixel Glow":
+      return {
+        label: "Glow Intensity",
+        value: values.glowIntensity,
+        onChange: setters.setGlowIntensity,
+        minimumValue: 0,
+        maximumValue: 100,
+        step: 1,
+      };
+    case "Blink":
+      return {
+        label: "Blink frequency",
+        value: values.blinkSpeed,
+        onChange: setters.setBlinkSpeed,
+        minimumValue: 1,
+        maximumValue: 10,
+        step: 1,
+      };
+    case "Pixel":
+      return {
+        label: "Pixel block size",
+        value: values.pixelSize,
+        onChange: setters.setPixelSize,
+        minimumValue: 2,
+        maximumValue: 24,
+        step: 1,
+      };
+    default:
+      return null;
+  }
+}
+
 export const EffectSection = ({}: EffectSectionProps) => {
   const { config, updateConfig, effectItems } = useSettings();
 
   const {
-    effectSelectedItem,
-    blurIntensity,
+    effectSelectedItems,
+    effectParamValues,
+    gradientBackgroundPreset,
     glowIntensity,
     blinkSpeed,
-    pixelBlockSize,
+    pixelSize,
   } = config.appearance;
 
-  const setEffectSelectedItem = (effect: string) =>
-    updateConfig("appearance", { effectSelectedItem: effect });
-
-  const setBlurIntensity = (value: number) =>
-    updateConfig("appearance", { blurIntensity: value });
+  const fxVals = effectParamValues ?? {};
 
   const setGlowIntensity = (value: number) =>
-    updateConfig("appearance", { glowIntensity: value });
+    updateConfig("appearance", {
+      glowIntensity: value,
+      effectParamValues: { ...fxVals, Glow: value },
+    });
 
   const setBlinkSpeed = (value: number) =>
-    updateConfig("appearance", { blinkSpeed: value });
+    updateConfig("appearance", {
+      blinkSpeed: value,
+      effectParamValues: { ...fxVals, Blink: value },
+    });
 
-  const setPixelBlockSize = (value: number) =>
-    updateConfig("appearance", { pixelBlockSize: value });
+  const setPixelSize = (value: number) =>
+    updateConfig("appearance", {
+      pixelSize: value,
+      effectParamValues: { ...fxVals, Pixel: value },
+    });
 
   const setFontWeight = (value: "normal" | "bold") =>
     updateConfig("appearance", { fontWeight: value });
 
-  const getEffectSliderProps =
-    (): Omit<SettingsSliderBlockProps, "containerStyle"> | null => {
-      switch (effectSelectedItem) {
-        case "Blur":
-          return {
-            label: "Blur Intensity",
-            value: blurIntensity,
-            onChange: setBlurIntensity,
-            minimumValue: 0,
-            maximumValue: 100,
-            step: 1,
-          };
-        case "Glow":
-        case "Pixel Glow":
-          return {
-            label: "Glow Intensity",
-            value: glowIntensity,
-            onChange: setGlowIntensity,
-            minimumValue: 0,
-            maximumValue: 100,
-            step: 1,
-          };
-        case "Blink":
-          return {
-            label: "Blink frequency",
-            value: blinkSpeed,
-            onChange: setBlinkSpeed,
-            minimumValue: 1,
-            maximumValue: 10,
-            step: 1,
-          };
-        case "Pixel":
-          return {
-            label: "Pixel block size",
-            value: pixelBlockSize,
-            onChange: setPixelBlockSize,
-            minimumValue: 2,
-            maximumValue: 24,
-            step: 1,
-          };
-        default:
-          return null;
-      }
-    };
-
-  const effectSliderProps = getEffectSliderProps();
+  const values = { glowIntensity, blinkSpeed, pixelSize };
+  const setters = {
+    setGlowIntensity,
+    setBlinkSpeed,
+    setPixelSize,
+  };
+  const stackedSliderBlocks: { key: string; props: SettingsSliderBlockProps }[] =
+    [];
+  for (const effect of effectItems) {
+    if (!effectSelectedItems.includes(effect)) continue;
+    const props = getSliderPropsForEffect(effect, values, setters);
+    if (!props) continue;
+    stackedSliderBlocks.push({ key: effect, props });
+  }
 
   return (
     <ScrollView
+      id="effectSection"
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.scrollViewContainer}
     >
@@ -109,22 +138,49 @@ export const EffectSection = ({}: EffectSectionProps) => {
             key={`effect-item-${index}`}
             style={[
               btnStyles.effectItemButton,
-              effectSelectedItem === effect && btnStyles.effectItemButtonActive,
+              effectSelectedItems.includes(effect) &&
+                btnStyles.effectItemButtonActive,
             ]}
             onPress={() => {
-              const isSame = effectSelectedItem === effect;
+              const isOn = effectSelectedItems.includes(effect);
+              const next = isOn
+                ? effectSelectedItems.filter((e) => e !== effect)
+                : [...effectSelectedItems, effect];
 
-              setEffectSelectedItem(isSame ? "" : effect);
+              if (isOn) {
+                updateConfig("appearance", { effectSelectedItems: next });
+              } else {
+                const fx = fxVals;
+                const patch: Partial<BannerConfig["appearance"]> = {
+                  effectSelectedItems: next,
+                };
+                if (effect === "Glow") {
+                  patch.glowIntensity = fx.Glow ?? glowIntensity;
+                } else if (effect === "Blink") {
+                  patch.blinkSpeed = fx.Blink ?? blinkSpeed;
+                } else if (effect === "Pixel") {
+                  patch.pixelSize = fx.Pixel ?? pixelSize;
+                } else if (effect === "Gradient") {
+                  patch.gradientBackgroundPreset =
+                    gradientBackgroundPreset ??
+                    DEFAULT_GRADIENT_BACKGROUND_PRESET_ID;
+                }
+                updateConfig("appearance", patch);
+              }
 
               if (effect === "Bold") {
-                setFontWeight(isSame ? "normal" : "bold");
+                setFontWeight(next.includes("Bold") ? "bold" : "normal");
+              }
+
+              if (next.length === 0) {
+                updateConfig("motion", { textMoveSpeed: 0 });
               }
             }}
           >
             <Text
               style={[
                 btnStyles.effectItemButtonText,
-                effectSelectedItem === effect &&
+                effectSelectedItems.includes(effect) &&
                   btnStyles.effectItemButtonTextActive,
               ]}
               allowFontScaling={false}
@@ -135,11 +191,58 @@ export const EffectSection = ({}: EffectSectionProps) => {
         ))}
       </ScrollView>
 
-      {effectSliderProps ? (
-        <SettingsSliderBlock
-          {...effectSliderProps}
-          containerStyle={{ marginTop: 12 }}
-        />
+      {stackedSliderBlocks.length > 0 ? (
+        <View style={{ marginTop: 12 }}>
+          {stackedSliderBlocks.map(({ key, props }, i) => (
+            <SettingsSliderBlock
+              key={key}
+              {...props}
+              containerStyle={{ marginTop: i === 0 ? 0 : 10 }}
+            />
+          ))}
+        </View>
+      ) : null}
+
+      {effectSelectedItems.includes("Gradient") ? (
+        <View style={{ marginTop: 14, marginHorizontal: 15 }}>
+          <Text allowFontScaling={false} style={{ marginBottom: 8 }}>
+            Gradient background
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.effectContainer}
+          >
+            {GRADIENT_BACKGROUND_PRESETS.map((p) => {
+              const selected = gradientBackgroundPreset === p.id;
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[
+                    btnStyles.effectItemButton,
+                    selected && btnStyles.effectItemButtonActive,
+                    { minWidth: 76, paddingVertical: 8 },
+                  ]}
+                  onPress={() =>
+                    updateConfig("appearance", {
+                      gradientBackgroundPreset: p.id,
+                    })
+                  }
+                >
+                  <Text
+                    style={[
+                      btnStyles.effectItemButtonText,
+                      selected && btnStyles.effectItemButtonTextActive,
+                    ]}
+                    allowFontScaling={false}
+                  >
+                    {p.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
       ) : null}
 
       {/* effect - background effect select */}

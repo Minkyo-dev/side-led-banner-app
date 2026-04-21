@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "side-led-banner-app",
-    "slug": "side-led-banner-app",
+    "name": "Led Pop",
+    "slug": "Led Pop",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/splash-icon.png",
@@ -33,6 +33,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set the banner background.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use the camera for the banner background."
+        }
+      ],
       [
         "expo-splash-screen",
         {

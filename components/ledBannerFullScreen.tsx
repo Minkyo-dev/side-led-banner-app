@@ -1,16 +1,33 @@
-import { PixelatedBackdrop } from "@/components/PixelatedBackdrop";
+import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
+import {
+  GRADIENT_BACKDROP_IDS,
+  type GradientBackdropId,
+} from "@/constants/gradientBackgroundPresets";
+import { glowColorToSkiaRgba } from "@/constants/colorPalette";
+import { Image } from "expo-image";
 import { BannerConfig } from "@/contexts/settingsContext";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
-import React, { useMemo, useRef } from "react";
+import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
-  Modal,
-  StatusBar,
-  Text,
-  TouchableWithoutFeedback,
-  View,
+    Blur,
+    Canvas,
+    Group,
+    Paint,
+    RuntimeShader,
+    Skia,
+    Text as SkiaText,
+} from "@shopify/react-native-skia";
+import React, { useMemo } from "react";
+import {
+    Modal,
+    Pressable,
+    StatusBar,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from "react-native";
-import Animated from "react-native-reanimated";
+
 interface LedBannerFullScreenProps {
   visible: boolean;
   onClose: () => void;
@@ -22,29 +39,52 @@ export const LedBannerFullScreen = ({
   onClose,
   config,
 }: LedBannerFullScreenProps) => {
-  const pixelCaptureRef = useRef<View>(null);
   const { previewText, playOption } = config.content;
   const {
+    font,
     fontSize,
     textSelectedColor,
     lineSpacing,
     fontWeight,
     blurIntensity,
-    effectSelectedItem,
+    glowIntensity,
+    glowColor,
+    effectSelectedItems,
+    gradientBackgroundPreset,
     blinkSpeed,
-    pixelBlockSize,
+    outLine,
+    pixelSize: configPixelSize,
   } = config.appearance;
 
-  const blinkStyle = useBlinkOpacityStyle(
-    effectSelectedItem === "Blink",
-    blinkSpeed,
+  const isPixelEffect = effectSelectedItems.includes("Pixel");
+  const isGlowEffect = effectSelectedItems.includes("Glow");
+  const showGradientBackdrop =
+    effectSelectedItems.includes("Gradient") &&
+    GRADIENT_BACKDROP_IDS.includes(
+      gradientBackgroundPreset as GradientBackdropId,
+    );
+  const pixelShaderSize = isPixelEffect ? Math.max(2, configPixelSize) : 1;
+  const skiaStrokeWidth = (outLine / 100) * 24;
+
+  const glowBlurRadius = useMemo(
+    () => Math.max(2, Math.min(18, 2 + (glowIntensity / 100) * 16)),
+    [glowIntensity],
   );
-  const { backgroundColor } = config.background;
+  const glowLayerColor = useMemo(
+    () => glowColorToSkiaRgba(glowColor, glowIntensity),
+    [glowColor, glowIntensity],
+  );
+
+  const { animatedStyle: blinkStyle, opacity: blinkOpacity } =
+    useBlinkOpacityStyle(effectSelectedItems.includes("Blink"), blinkSpeed);
+  const { backgroundColor, backgroundImageUri } = config.background;
+  const hasBgPhoto =
+    backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
   const {
     displayText,
+    translateX,
     animatedStyle,
-    onContainerLayout,
     onTextLayout,
     SPACER,
   } = useMarqueeAnimation({
@@ -52,6 +92,29 @@ export const LedBannerFullScreen = ({
     speed: textMoveSpeed,
     playOption,
   });
+
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  const canvas = usePreviewPanelCanvas({
+    displayText,
+    translateX,
+    onTextLayout,
+    previewFontSize: fontSize,
+    appearanceFont: font,
+    fontWeight,
+    letterSpacing: lineSpacing,
+    fallbackLayout: { width: windowWidth, height: windowHeight },
+  });
+  const source = Skia.RuntimeEffect.Make(`
+    uniform shader content;
+    uniform float pixelSize;
+  
+    half4 main(vec2 pos) {
+      // 픽셀 크기에 맞춰 좌표에 격자 형태의 필터
+      vec2 p = floor(pos / pixelSize) * pixelSize + (pixelSize / 2.0);
+      return content.eval(p);
+    }
+  `)!;
 
   const blurShadowStyle = useMemo(() => {
     if (blurIntensity <= 0) return {};
@@ -75,61 +138,128 @@ export const LedBannerFullScreen = ({
       animationType="fade"
       supportedOrientations={["portrait", "landscape"]}
       statusBarTranslucent
+      onRequestClose={onClose}
     >
       <StatusBar hidden />
-      <TouchableWithoutFeedback onPress={onClose}>
-        <PixelatedBackdrop
-          active={effectSelectedItem === "Pixel"}
-          pixelSize={pixelBlockSize}
-          captureRef={pixelCaptureRef}
-          style={{ flex: 1 }}
-        >
-          <View
-            ref={pixelCaptureRef}
-            collapsable={false}
-            style={{
-              flex: 1,
-              backgroundColor,
-              justifyContent: "flex-start",
-              overflow: "hidden",
-            }}
-            onLayout={onContainerLayout}
-          >
-            <Animated.View
+      <View style={styles.root}>
+        <View style={styles.layerPassThrough} pointerEvents="box-none">
+            <View
+              collapsable={false}
               style={[
+                styles.flex,
                 {
-                  flexDirection: "row",
-                  position: "absolute",
-                  top: 0,
-                  bottom: 0,
-                  alignItems: "center",
+                  backgroundColor: hasBgPhoto ? undefined : backgroundColor,
+                  justifyContent: "flex-start",
+                  overflow: "hidden",
                 },
-                animatedStyle,
-                blinkStyle,
               ]}
+              onLayout={canvas.onSkiaCanvasLayout}
+              pointerEvents="box-none"
             >
-            {[...Array(10)].map((_, i) => (
-              <React.Fragment key={i}>
-                <Text
-                  style={{
-                    fontSize,
-                    color: textSelectedColor,
-                    lineHeight: fontSize * (1.2 + lineSpacing / 100),
-                    fontWeight,
-                    ...blurShadowStyle,
-                  }}
-                  onTextLayout={onTextLayout}
-                  allowFontScaling={false}
+              {hasBgPhoto ? (
+                <Image
+                  source={{ uri: backgroundImageUri }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                />
+              ) : null}
+              <Canvas style={styles.flex} opaque={false}>
+                {showGradientBackdrop ? (
+                  <GradientBackdrop
+                    key={`gradient-${gradientBackgroundPreset}`}
+                    preset={gradientBackgroundPreset as GradientBackdropId}
+                    width={canvas.skiaCanvasLayout.width}
+                    height={canvas.skiaCanvasLayout.height}
+                    opacity={hasBgPhoto ? 0.4 : 1}
+                  />
+                ) : null}
+                <Group
+                  opacity={blinkOpacity}
+                  transform={canvas.skiaMarqueeTransform}
+                  layer={
+                    isPixelEffect ? (
+                      <Paint>
+                        <RuntimeShader
+                          source={source}
+                          uniforms={{ pixelSize: pixelShaderSize }}
+                        />
+                      </Paint>
+                    ) : undefined
+                  }
                 >
-                  {displayText}
-                </Text>
-                <View style={{ width: SPACER }} />
-              </React.Fragment>
-            ))}
-            </Animated.View>
-          </View>
-        </PixelatedBackdrop>
-      </TouchableWithoutFeedback>
+                  {[...Array(10)].map((_, seg) => {
+                    const segment = canvas.skiaTextWidth + SPACER;
+                    const baseX = seg * segment;
+                    return (
+                      <Group key={`marquee-${seg}`}>
+                        {isGlowEffect ? (
+                          <Group
+                            layer={
+                              <Paint>
+                                <Blur blur={glowBlurRadius} mode="clamp" />
+                              </Paint>
+                            }
+                          >
+                            {canvas.skiaGlyphs.map((g, gi) => (
+                              <SkiaText
+                                key={`glow-${gi}`}
+                                x={baseX + g.x}
+                                y={g.y}
+                                text={g.text}
+                                font={canvas.skiaFont}
+                                color={glowLayerColor}
+                              />
+                            ))}
+                          </Group>
+                        ) : null}
+                        {canvas.skiaGlyphs.map((g, gi) => (
+                          <Group key={`${seg}-${gi}`}>
+                            {skiaStrokeWidth > 0 ? (
+                              <SkiaText
+                                x={baseX + g.x}
+                                y={g.y}
+                                text={g.text}
+                                font={canvas.skiaFont}
+                                color="gray"
+                                style="stroke"
+                                strokeWidth={skiaStrokeWidth}
+                              />
+                            ) : null}
+                            <SkiaText
+                              x={baseX + g.x}
+                              y={g.y}
+                              text={g.text}
+                              font={canvas.skiaFont}
+                              color={textSelectedColor}
+                            />
+                          </Group>
+                        ))}
+                      </Group>
+                    );
+                  })}
+                </Group>
+              </Canvas>
+            </View>
+          
+        </View>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityLabel="Close fullscreen"
+        />
+      </View>
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  layerPassThrough: {
+    ...StyleSheet.absoluteFillObject,
+  },
+});

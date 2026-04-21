@@ -37,5 +37,7 @@ export function useBlinkOpacityStyle(active: boolean, blinkSpeed: number) {
     );
   }, [active, blinkSpeed]);
 
-  return useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return { animatedStyle, opacity };
 }

@@ -2,15 +2,31 @@
 import { ColorPicker } from "@/components/colorPicker";
 import { textColorPalette } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
-import React from "react";
-import { ScrollView, Text, View } from "react-native";
+import React, { useMemo } from "react";
+import { Dimensions, ScrollView, Text, View } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../../contexts/settingsContext";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 interface TextSectionProps {}
 
 export const TextSection = ({}: TextSectionProps) => {
+  const insets = useSafeAreaInsets();
+  /** 하단 네비바와 겹치지 않게 최대 높이를 설정 */
+  const fontDropdownMaxHeight = useMemo(() => {
+    const windowH = Dimensions.get("window").height;
+    const cap = Math.min(220, windowH * 0.32 - insets.bottom);
+    return Math.max(140, cap);
+  }, [insets.bottom]);
+
+  const fontDropdownFlatListProps = useMemo(
+    () => ({
+      contentContainerStyle: { paddingBottom: insets.bottom + 8 },
+    }),
+    [insets.bottom],
+  );
+
   const { config, updateConfig, fontItems } = useSettings();
   const { playOption } = config.content;
   const {
@@ -22,13 +38,14 @@ export const TextSection = ({}: TextSectionProps) => {
     dropShadow,
   } = config.appearance;
   const { textMoveSpeed } = config.motion;
-  const setFont = (font: string) => () => updateConfig("appearance", { font });
+  const onFontChange = (item: { value: string }) =>
+    updateConfig("appearance", { font: item.value });
   const setTextMoveSpeed = (value: number) =>
     updateConfig("motion", { textMoveSpeed: value });
   const setFontSize = (value: number) =>
     updateConfig("appearance", { fontSize: value });
   const setLineSpacing = (value: number) =>
-    updateConfig("appearance", { lineSpacing: value });
+    updateConfig("appearance", { lineSpacing: Math.max(10, value) });
   const setTextSelectedColor = (color: string) =>
     updateConfig("appearance", { textSelectedColor: color });
   const setOutLine = (value: number) =>
@@ -52,7 +69,10 @@ export const TextSection = ({}: TextSectionProps) => {
           placeholder="Select font"
           iconColor="black"
           value={font}
-          onChange={setFont}
+          onChange={onFontChange}
+          maxHeight={fontDropdownMaxHeight}
+          showsVerticalScrollIndicator
+          flatListProps={fontDropdownFlatListProps}
           style={styles.dropdownContainer}
           containerStyle={styles.dropdownContainer}
           selectedTextStyle={styles.dropdownSelectedTextStyle}
@@ -86,10 +106,10 @@ export const TextSection = ({}: TextSectionProps) => {
         label="Line Spacing"
         value={lineSpacing}
         onChange={setLineSpacing}
-        minimumValue={0}
+        minimumValue={10}
         maximumValue={100}
         step={1}
-        disabled={playOption === "one"}
+        // disabled={playOption === "one"}
       />
 
       {/* text - color picker */}
