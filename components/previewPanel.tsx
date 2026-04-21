@@ -1,11 +1,11 @@
 import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
+import { appFontFamilyForText } from "@/constants/appFonts";
+import { btnStyles } from "@/constants/btnStyles";
+import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
   GRADIENT_BACKDROP_IDS,
   type GradientBackdropId,
 } from "@/constants/gradientBackgroundPresets";
-import { appFontFamilyForText } from "@/constants/appFonts";
-import { btnStyles } from "@/constants/btnStyles";
-import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
@@ -17,6 +17,7 @@ import {
   Group,
   Paint,
   RuntimeShader,
+  Shadow,
   Skia,
   Text as SkiaText,
 } from "@shopify/react-native-skia";
@@ -40,12 +41,10 @@ type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
 };
 
-
 const INTENTIONAL_NEWLINE_MARKER = "↵";
 
 const TEXT_MAX_WIDTH = 100_000;
 const INPUT_WIDTH_CURSOR_PAD = 28;
-
 
 function formatMultiLineInputDisplay(stored: string): string {
   const clean = stored.replace(/↵/g, "");
@@ -54,18 +53,17 @@ function formatMultiLineInputDisplay(stored: string): string {
 
 function stripMarkersForStorage(s: string): string {
   const M = INTENTIONAL_NEWLINE_MARKER;
-  const withoutOrphanMarker = s.replace(
-    new RegExp(`${M}(?!\\n)`, "g"),
-    "",
-  );
+  const withoutOrphanMarker = s.replace(new RegExp(`${M}(?!\\n)`, "g"), "");
   return withoutOrphanMarker.split(M).join("");
 }
 
-function storageIndexToDisplayIndex(stored: string, storageIdx: number): number {
+function storageIndexToDisplayIndex(
+  stored: string,
+  storageIdx: number,
+): number {
   const prefix = stored.slice(0, storageIdx);
   return storageIdx + (prefix.match(/\n/g) || []).length;
 }
-
 
 function mergeWhenOnlyMarkerBeforeNewlineRemoved(
   prevDisplay: string,
@@ -73,8 +71,7 @@ function mergeWhenOnlyMarkerBeforeNewlineRemoved(
 ): { text: string; cursorInMerged?: number } {
   if (newInput.length >= prevDisplay.length) return { text: newInput };
   for (let i = 0; i < prevDisplay.length; i++) {
-    const oneRemoved =
-      prevDisplay.slice(0, i) + prevDisplay.slice(i + 1);
+    const oneRemoved = prevDisplay.slice(0, i) + prevDisplay.slice(i + 1);
     if (oneRemoved !== newInput) continue;
     if (
       prevDisplay[i] === INTENTIONAL_NEWLINE_MARKER &&
@@ -115,6 +112,7 @@ export default function PreviewPanel() {
     textSelectedColor,
     outLine,
     lineSpacing,
+    dropShadow,
     fontWeight,
     effectSelectedItems,
     gradientBackgroundPreset,
@@ -129,17 +127,12 @@ export default function PreviewPanel() {
   const { textMoveSpeed } = config.motion;
   const { width: windowWidth } = useWindowDimensions();
 
-  const {
-    displayText,
-    translateX,
-    onContainerLayout,
-    onTextLayout,
-    SPACER,
-  } = useMarqueeAnimation({
-    text: previewText,
-    speed: textMoveSpeed,
-    playOption,
-  });
+  const { displayText, translateX, onContainerLayout, onTextLayout, SPACER } =
+    useMarqueeAnimation({
+      text: previewText,
+      speed: textMoveSpeed,
+      playOption,
+    });
 
   const previewFontSize = useMemo(() => {
     if (previewHeight === 0) return 100;
@@ -176,7 +169,6 @@ export default function PreviewPanel() {
   }
 `)!;
 
-  
   const glowBlurRadius = useMemo(
     () => Math.max(2, Math.min(18, 2 + (glowIntensity / 100) * 16)),
     [glowIntensity],
@@ -271,7 +263,6 @@ export default function PreviewPanel() {
 
   return (
     <View style={styles.previewContainer}>
-
       <View
         collapsable={false}
         style={[
@@ -340,13 +331,40 @@ export default function PreviewPanel() {
                             text={g.text}
                             font={canvas.skiaFont}
                             color={glowLayerColor}
-                          />
+                          >
+                            {skiaStrokeWidth > 0 && (
+                              <Paint
+                                style="stroke"
+                                strokeWidth={Math.round(
+                                  (skiaStrokeWidth / 100) * 30,
+                                )}
+                                color="white"
+                              >
+                                {dropShadow > 0 && (
+                                  <Shadow
+                                    dx={5}
+                                    dy={5}
+                                    blur={Math.round((dropShadow / 100) * 5)}
+                                    color="rgba(0, 0, 0, 0.5)"
+                                  />
+                                )}
+                              </Paint>
+                            )}
+                            {dropShadow > 0 && skiaStrokeWidth === 0 && (
+                              <Shadow
+                                dx={5}
+                                dy={5}
+                                blur={Math.round((dropShadow / 100) * 5)}
+                                color="rgba(0, 0, 0, 0.5)"
+                              />
+                            )}
+                          </SkiaText>
                         ))}
                       </Group>
                     ) : null}
                     {canvas.skiaGlyphs.map((g, gi) => (
                       <Group key={`${seg}-${gi}`}>
-                        {skiaStrokeWidth > 0 ? (
+                        {/* {skiaStrokeWidth > 0 ? (
                           <SkiaText
                             x={baseX + g.x}
                             y={g.y}
@@ -356,14 +374,41 @@ export default function PreviewPanel() {
                             style="stroke"
                             strokeWidth={skiaStrokeWidth}
                           />
-                        ) : null}
+                        ) : null} */}
                         <SkiaText
                           x={baseX + g.x}
                           y={g.y}
                           text={g.text}
                           font={canvas.skiaFont}
                           color={previewTextColor}
-                        />
+                        >
+                          {skiaStrokeWidth > 0 && (
+                            <Paint
+                              style="stroke"
+                              strokeWidth={Math.round(
+                                (skiaStrokeWidth / 100) * 30,
+                              )}
+                              color="white"
+                            >
+                              {dropShadow > 0 && (
+                                <Shadow
+                                  dx={5}
+                                  dy={5}
+                                  blur={Math.round((dropShadow / 100) * 5)}
+                                  color="rgba(0, 0, 0, 0.5)"
+                                />
+                              )}
+                            </Paint>
+                          )}
+                          {dropShadow > 0 && skiaStrokeWidth === 0 && (
+                            <Shadow
+                              dx={5}
+                              dy={5}
+                              blur={Math.round((dropShadow / 100) * 5)}
+                              color="rgba(0, 0, 0, 0.5)"
+                            />
+                          )}
+                        </SkiaText>
                       </Group>
                     ))}
                   </Group>

@@ -128,7 +128,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     lineSpacing: 10,
     textSelectedColor: "#000000",
     outLine: 0,
-    dropShadow: 50,
+    dropShadow: 0,
     effectSelectedItems: ["Bold"],
     effectParamValues: {
       Glow: 50,
@@ -167,7 +167,9 @@ function normalizePresetSlot(raw: unknown): PresetSnapshot {
       ? o.content
       : {};
   const appearancePartial: Partial<BannerConfig["appearance"]> =
-    o.appearance && typeof o.appearance === "object" && !Array.isArray(o.appearance)
+    o.appearance &&
+    typeof o.appearance === "object" &&
+    !Array.isArray(o.appearance)
       ? (o.appearance as Partial<BannerConfig["appearance"]>)
       : {};
 
@@ -184,7 +186,9 @@ function normalizePresetSlot(raw: unknown): PresetSnapshot {
   });
 
   const bgPartial =
-    o.background && typeof o.background === "object" && !Array.isArray(o.background)
+    o.background &&
+    typeof o.background === "object" &&
+    !Array.isArray(o.background)
       ? o.background
       : {};
   const motionPartial =
@@ -289,7 +293,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) {
           setPresetSlots(blankSlots);
           void persistPresetSlotsSnapshot(blankSlots).catch((err) => {
-            if (__DEV__) console.warn("[presets] persist after load error", err);
+            if (__DEV__)
+              console.warn("[presets] persist after load error", err);
           });
         }
       } finally {
@@ -372,15 +377,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       next[index] = blank;
       if (presetsStorageReadyRef.current) {
         void persistPresetSlotsSnapshot(next).catch((err) => {
-          if (__DEV__) console.warn("[presets] resetPresetSlot persist failed", err);
+          if (__DEV__)
+            console.warn("[presets] resetPresetSlot persist failed", err);
         });
       }
       return next;
     });
     if (index === activePresetRef.current) {
-      setConfig(
-        configFromPreset(blank, configRef.current.content.playOption),
-      );
+      setConfig(configFromPreset(blank, configRef.current.content.playOption));
     }
   }, []);
 
@@ -413,7 +417,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       loadPreset,
       resetPresetSlot,
     }),
-    [config, ui, fontItems, effectItems, savePreset, loadPreset, resetPresetSlot],
+    [
+      config,
+      ui,
+      fontItems,
+      effectItems,
+      savePreset,
+      loadPreset,
+      resetPresetSlot,
+    ],
   );
 
   return (

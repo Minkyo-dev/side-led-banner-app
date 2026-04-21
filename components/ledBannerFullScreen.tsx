@@ -1,31 +1,32 @@
 import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
+import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
   GRADIENT_BACKDROP_IDS,
   type GradientBackdropId,
 } from "@/constants/gradientBackgroundPresets";
-import { glowColorToSkiaRgba } from "@/constants/colorPalette";
-import { Image } from "expo-image";
 import { BannerConfig } from "@/contexts/settingsContext";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
-    Blur,
-    Canvas,
-    Group,
-    Paint,
-    RuntimeShader,
-    Skia,
-    Text as SkiaText,
+  Blur,
+  Canvas,
+  Group,
+  Paint,
+  RuntimeShader,
+  Shadow,
+  Skia,
+  Text as SkiaText,
 } from "@shopify/react-native-skia";
+import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
-    Modal,
-    Pressable,
-    StatusBar,
-    StyleSheet,
-    useWindowDimensions,
-    View,
+  Modal,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  useWindowDimensions,
+  View,
 } from "react-native";
 
 interface LedBannerFullScreenProps {
@@ -43,6 +44,7 @@ export const LedBannerFullScreen = ({
   const {
     font,
     fontSize,
+    dropShadow,
     textSelectedColor,
     lineSpacing,
     fontWeight,
@@ -81,17 +83,12 @@ export const LedBannerFullScreen = ({
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
-  const {
-    displayText,
-    translateX,
-    animatedStyle,
-    onTextLayout,
-    SPACER,
-  } = useMarqueeAnimation({
-    text: previewText,
-    speed: textMoveSpeed,
-    playOption,
-  });
+  const { displayText, translateX, animatedStyle, onTextLayout, SPACER } =
+    useMarqueeAnimation({
+      text: previewText,
+      speed: textMoveSpeed,
+      playOption,
+    });
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
@@ -143,78 +140,105 @@ export const LedBannerFullScreen = ({
       <StatusBar hidden />
       <View style={styles.root}>
         <View style={styles.layerPassThrough} pointerEvents="box-none">
-            <View
-              collapsable={false}
-              style={[
-                styles.flex,
-                {
-                  backgroundColor: hasBgPhoto ? undefined : backgroundColor,
-                  justifyContent: "flex-start",
-                  overflow: "hidden",
-                },
-              ]}
-              onLayout={canvas.onSkiaCanvasLayout}
-              pointerEvents="box-none"
-            >
-              {hasBgPhoto ? (
-                <Image
-                  source={{ uri: backgroundImageUri }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="cover"
+          <View
+            collapsable={false}
+            style={[
+              styles.flex,
+              {
+                backgroundColor: hasBgPhoto ? undefined : backgroundColor,
+                justifyContent: "flex-start",
+                overflow: "hidden",
+              },
+            ]}
+            onLayout={canvas.onSkiaCanvasLayout}
+            pointerEvents="box-none"
+          >
+            {hasBgPhoto ? (
+              <Image
+                source={{ uri: backgroundImageUri }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+              />
+            ) : null}
+            <Canvas style={styles.flex} opaque={false}>
+              {showGradientBackdrop ? (
+                <GradientBackdrop
+                  key={`gradient-${gradientBackgroundPreset}`}
+                  preset={gradientBackgroundPreset as GradientBackdropId}
+                  width={canvas.skiaCanvasLayout.width}
+                  height={canvas.skiaCanvasLayout.height}
+                  opacity={hasBgPhoto ? 0.4 : 1}
                 />
               ) : null}
-              <Canvas style={styles.flex} opaque={false}>
-                {showGradientBackdrop ? (
-                  <GradientBackdrop
-                    key={`gradient-${gradientBackgroundPreset}`}
-                    preset={gradientBackgroundPreset as GradientBackdropId}
-                    width={canvas.skiaCanvasLayout.width}
-                    height={canvas.skiaCanvasLayout.height}
-                    opacity={hasBgPhoto ? 0.4 : 1}
-                  />
-                ) : null}
-                <Group
-                  opacity={blinkOpacity}
-                  transform={canvas.skiaMarqueeTransform}
-                  layer={
-                    isPixelEffect ? (
-                      <Paint>
-                        <RuntimeShader
-                          source={source}
-                          uniforms={{ pixelSize: pixelShaderSize }}
-                        />
-                      </Paint>
-                    ) : undefined
-                  }
-                >
-                  {[...Array(10)].map((_, seg) => {
-                    const segment = canvas.skiaTextWidth + SPACER;
-                    const baseX = seg * segment;
-                    return (
-                      <Group key={`marquee-${seg}`}>
-                        {isGlowEffect ? (
-                          <Group
-                            layer={
-                              <Paint>
-                                <Blur blur={glowBlurRadius} mode="clamp" />
-                              </Paint>
-                            }
-                          >
-                            {canvas.skiaGlyphs.map((g, gi) => (
-                              <SkiaText
-                                key={`glow-${gi}`}
-                                x={baseX + g.x}
-                                y={g.y}
-                                text={g.text}
-                                font={canvas.skiaFont}
-                                color={glowLayerColor}
-                              />
-                            ))}
-                          </Group>
-                        ) : null}
-                        {canvas.skiaGlyphs.map((g, gi) => (
-                          <Group key={`${seg}-${gi}`}>
-                            {skiaStrokeWidth > 0 ? (
+              <Group
+                opacity={blinkOpacity}
+                transform={canvas.skiaMarqueeTransform}
+                layer={
+                  isPixelEffect ? (
+                    <Paint>
+                      <RuntimeShader
+                        source={source}
+                        uniforms={{ pixelSize: pixelShaderSize }}
+                      />
+                    </Paint>
+                  ) : undefined
+                }
+              >
+                {[...Array(10)].map((_, seg) => {
+                  const segment = canvas.skiaTextWidth + SPACER;
+                  const baseX = seg * segment;
+                  return (
+                    <Group key={`marquee-${seg}`}>
+                      {isGlowEffect ? (
+                        <Group
+                          layer={
+                            <Paint>
+                              <Blur blur={glowBlurRadius} mode="clamp" />
+                            </Paint>
+                          }
+                        >
+                          {canvas.skiaGlyphs.map((g, gi) => (
+                            <SkiaText
+                              key={`glow-${gi}`}
+                              x={baseX + g.x}
+                              y={g.y}
+                              text={g.text}
+                              font={canvas.skiaFont}
+                              color={glowLayerColor}
+                            >
+                              {skiaStrokeWidth > 0 && (
+                                <Paint
+                                  style="stroke"
+                                  strokeWidth={Math.round(
+                                    (skiaStrokeWidth / 100) * 30,
+                                  )}
+                                  color="white"
+                                >
+                                  {dropShadow > 0 && (
+                                    <Shadow
+                                      dx={5}
+                                      dy={5}
+                                      blur={Math.round((dropShadow / 100) * 5)}
+                                      color="rgba(0, 0, 0, 0.5)"
+                                    />
+                                  )}
+                                </Paint>
+                              )}
+                              {dropShadow > 0 && skiaStrokeWidth === 0 && (
+                                <Shadow
+                                  dx={5}
+                                  dy={5}
+                                  blur={Math.round((dropShadow / 100) * 5)}
+                                  color="rgba(0, 0, 0, 0.5)"
+                                />
+                              )}
+                            </SkiaText>
+                          ))}
+                        </Group>
+                      ) : null}
+                      {canvas.skiaGlyphs.map((g, gi) => (
+                        <Group key={`${seg}-${gi}`}>
+                          {/* {skiaStrokeWidth > 0 ? (
                               <SkiaText
                                 x={baseX + g.x}
                                 y={g.y}
@@ -224,23 +248,49 @@ export const LedBannerFullScreen = ({
                                 style="stroke"
                                 strokeWidth={skiaStrokeWidth}
                               />
-                            ) : null}
-                            <SkiaText
-                              x={baseX + g.x}
-                              y={g.y}
-                              text={g.text}
-                              font={canvas.skiaFont}
-                              color={textSelectedColor}
-                            />
-                          </Group>
-                        ))}
-                      </Group>
-                    );
-                  })}
-                </Group>
-              </Canvas>
-            </View>
-          
+                            ) : null} */}
+                          <SkiaText
+                            x={baseX + g.x}
+                            y={g.y}
+                            text={g.text}
+                            font={canvas.skiaFont}
+                            color={textSelectedColor}
+                          >
+                            {skiaStrokeWidth > 0 && (
+                              <Paint
+                                style="stroke"
+                                strokeWidth={Math.round(
+                                  (skiaStrokeWidth / 100) * 30,
+                                )}
+                                color="white"
+                              >
+                                {dropShadow > 0 && (
+                                  <Shadow
+                                    dx={5}
+                                    dy={5}
+                                    blur={Math.round((dropShadow / 100) * 5)}
+                                    color="rgba(0, 0, 0, 0.5)"
+                                  />
+                                )}
+                              </Paint>
+                            )}
+                            {dropShadow > 0 && skiaStrokeWidth === 0 && (
+                              <Shadow
+                                dx={5}
+                                dy={5}
+                                blur={Math.round((dropShadow / 100) * 5)}
+                                color="rgba(0, 0, 0, 0.5)"
+                              />
+                            )}
+                          </SkiaText>
+                        </Group>
+                      ))}
+                    </Group>
+                  );
+                })}
+              </Group>
+            </Canvas>
+          </View>
         </View>
         <Pressable
           style={StyleSheet.absoluteFill}
