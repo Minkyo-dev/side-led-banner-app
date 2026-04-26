@@ -121,7 +121,7 @@ export default function PreviewPanel() {
     glowIntensity,
     glowColor,
   } = config.appearance;
-  const { backgroundColor, backgroundImageUri } = config.background;
+  const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
@@ -280,6 +280,7 @@ export default function PreviewPanel() {
             source={{ uri: backgroundImageUri }}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
+            blurRadius={backgroundBlur / 8}
           />
         ) : null}
         <View
@@ -287,18 +288,7 @@ export default function PreviewPanel() {
           onLayout={canvas.onSkiaCanvasLayout}
         >
           <Canvas style={{ flex: 1 }} opaque={false}>
-            {showGradientBackdrop ? (
-              <GradientBackdrop
-                key={`gradient-${gradientBackgroundPreset}`}
-                preset={gradientBackgroundPreset as GradientBackdropId}
-                width={canvas.skiaCanvasLayout.width}
-                height={canvas.skiaCanvasLayout.height}
-                opacity={hasBgPhoto ? 0.4 : 1}
-              />
-            ) : null}
             <Group
-              opacity={blinkOpacity}
-              transform={canvas.skiaMarqueeTransform}
               layer={
                 isPixelEffect ? (
                   <Paint>
@@ -310,27 +300,87 @@ export default function PreviewPanel() {
                 ) : undefined
               }
             >
-              {[...Array(5)].map((_, seg) => {
-                const segment = canvas.skiaTextWidth + SPACER;
-                const baseX = seg * segment;
-                return (
-                  <Group key={`marquee-${seg}`}>
-                    {isGlowEffect ? (
-                      <Group
-                        layer={
-                          <Paint>
-                            <Blur blur={glowBlurRadius} mode="clamp" />
-                          </Paint>
-                        }
-                      >
-                        {canvas.skiaGlyphs.map((g, gi) => (
+              {showGradientBackdrop ? (
+                <GradientBackdrop
+                  key={`gradient-${gradientBackgroundPreset}`}
+                  preset={gradientBackgroundPreset as GradientBackdropId}
+                  width={canvas.skiaCanvasLayout.width}
+                  height={canvas.skiaCanvasLayout.height}
+                  opacity={hasBgPhoto ? 0.4 : 1}
+                />
+              ) : null}
+              <Group opacity={blinkOpacity} transform={canvas.skiaMarqueeTransform}>
+                {[...Array(5)].map((_, seg) => {
+                  const segment = canvas.skiaTextWidth + SPACER;
+                  const baseX = seg * segment;
+                  return (
+                    <Group key={`marquee-${seg}`}>
+                      {isGlowEffect ? (
+                        <Group
+                          layer={
+                            <Paint>
+                              <Blur blur={glowBlurRadius} mode="clamp" />
+                            </Paint>
+                          }
+                        >
+                          {canvas.skiaGlyphs.map((g, gi) => (
+                            <SkiaText
+                              key={`glow-${gi}`}
+                              x={baseX + g.x}
+                              y={g.y}
+                              text={g.text}
+                              font={canvas.skiaFont}
+                              color={glowLayerColor}
+                            >
+                              {skiaStrokeWidth > 0 && (
+                                <Paint
+                                  style="stroke"
+                                  strokeWidth={Math.round(
+                                    (skiaStrokeWidth / 100) * 30,
+                                  )}
+                                  color="white"
+                                >
+                                  {dropShadow > 0 && (
+                                    <Shadow
+                                      dx={5}
+                                      dy={5}
+                                      blur={Math.round((dropShadow / 100) * 5)}
+                                      color="rgba(0, 0, 0, 0.5)"
+                                    />
+                                  )}
+                                </Paint>
+                              )}
+                              {dropShadow > 0 && skiaStrokeWidth === 0 && (
+                                <Shadow
+                                  dx={5}
+                                  dy={5}
+                                  blur={Math.round((dropShadow / 100) * 5)}
+                                  color="rgba(0, 0, 0, 0.5)"
+                                />
+                              )}
+                            </SkiaText>
+                          ))}
+                        </Group>
+                      ) : null}
+                      {canvas.skiaGlyphs.map((g, gi) => (
+                        <Group key={`${seg}-${gi}`}>
+                          {/* {skiaStrokeWidth > 0 ? (
+                            <SkiaText
+                              x={baseX + g.x}
+                              y={g.y}
+                              text={g.text}
+                              font={canvas.skiaFont}
+                              color="gray"
+                              style="stroke"
+                              strokeWidth={skiaStrokeWidth}
+                            />
+                          ) : null} */}
                           <SkiaText
-                            key={`glow-${gi}`}
                             x={baseX + g.x}
                             y={g.y}
                             text={g.text}
                             font={canvas.skiaFont}
-                            color={glowLayerColor}
+                            color={previewTextColor}
                           >
                             {skiaStrokeWidth > 0 && (
                               <Paint
@@ -359,61 +409,12 @@ export default function PreviewPanel() {
                               />
                             )}
                           </SkiaText>
-                        ))}
-                      </Group>
-                    ) : null}
-                    {canvas.skiaGlyphs.map((g, gi) => (
-                      <Group key={`${seg}-${gi}`}>
-                        {/* {skiaStrokeWidth > 0 ? (
-                          <SkiaText
-                            x={baseX + g.x}
-                            y={g.y}
-                            text={g.text}
-                            font={canvas.skiaFont}
-                            color="gray"
-                            style="stroke"
-                            strokeWidth={skiaStrokeWidth}
-                          />
-                        ) : null} */}
-                        <SkiaText
-                          x={baseX + g.x}
-                          y={g.y}
-                          text={g.text}
-                          font={canvas.skiaFont}
-                          color={previewTextColor}
-                        >
-                          {skiaStrokeWidth > 0 && (
-                            <Paint
-                              style="stroke"
-                              strokeWidth={Math.round(
-                                (skiaStrokeWidth / 100) * 30,
-                              )}
-                              color="white"
-                            >
-                              {dropShadow > 0 && (
-                                <Shadow
-                                  dx={5}
-                                  dy={5}
-                                  blur={Math.round((dropShadow / 100) * 5)}
-                                  color="rgba(0, 0, 0, 0.5)"
-                                />
-                              )}
-                            </Paint>
-                          )}
-                          {dropShadow > 0 && skiaStrokeWidth === 0 && (
-                            <Shadow
-                              dx={5}
-                              dy={5}
-                              blur={Math.round((dropShadow / 100) * 5)}
-                              color="rgba(0, 0, 0, 0.5)"
-                            />
-                          )}
-                        </SkiaText>
-                      </Group>
-                    ))}
-                  </Group>
-                );
-              })}
+                        </Group>
+                      ))}
+                    </Group>
+                  );
+                })}
+              </Group>
             </Group>
           </Canvas>
         </View>

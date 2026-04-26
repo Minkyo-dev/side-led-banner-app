@@ -48,7 +48,6 @@ export const LedBannerFullScreen = ({
     textSelectedColor,
     lineSpacing,
     fontWeight,
-    blurIntensity,
     glowIntensity,
     glowColor,
     effectSelectedItems,
@@ -57,6 +56,9 @@ export const LedBannerFullScreen = ({
     outLine,
     pixelSize: configPixelSize,
   } = config.appearance;
+
+  const { backgroundColor, backgroundImageUri, backgroundBlur } =
+    config.background;
 
   const isPixelEffect = effectSelectedItems.includes("Pixel");
   const isGlowEffect = effectSelectedItems.includes("Glow");
@@ -79,7 +81,6 @@ export const LedBannerFullScreen = ({
 
   const { animatedStyle: blinkStyle, opacity: blinkOpacity } =
     useBlinkOpacityStyle(effectSelectedItems.includes("Blink"), blinkSpeed);
-  const { backgroundColor, backgroundImageUri } = config.background;
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
@@ -113,22 +114,6 @@ export const LedBannerFullScreen = ({
     }
   `)!;
 
-  const blurShadowStyle = useMemo(() => {
-    if (blurIntensity <= 0) return {};
-    const amount = 0.1;
-    const num = parseInt(textSelectedColor.replace("#", ""), 16);
-    const r = num >> 16;
-    const g = (num >> 8) & 0x00ff;
-    const b = num & 0x0000ff;
-    const newR = Math.round(r + (255 - r) * amount);
-    const newG = Math.round(g + (255 - g) * amount);
-    const newB = Math.round(b + (255 - b) * amount);
-    return {
-      textShadowColor: `rgb(${newR}, ${newG}, ${newB})`,
-      textShadowRadius: blurIntensity,
-    };
-  }, [textSelectedColor, blurIntensity]);
-
   return (
     <Modal
       visible={visible}
@@ -158,21 +143,11 @@ export const LedBannerFullScreen = ({
                 source={{ uri: backgroundImageUri }}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
+                blurRadius={backgroundBlur / 8}
               />
             ) : null}
             <Canvas style={styles.flex} opaque={false}>
-              {showGradientBackdrop ? (
-                <GradientBackdrop
-                  key={`gradient-${gradientBackgroundPreset}`}
-                  preset={gradientBackgroundPreset as GradientBackdropId}
-                  width={canvas.skiaCanvasLayout.width}
-                  height={canvas.skiaCanvasLayout.height}
-                  opacity={hasBgPhoto ? 0.4 : 1}
-                />
-              ) : null}
               <Group
-                opacity={blinkOpacity}
-                transform={canvas.skiaMarqueeTransform}
                 layer={
                   isPixelEffect ? (
                     <Paint>
@@ -184,27 +159,87 @@ export const LedBannerFullScreen = ({
                   ) : undefined
                 }
               >
-                {[...Array(10)].map((_, seg) => {
-                  const segment = canvas.skiaTextWidth + SPACER;
-                  const baseX = seg * segment;
-                  return (
-                    <Group key={`marquee-${seg}`}>
-                      {isGlowEffect ? (
-                        <Group
-                          layer={
-                            <Paint>
-                              <Blur blur={glowBlurRadius} mode="clamp" />
-                            </Paint>
-                          }
-                        >
-                          {canvas.skiaGlyphs.map((g, gi) => (
+                {showGradientBackdrop ? (
+                  <GradientBackdrop
+                    key={`gradient-${gradientBackgroundPreset}`}
+                    preset={gradientBackgroundPreset as GradientBackdropId}
+                    width={canvas.skiaCanvasLayout.width}
+                    height={canvas.skiaCanvasLayout.height}
+                    opacity={hasBgPhoto ? 0.4 : 1}
+                  />
+                ) : null}
+                <Group opacity={blinkOpacity} transform={canvas.skiaMarqueeTransform}>
+                  {[...Array(10)].map((_, seg) => {
+                    const segment = canvas.skiaTextWidth + SPACER;
+                    const baseX = seg * segment;
+                    return (
+                      <Group key={`marquee-${seg}`}>
+                        {isGlowEffect ? (
+                          <Group
+                            layer={
+                              <Paint>
+                                <Blur blur={glowBlurRadius} mode="clamp" />
+                              </Paint>
+                            }
+                          >
+                            {canvas.skiaGlyphs.map((g, gi) => (
+                              <SkiaText
+                                key={`glow-${gi}`}
+                                x={baseX + g.x}
+                                y={g.y}
+                                text={g.text}
+                                font={canvas.skiaFont}
+                                color={glowLayerColor}
+                              >
+                                {skiaStrokeWidth > 0 && (
+                                  <Paint
+                                    style="stroke"
+                                    strokeWidth={Math.round(
+                                      (skiaStrokeWidth / 100) * 30,
+                                    )}
+                                    color="white"
+                                  >
+                                    {dropShadow > 0 && (
+                                      <Shadow
+                                        dx={5}
+                                        dy={5}
+                                        blur={Math.round((dropShadow / 100) * 5)}
+                                        color="rgba(0, 0, 0, 0.5)"
+                                      />
+                                    )}
+                                  </Paint>
+                                )}
+                                {dropShadow > 0 && skiaStrokeWidth === 0 && (
+                                  <Shadow
+                                    dx={5}
+                                    dy={5}
+                                    blur={Math.round((dropShadow / 100) * 5)}
+                                    color="rgba(0, 0, 0, 0.5)"
+                                  />
+                                )}
+                              </SkiaText>
+                            ))}
+                          </Group>
+                        ) : null}
+                        {canvas.skiaGlyphs.map((g, gi) => (
+                          <Group key={`${seg}-${gi}`}>
+                            {/* {skiaStrokeWidth > 0 ? (
+                                <SkiaText
+                                  x={baseX + g.x}
+                                  y={g.y}
+                                  text={g.text}
+                                  font={canvas.skiaFont}
+                                  color="gray"
+                                  style="stroke"
+                                  strokeWidth={skiaStrokeWidth}
+                                />
+                              ) : null} */}
                             <SkiaText
-                              key={`glow-${gi}`}
                               x={baseX + g.x}
                               y={g.y}
                               text={g.text}
                               font={canvas.skiaFont}
-                              color={glowLayerColor}
+                              color={textSelectedColor}
                             >
                               {skiaStrokeWidth > 0 && (
                                 <Paint
@@ -233,61 +268,12 @@ export const LedBannerFullScreen = ({
                                 />
                               )}
                             </SkiaText>
-                          ))}
-                        </Group>
-                      ) : null}
-                      {canvas.skiaGlyphs.map((g, gi) => (
-                        <Group key={`${seg}-${gi}`}>
-                          {/* {skiaStrokeWidth > 0 ? (
-                              <SkiaText
-                                x={baseX + g.x}
-                                y={g.y}
-                                text={g.text}
-                                font={canvas.skiaFont}
-                                color="gray"
-                                style="stroke"
-                                strokeWidth={skiaStrokeWidth}
-                              />
-                            ) : null} */}
-                          <SkiaText
-                            x={baseX + g.x}
-                            y={g.y}
-                            text={g.text}
-                            font={canvas.skiaFont}
-                            color={textSelectedColor}
-                          >
-                            {skiaStrokeWidth > 0 && (
-                              <Paint
-                                style="stroke"
-                                strokeWidth={Math.round(
-                                  (skiaStrokeWidth / 100) * 30,
-                                )}
-                                color="white"
-                              >
-                                {dropShadow > 0 && (
-                                  <Shadow
-                                    dx={5}
-                                    dy={5}
-                                    blur={Math.round((dropShadow / 100) * 5)}
-                                    color="rgba(0, 0, 0, 0.5)"
-                                  />
-                                )}
-                              </Paint>
-                            )}
-                            {dropShadow > 0 && skiaStrokeWidth === 0 && (
-                              <Shadow
-                                dx={5}
-                                dy={5}
-                                blur={Math.round((dropShadow / 100) * 5)}
-                                color="rgba(0, 0, 0, 0.5)"
-                              />
-                            )}
-                          </SkiaText>
-                        </Group>
-                      ))}
-                    </Group>
-                  );
-                })}
+                          </Group>
+                        ))}
+                      </Group>
+                    );
+                  })}
+                </Group>
               </Group>
             </Canvas>
           </View>

@@ -56,9 +56,9 @@ function getSliderPropsForEffect(
         label: "Pixel block size",
         value: values.pixelSize,
         onChange: setters.setPixelSize,
-        minimumValue: 2,
-        maximumValue: 24,
-        step: 1,
+        minimumValue: 0,
+        maximumValue: 10,
+        step: 0.2,
       };
     default:
       return null;
