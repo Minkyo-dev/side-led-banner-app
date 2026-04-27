@@ -318,9 +318,27 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           }
         }
         setPresetSlots(slots);
+        const active = activePresetRef.current;
+        if (active >= 0 && active < slots.length) {
+          const chosen = slots[active];
+          if (chosen) {
+            setConfig(
+              configFromPreset(chosen, configRef.current.content.playOption),
+            );
+          }
+        }
       } catch {
         if (!cancelled) {
           setPresetSlots(blankSlots);
+          const active = activePresetRef.current;
+          if (active >= 0 && active < blankSlots.length) {
+            const chosen = blankSlots[active];
+            if (chosen) {
+              setConfig(
+                configFromPreset(chosen, configRef.current.content.playOption),
+              );
+            }
+          }
           void persistPresetSlotsSnapshot(blankSlots).catch((err) => {
             if (__DEV__)
               console.warn("[presets] persist after load error", err);
