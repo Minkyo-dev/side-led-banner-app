@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-    Easing,
-    cancelAnimation,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withTiming,
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from "react-native-reanimated";
 
 const SPACER = 80;
@@ -14,6 +14,7 @@ export interface UseMarqueeAnimationParams {
   text: string;
   speed: number;
   playOption: "one" | "multi";
+  oneLineJoinMode: "space3" | "concat";
 }
 
 type ContainerLayoutEvent = {
@@ -32,12 +33,19 @@ export function useMarqueeAnimation({
   text,
   speed,
   playOption,
+  oneLineJoinMode,
 }: UseMarqueeAnimationParams) {
   const translateX = useSharedValue(0);
   const [textWidth, setTextWidth] = useState(0);
 
+  const oneLineText = text.replace(/\n/g, "");
   const displayText =
-    playOption === "one" ? text.replace(/\n/g, "   ") : text;
+    playOption === "one"
+      ? oneLineJoinMode === "space3"
+        ? `${oneLineText}   `
+        : oneLineText
+      : text;
+  const spacer = playOption === "one" ? 10 : SPACER;
 
   useEffect(() => {
     if (speed === 0 || textWidth === 0) {
@@ -46,7 +54,7 @@ export function useMarqueeAnimation({
       return;
     }
 
-    const totalShift = textWidth + SPACER;
+    const totalShift = textWidth + spacer;
     const duration = (totalShift / (speed * 2)) * 1000;
 
     translateX.value = 0;
@@ -58,7 +66,7 @@ export function useMarqueeAnimation({
       -1,
       false,
     );
-  }, [speed, text, playOption, textWidth]);
+  }, [speed, text, playOption, oneLineJoinMode, textWidth, spacer]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -82,6 +90,6 @@ export function useMarqueeAnimation({
     animatedStyle,
     onContainerLayout,
     onTextLayout,
-    SPACER,
+    SPACER: spacer,
   };
 }

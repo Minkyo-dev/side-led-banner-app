@@ -1,7 +1,8 @@
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity } from "react-native";
 
 import Slider from "@react-native-community/slider";
 import { View } from "react-native";
+import { sliderComponentStyles as styles } from "@/constants/styles";
 
 export const SliderComponent = ({
   value,
@@ -53,34 +54,3 @@ export const SliderComponent = ({
   );
 };
 
-const styles = StyleSheet.create({
-  sliderContainer: {
-    height: 40,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    // paddingVertical: 10,
-    paddingTop: 15,
-    paddingBottom: 30,
-    marginBottom: 5,
-    borderBottomWidth: 2,
-    borderBottomColor: "#DDDDDD",
-    // backgroundColor: 'blue',
-  },
-  slider: {
-    flex: 1,
-    height: 40,
-    paddingTop: 4,
-  },
-  sliderButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sliderButtonText: {
-    fontSize: 30,
-    color: "#B4B4B4",
-    fontWeight: "400",
-  },
-});

@@ -13,6 +13,7 @@ export interface UseMarqueePixelAnimationParams {
   text: string;
   speed: number;
   playOption: "one" | "multi";
+  oneLineJoinMode: "space3" | "concat";
 }
 
 type TextLayoutEvent = {
@@ -28,13 +29,20 @@ export function useMarqueePixelAnimation({
   text,
   speed,
   playOption,
+  oneLineJoinMode,
   font,
 }: UseMarqueePixelAnimationParams & {font: SkFont | null}) {
   const translateX = useSharedValue(0);
   const [textWidth, setTextWidth] = useState(0);
 
+  const oneLineText = text.replace(/\n/g, "");
   const displayText =
-    playOption === "one" ? text.replace(/\n/g, "   ") : text;
+    playOption === "one"
+      ? oneLineJoinMode === "space3"
+        ? `${oneLineText}   `
+        : oneLineText
+      : text;
+  const spacer = playOption === "one" ? 0 : SPACER;
 
   useEffect(() => {
     if (speed === 0 || textWidth === 0) {
@@ -43,7 +51,7 @@ export function useMarqueePixelAnimation({
       return;
     }
 
-    const totalShift = textWidth + SPACER;
+    const totalShift = textWidth + spacer;
     const duration = (totalShift / (speed * 2)) * 1000;
 
     translateX.value = 0;
@@ -55,11 +63,11 @@ export function useMarqueePixelAnimation({
       -1,
       false,
     );
-  }, [speed, text, playOption, textWidth]);
+  }, [speed, text, playOption, oneLineJoinMode, textWidth, spacer]);
 
   useEffect(() => {
     if (font && displayText) {
-      setTextWidth(font.getTextWidth(displayText));
+      setTextWidth(font.measureText(displayText).width);
     } else {
       setTextWidth(0);
     }
@@ -77,7 +85,7 @@ export function useMarqueePixelAnimation({
     displayText,
     translateX,
     onTextLayout,
-    SPACER,
+    SPACER: spacer,
     textWidth,
   };
 }

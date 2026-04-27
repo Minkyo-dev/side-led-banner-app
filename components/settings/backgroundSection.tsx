@@ -56,7 +56,11 @@ const chip = StyleSheet.create({
 export const BackgroundSection = ({}: BackgroundSectionProps) => {
   const [photoSheet, setPhotoSheet] = useState(false);
   const { config, updateConfig } = useSettings();
-  const { backgroundColor, backgroundBlur, backgroundImageUri } =
+  const {
+    backgroundColor,
+    backgroundBlur,
+    backgroundImageUri,
+  } =
     config.background;
 
   const setBackgroundBlur = (value: number) =>
@@ -150,7 +154,6 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
             style={chip.colorPickerItemButton}
             onPress={() => setPhotoSheet(true)}
             accessibilityLabel="Background photo"
-            accessibilityHint="Choose from gallery, camera, or default image"
           >
             {hasBgPhoto ? (
               <Image

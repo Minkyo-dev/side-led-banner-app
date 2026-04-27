@@ -1,4 +1,5 @@
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
+import { colorPickerStyles as styles } from "@/constants/styles";
 
 export const ColorPicker = ({ colorList, selectedColor, onColorSelect }: {
   colorList: string[],
@@ -29,36 +30,3 @@ export const ColorPicker = ({ colorList, selectedColor, onColorSelect }: {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  colorPickerContainer: {
-    gap: 10,
-    marginHorizontal: 15,
-    marginBottom: 5,
-  },
-  colorPickerRow: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 5,
-  },
-  colorPickerItemButton: {
-    // flex: 1,
-    position: 'relative',
-  },
-  colorPickerItem: {
-    width: 32,
-    height: 32,
-    borderRadius: 50,
-  },
-  colorPickerItemActive: {
-    position: 'absolute',
-    top: -4,
-    left: -4,
-    borderWidth: 2.5,
-    borderColor: 'black',
-    width: 40,
-    height: 40,
-    borderRadius: 50,
-  }
-});

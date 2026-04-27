@@ -2,6 +2,7 @@ import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
+import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import React, {
   createContext,
   useCallback,
@@ -37,6 +38,7 @@ export interface BannerConfig {
   content: {
     previewText: string;
     playOption: "one" | "multi";
+    oneLineJoinMode: "space3" | "concat";
     blurColor: string;
   };
   appearance: {
@@ -57,6 +59,12 @@ export interface BannerConfig {
     fontWeight: "normal" | "bold";
     /** Effect에서 Gradient 켰을 때 배경 물결 등 (wave만 구현) */
     gradientBackgroundPreset: string;
+    /** 배경 가장자리 이미지 이펙트 프리셋 */
+    backgroundEffectPreset:
+      | "none"
+      | "effect1"
+      | "heartBgA"
+      | SpeechBubblePresetId;
   };
   background: {
     backgroundColor: string;
@@ -78,6 +86,7 @@ export type PresetSnapshot = {
 };
 
 export const PRESET_SLOT_COUNT = 5;
+const PRESET_AUTOSAVE_DEBOUNCE_MS = 100;
 
 /** appearance만 deep copy용 (배열·맵 참조 끊기) */
 function dupAppearance(
@@ -120,6 +129,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     previewText:
       "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
     playOption: "one",
+    oneLineJoinMode: "space3",
     blurColor: "",
   },
   appearance: {
@@ -143,6 +153,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     blinkSpeed: 5,
     pixelSize: 6,
     gradientBackgroundPreset: "wave",
+    backgroundEffectPreset: "none",
   },
   background: {
     backgroundColor: "#FFFFFF",
@@ -273,6 +284,24 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [ui.activePreset]);
 
   useEffect(() => {
+    if (!presetsStorageReadyRef.current) return;
+    const timeoutId = setTimeout(() => {
+      const active = activePresetRef.current;
+      setPresetSlots((prev) => {
+        if (active < 0 || active >= PRESET_SLOT_COUNT) return prev;
+        const next = [...prev];
+        next[active] = presetFromConfig(configRef.current);
+        void persistPresetSlotsSnapshot(next).catch((err) => {
+          if (__DEV__) console.warn("[presets] autosave persist failed", err);
+        });
+        return next;
+      });
+    }, PRESET_AUTOSAVE_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [config, ui.activePreset]);
+
+  useEffect(() => {
     let cancelled = false;
     const blankSlots = Array.from({ length: PRESET_SLOT_COUNT }, () =>
       presetFromConfig(DEFAULT_BANNER_CONFIG),
@@ -289,9 +318,27 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           }
         }
         setPresetSlots(slots);
+        const active = activePresetRef.current;
+        if (active >= 0 && active < slots.length) {
+          const chosen = slots[active];
+          if (chosen) {
+            setConfig(
+              configFromPreset(chosen, configRef.current.content.playOption),
+            );
+          }
+        }
       } catch {
         if (!cancelled) {
           setPresetSlots(blankSlots);
+          const active = activePresetRef.current;
+          if (active >= 0 && active < blankSlots.length) {
+            const chosen = blankSlots[active];
+            if (chosen) {
+              setConfig(
+                configFromPreset(chosen, configRef.current.content.playOption),
+              );
+            }
+          }
           void persistPresetSlotsSnapshot(blankSlots).catch((err) => {
             if (__DEV__)
               console.warn("[presets] persist after load error", err);

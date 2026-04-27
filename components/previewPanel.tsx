@@ -1,4 +1,3 @@
-import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
@@ -6,36 +5,32 @@ import {
   GRADIENT_BACKDROP_IDS,
   type GradientBackdropId,
 } from "@/constants/gradientBackgroundPresets";
+import {
+  isSpeechBubblePreset,
+  SPEECH_BUBBLE_PRESETS,
+} from "@/constants/speechBubblePresets";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
+import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimation";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
-import {
-  Blur,
-  Canvas,
-  Group,
-  Paint,
-  RuntimeShader,
-  Shadow,
-  Skia,
-  Text as SkiaText,
-} from "@shopify/react-native-skia";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  NativeSyntheticEvent,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextLayoutEvent,
   TextInput,
-  TextLayoutEventData,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
+import { MarqueeCanvas } from "./animation/MarqueeCanvas";
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
@@ -45,6 +40,10 @@ const INTENTIONAL_NEWLINE_MARKER = "↵";
 
 const TEXT_MAX_WIDTH = 100_000;
 const INPUT_WIDTH_CURSOR_PAD = 28;
+const INPUT_MAX_LINES = 3;
+const INPUT_HEIGHT_FALLBACK = 84;
+const INPUT_HEIGHT_BUFFER = 20;
+const INPUT_HEIGHT_SAMPLE_GLYPH = "Ag";
 
 function formatMultiLineInputDisplay(stored: string): string {
   const clean = stored.replace(/↵/g, "");
@@ -91,6 +90,7 @@ export default function PreviewPanel() {
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
   const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
+  const [inputFixedHeight, setInputFixedHeight] = useState(INPUT_HEIGHT_FALLBACK);
   const [pendingSelection, setPendingSelection] = useState<
     { start: number; end: number } | undefined
   >(undefined);
@@ -99,13 +99,12 @@ export default function PreviewPanel() {
     handleTextChange,
     updateConfig,
     ui,
-    savePreset,
     loadPreset,
     resetPresetSlot,
   } = useSettings();
   const { activePreset } = ui;
 
-  const { previewText, playOption } = config.content;
+  const { previewText, playOption, oneLineJoinMode } = config.content;
   const {
     font,
     fontSize,
@@ -116,23 +115,33 @@ export default function PreviewPanel() {
     fontWeight,
     effectSelectedItems,
     gradientBackgroundPreset,
+    backgroundEffectPreset,
     blinkSpeed,
     pixelSize: configPixelSize,
     glowIntensity,
     glowColor,
   } = config.appearance;
-  const { backgroundColor, backgroundImageUri } = config.background;
+  const isNanumGothic = font === "nanum_gothic";
+  const inputMaxLines = isNanumGothic ? 1 : INPUT_MAX_LINES;
+  const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const isPortrait = windowHeight >= windowWidth;
 
-  const { displayText, translateX, onContainerLayout, onTextLayout, SPACER } =
-    useMarqueeAnimation({
-      text: previewText,
-      speed: textMoveSpeed,
-      playOption,
-    });
+  const {
+    displayText,
+    translateX,
+    onContainerLayout,
+    onTextLayout,
+    SPACER,
+  } = useMarqueeAnimation({
+    text: previewText,
+    speed: textMoveSpeed,
+    playOption,
+    oneLineJoinMode,
+  });
 
   const previewFontSize = useMemo(() => {
     if (previewHeight === 0) return 100;
@@ -159,16 +168,6 @@ export default function PreviewPanel() {
   const pixelShaderSize = isPixelEffect ? Math.max(2, configPixelSize) : 1;
   const skiaStrokeWidth = (outLine / 100) * 24;
 
-  const source = Skia.RuntimeEffect.Make(`
-  uniform shader content;
-  uniform float pixelSize;
-
-  half4 main(vec2 pos) {
-    vec2 p = floor(pos / pixelSize) * pixelSize + (pixelSize / 2.0);
-    return content.eval(p);
-  }
-`)!;
-
   const glowBlurRadius = useMemo(
     () => Math.max(2, Math.min(18, 2 + (glowIntensity / 100) * 16)),
     [glowIntensity],
@@ -193,6 +192,16 @@ export default function PreviewPanel() {
     effectSelectedItems.includes("Blink"),
     blinkSpeed,
   );
+  const backgroundEdgeEffectAnim =
+    useBackgroundEffectAnimation(backgroundEffectPreset);
+  let previewTextContainerSize: { width: `${number}%`; height: `${number}%` } | null =
+    null;
+  if (isSpeechBubblePreset(backgroundEdgeEffectAnim.id)) {
+    const preset = SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id];
+    const previewBox =
+      Platform.OS === "ios" ? preset.ios.previewTextBox : preset.android.previewTextBox;
+    previewTextContainerSize = previewBox.portrait;
+  }
 
   const onPreviewLayout = (e: LayoutEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -236,10 +245,13 @@ export default function PreviewPanel() {
         : { text: e };
 
     const working = merged.text;
-    const forStorage = stripMarkersForStorage(working);
+    const stripped = stripMarkersForStorage(working);
+    const forStorage = isNanumGothic
+      ? stripped.split("\n")[0] ?? ""
+      : stripped;
     handleTextChange(forStorage);
 
-    if (playOption === "multi" && merged.cursorInMerged !== undefined) {
+    if (!isNanumGothic && playOption === "multi" && merged.cursorInMerged !== undefined) {
       const storageIdx = stripMarkersForStorage(
         working.slice(0, merged.cursorInMerged),
       ).length;
@@ -251,14 +263,22 @@ export default function PreviewPanel() {
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
 
-  const handleInputMeasureLayout = (
-    e: NativeSyntheticEvent<TextLayoutEventData>,
-  ) => {
+  const handleInputMeasureLayout = (e: TextLayoutEvent) => {
     const maxWidth = e.nativeEvent.lines.reduce(
       (widest, line) => Math.max(widest, line.width),
       0,
     );
     setMeasuredTextMaxW(maxWidth);
+  };
+
+  const handleInputHeightMeasureLayout = (e: TextLayoutEvent) => {
+    const lines = e.nativeEvent.lines.slice(0, inputMaxLines);
+    if (lines.length === 0) return;
+    const measured = lines.reduce((sum, line) => sum + line.height, 0);
+    const nextHeight = Math.ceil(measured + INPUT_HEIGHT_BUFFER);
+    if (nextHeight > 0 && nextHeight !== inputFixedHeight) {
+      setInputFixedHeight(nextHeight);
+    }
   };
 
   return (
@@ -280,143 +300,68 @@ export default function PreviewPanel() {
             source={{ uri: backgroundImageUri }}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
+            blurRadius={backgroundBlur / 8}
           />
         ) : null}
-        <View
-          style={StyleSheet.absoluteFill}
-          onLayout={canvas.onSkiaCanvasLayout}
-        >
-          <Canvas style={{ flex: 1 }} opaque={false}>
-            {showGradientBackdrop ? (
-              <GradientBackdrop
-                key={`gradient-${gradientBackgroundPreset}`}
-                preset={gradientBackgroundPreset as GradientBackdropId}
-                width={canvas.skiaCanvasLayout.width}
-                height={canvas.skiaCanvasLayout.height}
-                opacity={hasBgPhoto ? 0.4 : 1}
-              />
-            ) : null}
-            <Group
-              opacity={blinkOpacity}
-              transform={canvas.skiaMarqueeTransform}
-              layer={
-                isPixelEffect ? (
-                  <Paint>
-                    <RuntimeShader
-                      source={source}
-                      uniforms={{ pixelSize: pixelShaderSize }}
-                    />
-                  </Paint>
-                ) : undefined
-              }
-            >
-              {[...Array(5)].map((_, seg) => {
-                const segment = canvas.skiaTextWidth + SPACER;
-                const baseX = seg * segment;
-                return (
-                  <Group key={`marquee-${seg}`}>
-                    {isGlowEffect ? (
-                      <Group
-                        layer={
-                          <Paint>
-                            <Blur blur={glowBlurRadius} mode="clamp" />
-                          </Paint>
-                        }
-                      >
-                        {canvas.skiaGlyphs.map((g, gi) => (
-                          <SkiaText
-                            key={`glow-${gi}`}
-                            x={baseX + g.x}
-                            y={g.y}
-                            text={g.text}
-                            font={canvas.skiaFont}
-                            color={glowLayerColor}
-                          >
-                            {skiaStrokeWidth > 0 && (
-                              <Paint
-                                style="stroke"
-                                strokeWidth={Math.round(
-                                  (skiaStrokeWidth / 100) * 30,
-                                )}
-                                color="white"
-                              >
-                                {dropShadow > 0 && (
-                                  <Shadow
-                                    dx={5}
-                                    dy={5}
-                                    blur={Math.round((dropShadow / 100) * 5)}
-                                    color="rgba(0, 0, 0, 0.5)"
-                                  />
-                                )}
-                              </Paint>
-                            )}
-                            {dropShadow > 0 && skiaStrokeWidth === 0 && (
-                              <Shadow
-                                dx={5}
-                                dy={5}
-                                blur={Math.round((dropShadow / 100) * 5)}
-                                color="rgba(0, 0, 0, 0.5)"
-                              />
-                            )}
-                          </SkiaText>
-                        ))}
-                      </Group>
-                    ) : null}
-                    {canvas.skiaGlyphs.map((g, gi) => (
-                      <Group key={`${seg}-${gi}`}>
-                        {/* {skiaStrokeWidth > 0 ? (
-                          <SkiaText
-                            x={baseX + g.x}
-                            y={g.y}
-                            text={g.text}
-                            font={canvas.skiaFont}
-                            color="gray"
-                            style="stroke"
-                            strokeWidth={skiaStrokeWidth}
-                          />
-                        ) : null} */}
-                        <SkiaText
-                          x={baseX + g.x}
-                          y={g.y}
-                          text={g.text}
-                          font={canvas.skiaFont}
-                          color={previewTextColor}
-                        >
-                          {skiaStrokeWidth > 0 && (
-                            <Paint
-                              style="stroke"
-                              strokeWidth={Math.round(
-                                (skiaStrokeWidth / 100) * 30,
-                              )}
-                              color="white"
-                            >
-                              {dropShadow > 0 && (
-                                <Shadow
-                                  dx={5}
-                                  dy={5}
-                                  blur={Math.round((dropShadow / 100) * 5)}
-                                  color="rgba(0, 0, 0, 0.5)"
-                                />
-                              )}
-                            </Paint>
-                          )}
-                          {dropShadow > 0 && skiaStrokeWidth === 0 && (
-                            <Shadow
-                              dx={5}
-                              dy={5}
-                              blur={Math.round((dropShadow / 100) * 5)}
-                              color="rgba(0, 0, 0, 0.5)"
-                            />
-                          )}
-                        </SkiaText>
-                      </Group>
-                    ))}
-                  </Group>
-                );
-              })}
-            </Group>
-          </Canvas>
-        </View>
+        <BackgroundEffectLayer
+          effect={backgroundEdgeEffectAnim}
+          translateX={translateX}
+          isPortrait={isPortrait}
+          mode="preview"
+        />
+        {previewTextContainerSize ? (
+          <View
+            style={{
+              position: "absolute",
+              width: previewTextContainerSize.width as `${number}%`,
+              height: previewTextContainerSize.height as `${number}%`,
+              alignSelf: "center",
+              top: "14%",
+            }}
+            onLayout={canvas.onSkiaCanvasLayout}
+          >
+            <MarqueeCanvas
+              canvas={canvas}
+              isPixelEffect={isPixelEffect}
+              pixelShaderSize={pixelShaderSize}
+              showGradientBackdrop={showGradientBackdrop}
+              gradientBackgroundPreset={gradientBackgroundPreset}
+              hasBgPhoto={hasBgPhoto}
+              blinkOpacity={blinkOpacity}
+              segmentCount={5}
+              spacer={SPACER}
+              isGlowEffect={isGlowEffect}
+              glowBlurRadius={glowBlurRadius}
+              glowLayerColor={glowLayerColor}
+              skiaStrokeWidth={skiaStrokeWidth}
+              dropShadow={dropShadow}
+              previewTextColor={previewTextColor}
+            />
+          </View>
+        ) : (
+          <View
+            style={StyleSheet.absoluteFill}
+            onLayout={canvas.onSkiaCanvasLayout}
+          >
+            <MarqueeCanvas
+              canvas={canvas}
+              isPixelEffect={isPixelEffect}
+              pixelShaderSize={pixelShaderSize}
+              showGradientBackdrop={showGradientBackdrop}
+              gradientBackgroundPreset={gradientBackgroundPreset}
+              hasBgPhoto={hasBgPhoto}
+              blinkOpacity={blinkOpacity}
+              segmentCount={5}
+              spacer={SPACER}
+              isGlowEffect={isGlowEffect}
+              glowBlurRadius={glowBlurRadius}
+              glowLayerColor={glowLayerColor}
+              skiaStrokeWidth={skiaStrokeWidth}
+              dropShadow={dropShadow}
+              previewTextColor={previewTextColor}
+            />
+          </View>
+        )}
       </View>
 
       <View style={styles.presetButtonsContainer}>
@@ -429,10 +374,7 @@ export default function PreviewPanel() {
                 : btnStyles.presetButton
             }
             onPress={() => loadPreset(index)}
-            onLongPress={() => savePreset(index)}
-            delayLongPress={380}
             accessibilityLabel={`Preset ${index + 1}`}
-            accessibilityHint="Tap to switch preset; the previous slot is saved automatically. Long press to save to this slot."
           >
             <LinearGradientExpo
               colors={
@@ -489,6 +431,27 @@ export default function PreviewPanel() {
         >
           {displayInputText || " "}
         </Text>
+        <Text
+          style={[
+            styles.contentsInput,
+            {
+              position: "absolute",
+              opacity: 0,
+              left: -TEXT_MAX_WIDTH,
+              width: TEXT_MAX_WIDTH,
+              fontFamily: appFontFamilyForText(
+                font,
+                fontWeight === "bold" ? "bold" : "normal",
+              ),
+            },
+          ]}
+          onTextLayout={handleInputHeightMeasureLayout}
+          pointerEvents="none"
+        >
+          {Array.from({ length: inputMaxLines })
+            .map(() => INPUT_HEIGHT_SAMPLE_GLYPH)
+            .join("\n")}
+        </Text>
         <ScrollView
           horizontal
           nestedScrollEnabled
@@ -507,14 +470,18 @@ export default function PreviewPanel() {
         >
           <TextInput
             editable
-            multiline={playOption === "multi"}
-            scrollEnabled
+            multiline={playOption === "multi" && !isNanumGothic}
+            scrollEnabled={false}
             style={[
               styles.contentsInput,
               {
                 flex: 0,
                 width: inputHorizontalCanvasWidth,
-                minHeight: 72,
+                height: inputFixedHeight,
+                maxHeight: inputFixedHeight,
+                paddingTop: 0,
+                paddingBottom: 0,
+                includeFontPadding: false,
                 fontFamily: appFontFamilyForText(
                   font,
                   fontWeight === "bold" ? "bold" : "normal",
