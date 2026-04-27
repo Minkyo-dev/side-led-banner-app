@@ -5,7 +5,7 @@ import {
 import type { BackgroundEffectAnimationResult } from "@/hooks/useBackgroundEffectAnimation";
 import { Image } from "expo-image";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import { HeartBackgroundTicker } from "./HeartBackgroundTicker";
 
@@ -68,13 +68,14 @@ export function BackgroundEffectLayer({
 
   if (isSpeechBubblePreset(effect.id)) {
     const preset = SPEECH_BUBBLE_PRESETS[effect.id];
+    const platformPreset = Platform.OS === "ios" ? preset.ios : preset.android;
     const source =
       mode === "preview"
         ? preset.previewSource
         : isPortrait
           ? preset.fullscreenPortraitSource
           : preset.fullscreenLandscapeSource;
-    const previewInset = (preset.previewHeightBoostPx ?? 0) / 2;
+    const previewInset = (platformPreset.previewHeightBoostPx ?? 0) / 2;
     const imageStyle =
       mode === "preview" && previewInset > 0
         ? {

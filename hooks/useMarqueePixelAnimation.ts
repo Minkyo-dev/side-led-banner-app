@@ -67,7 +67,7 @@ export function useMarqueePixelAnimation({
 
   useEffect(() => {
     if (font && displayText) {
-      setTextWidth(font.getTextWidth(displayText));
+      setTextWidth(font.measureText(displayText).width);
     } else {
       setTextWidth(0);
     }

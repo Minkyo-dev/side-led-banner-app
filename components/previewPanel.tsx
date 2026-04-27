@@ -197,8 +197,9 @@ export default function PreviewPanel() {
   let previewTextContainerSize: { width: `${number}%`; height: `${number}%` } | null =
     null;
   if (isSpeechBubblePreset(backgroundEdgeEffectAnim.id)) {
+    const preset = SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id];
     const previewBox =
-      SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].previewTextBox;
+      Platform.OS === "ios" ? preset.ios.previewTextBox : preset.android.previewTextBox;
     previewTextContainerSize = previewBox.portrait;
   }
 

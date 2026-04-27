@@ -4,10 +4,10 @@ import { textColorPalette } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
 import React, { useMemo } from "react";
 import {
-  Dimensions,
   ScrollView,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
@@ -19,12 +19,12 @@ interface TextSectionProps {}
 
 export const TextSection = ({}: TextSectionProps) => {
   const insets = useSafeAreaInsets();
+  const { height: windowH } = useWindowDimensions();
   /** 하단 네비바와 겹치지 않게 최대 높이를 설정 */
   const fontDropdownMaxHeight = useMemo(() => {
-    const windowH = Dimensions.get("window").height;
     const cap = Math.min(220, windowH * 0.32 - insets.bottom);
     return Math.max(140, cap);
-  }, [insets.bottom]);
+  }, [insets.bottom, windowH]);
 
   const fontDropdownFlatListProps = useMemo(
     () => ({

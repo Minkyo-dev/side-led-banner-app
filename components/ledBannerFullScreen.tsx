@@ -15,6 +15,7 @@ import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
   Modal,
+  Platform,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -95,10 +96,15 @@ export const LedBannerFullScreen = ({
   const isSpeechBgActive =
     backgroundEdgeEffectAnim.id === "speechBg1" ||
     backgroundEdgeEffectAnim.id === "speechBg2";
+  const speechPresetPlatform = isSpeechBgActive
+    ? Platform.OS === "ios"
+      ? SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].ios
+      : SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].android
+    : null;
   const speechTextContainerStyle: ViewStyle = isSpeechBgActive
     ? isPortrait
-      ? SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].fullscreenTextBox.portrait
-      : SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].fullscreenTextBox.landscape
+      ? speechPresetPlatform!.fullscreenTextBox.portrait
+      : speechPresetPlatform!.fullscreenTextBox.landscape
     : {};
   
   const canvas = usePreviewPanelCanvas({
