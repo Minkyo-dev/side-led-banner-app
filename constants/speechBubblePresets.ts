@@ -7,24 +7,24 @@ export const SPEECH_BUBBLE_PRESETS = {
       previewHeightBoostPx: 20,
       // fullscreen에서 말풍선 안 삐져나오게 landscape/portrait text box 크기
       fullscreenTextBox: {
-        landscape: { width: "85%", height: "100%" },
-        portrait: { width: "74%", height: "86%" },
+        landscape: { width: "82%", height: "94%" },
+        portrait: { width: "70%", height: "82%" },
       },
       // preview 전용 text box 크기
       previewTextBox: {
-        portrait: { width: "74%", height: "86%" },
+        portrait: { width: "70%", height: "82%" },
       },
     },
     android: {
       previewHeightBoostPx: 20,
       // fullscreen에서 말풍선 안 삐져나오게 landscape/portrait text box 크기
       fullscreenTextBox: {
-        landscape: { width: "85%", height: "100%" },
-        portrait: { width: "74%", height: "86%" },
+        landscape: { width: "82%", height: "94%" },
+        portrait: { width: "70%", height: "82%" },
       },
       // preview 전용 text box 크기
       previewTextBox: {
-        portrait: { width: "74%", height: "86%" },
+        portrait: { width: "70%", height: "82%" },
       },
     },
   },
@@ -36,24 +36,24 @@ export const SPEECH_BUBBLE_PRESETS = {
       previewHeightBoostPx: 20, // preview에서 자연스럽게 조이도록 이미지높이 조절
       // fullscreen에서 말풍선 안 삐져나오게 landscape/portrait text box 크기
       fullscreenTextBox: {
-        landscape: { width: "85%", height: "75%" },
-        portrait: { width: "74%", height: "100%" },
+        landscape: { width: "82%", height: "70%" },
+        portrait: { width: "70%", height: "94%" },
       },
       // preview 전용 text box 크기
       previewTextBox: {
-        portrait: { width: "80%", height: "50%" },
+        portrait: { width: "76%", height: "46%" },
       },
     },
     android: {
       previewHeightBoostPx: 20, // preview에서 자연스럽게 조이도록 이미지높이 조절
       // fullscreen에서 말풍선 안 삐져나오게 landscape/portrait text box 크기
       fullscreenTextBox: {
-        landscape: { width: "85%", height: "75%" },
-        portrait: { width: "74%", height: "100%" },
+        landscape: { width: "82%", height: "70%" },
+        portrait: { width: "70%", height: "94%" },
       },
       // preview 전용 text box 크기
       previewTextBox: {
-        portrait: { width: "80%", height: "50%" },
+        portrait: { width: "76%", height: "46%" },
       },
     },
   },
