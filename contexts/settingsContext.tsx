@@ -57,6 +57,13 @@ export interface BannerConfig {
     fontWeight: "normal" | "bold";
     /** Effect에서 Gradient 켰을 때 배경 물결 등 (wave만 구현) */
     gradientBackgroundPreset: string;
+    /** 배경 가장자리 이미지 이펙트 프리셋 */
+    backgroundEffectPreset:
+      | "none"
+      | "effect1"
+      | "heartBgA"
+      | "speechBg1"
+      | "speechBg2";
   };
   background: {
     backgroundColor: string;
@@ -143,6 +150,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     blinkSpeed: 5,
     pixelSize: 6,
     gradientBackgroundPreset: "wave",
+    backgroundEffectPreset: "none",
   },
   background: {
     backgroundColor: "#FFFFFF",

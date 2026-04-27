@@ -205,4 +205,26 @@ export const styles = StyleSheet.create({
     gap: 4,
     borderRadius: 8,
   },
+  backgroundEffectRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 6,
+    flex: 0,
+    minHeight: 188,
+    alignItems: "flex-start",
+  },
+  backgroundEffectCard: {
+    borderRadius: 10,
+    padding: 3,
+    borderWidth: 2,
+    borderColor: "#BDBDBD",
+    width: 92,
+    overflow: "hidden",
+    backgroundColor: "#FFF",
+  },
+  backgroundEffectThumb: {
+    width: "100%",
+    height: 180,
+    aspectRatio: undefined,
+  },
 });

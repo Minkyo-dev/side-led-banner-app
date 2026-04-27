@@ -5,7 +5,13 @@ import {
 } from "@/constants/gradientBackgroundPresets";
 import { styles } from "@/constants/styles";
 import React from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import {
   type BannerConfig,
@@ -72,6 +78,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
     effectSelectedItems,
     effectParamValues,
     gradientBackgroundPreset,
+    backgroundEffectPreset,
     glowIntensity,
     blinkSpeed,
     pixelSize,
@@ -252,19 +259,73 @@ export const EffectSection = ({}: EffectSectionProps) => {
         <Text allowFontScaling={false}>Background Effect</Text>
       </View>
 
-      <ScrollView
-        horizontal={true}
-        showsHorizontalScrollIndicator={false}
-        style={styles.effectImageContainer}
+      <View
+        style={[
+          styles.effectImageContainer,
+          styles.backgroundEffectRow,
+        ]}
       >
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num, index) => (
+        <TouchableOpacity
+          style={styles.backgroundEffectCard}
+          onPress={() =>
+            updateConfig("appearance", {
+              backgroundEffectPreset:
+                backgroundEffectPreset === "effect1" ? "none" : "effect1",
+            })
+          }
+        >
           <Image
-            key={`effect-image-${index}`}
-            source={require("@/assets/images/effectSample.png")}
-            style={styles.effectImage}
+            source={require("@/assets/images/Effect 1_on_L.png")}
+            style={[styles.effectImage, styles.backgroundEffectThumb]}
+            resizeMode="contain"
           />
-        ))}
-      </ScrollView>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.backgroundEffectCard}
+          onPress={() =>
+            updateConfig("appearance", {
+              backgroundEffectPreset:
+                backgroundEffectPreset === "heartBgA" ? "none" : "heartBgA",
+            })
+          }
+        >
+          <Image
+            source={require("@/assets/images/Heart BG_B.png")}
+            style={[styles.effectImage, styles.backgroundEffectThumb]}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.backgroundEffectCard}
+          onPress={() =>
+            updateConfig("appearance", {
+              backgroundEffectPreset:
+                backgroundEffectPreset === "speechBg1" ? "none" : "speechBg1",
+            })
+          }
+        >
+          <Image
+            source={require("@/assets/images/Speech BG_1_B.png")}
+            style={[styles.effectImage, styles.backgroundEffectThumb]}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.backgroundEffectCard}
+          onPress={() =>
+            updateConfig("appearance", {
+              backgroundEffectPreset:
+                backgroundEffectPreset === "speechBg2" ? "none" : "speechBg2",
+            })
+          }
+        >
+          <Image
+            source={require("@/assets/images/Speech BG_2_B.png")}
+            style={[styles.effectImage, styles.backgroundEffectThumb]}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 };
