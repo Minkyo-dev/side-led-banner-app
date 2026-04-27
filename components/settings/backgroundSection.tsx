@@ -154,7 +154,6 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
             style={chip.colorPickerItemButton}
             onPress={() => setPhotoSheet(true)}
             accessibilityLabel="Background photo"
-            accessibilityHint="Choose from gallery, camera, or default image"
           >
             {hasBgPhoto ? (
               <Image

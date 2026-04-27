@@ -85,6 +85,7 @@ export type PresetSnapshot = {
 };
 
 export const PRESET_SLOT_COUNT = 5;
+const PRESET_AUTOSAVE_DEBOUNCE_MS = 100;
 
 /** appearance만 deep copy용 (배열·맵 참조 끊기) */
 function dupAppearance(
@@ -279,6 +280,24 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     activePresetRef.current = ui.activePreset;
   }, [ui.activePreset]);
+
+  useEffect(() => {
+    if (!presetsStorageReadyRef.current) return;
+    const timeoutId = setTimeout(() => {
+      const active = activePresetRef.current;
+      setPresetSlots((prev) => {
+        if (active < 0 || active >= PRESET_SLOT_COUNT) return prev;
+        const next = [...prev];
+        next[active] = presetFromConfig(configRef.current);
+        void persistPresetSlotsSnapshot(next).catch((err) => {
+          if (__DEV__) console.warn("[presets] autosave persist failed", err);
+        });
+        return next;
+      });
+    }, PRESET_AUTOSAVE_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [config, ui.activePreset]);
 
   useEffect(() => {
     let cancelled = false;

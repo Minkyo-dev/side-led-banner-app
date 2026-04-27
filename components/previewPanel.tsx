@@ -40,6 +40,10 @@ const INTENTIONAL_NEWLINE_MARKER = "↵";
 
 const TEXT_MAX_WIDTH = 100_000;
 const INPUT_WIDTH_CURSOR_PAD = 28;
+const INPUT_MAX_LINES = 3;
+const INPUT_HEIGHT_FALLBACK = 84;
+const INPUT_HEIGHT_BUFFER = 20;
+const INPUT_HEIGHT_SAMPLE_GLYPH = "Ag";
 
 function formatMultiLineInputDisplay(stored: string): string {
   const clean = stored.replace(/↵/g, "");
@@ -86,6 +90,7 @@ export default function PreviewPanel() {
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
   const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
+  const [inputFixedHeight, setInputFixedHeight] = useState(INPUT_HEIGHT_FALLBACK);
   const [pendingSelection, setPendingSelection] = useState<
     { start: number; end: number } | undefined
   >(undefined);
@@ -94,7 +99,6 @@ export default function PreviewPanel() {
     handleTextChange,
     updateConfig,
     ui,
-    savePreset,
     loadPreset,
     resetPresetSlot,
   } = useSettings();
@@ -117,6 +121,8 @@ export default function PreviewPanel() {
     glowIntensity,
     glowColor,
   } = config.appearance;
+  const isNanumGothic = font === "nanum_gothic";
+  const inputMaxLines = isNanumGothic ? 1 : INPUT_MAX_LINES;
   const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
@@ -237,10 +243,13 @@ export default function PreviewPanel() {
         : { text: e };
 
     const working = merged.text;
-    const forStorage = stripMarkersForStorage(working);
+    const stripped = stripMarkersForStorage(working);
+    const forStorage = isNanumGothic
+      ? stripped.split("\n")[0] ?? ""
+      : stripped;
     handleTextChange(forStorage);
 
-    if (playOption === "multi" && merged.cursorInMerged !== undefined) {
+    if (!isNanumGothic && playOption === "multi" && merged.cursorInMerged !== undefined) {
       const storageIdx = stripMarkersForStorage(
         working.slice(0, merged.cursorInMerged),
       ).length;
@@ -258,6 +267,16 @@ export default function PreviewPanel() {
       0,
     );
     setMeasuredTextMaxW(maxWidth);
+  };
+
+  const handleInputHeightMeasureLayout = (e: TextLayoutEvent) => {
+    const lines = e.nativeEvent.lines.slice(0, inputMaxLines);
+    if (lines.length === 0) return;
+    const measured = lines.reduce((sum, line) => sum + line.height, 0);
+    const nextHeight = Math.ceil(measured + INPUT_HEIGHT_BUFFER);
+    if (nextHeight > 0 && nextHeight !== inputFixedHeight) {
+      setInputFixedHeight(nextHeight);
+    }
   };
 
   return (
@@ -353,10 +372,7 @@ export default function PreviewPanel() {
                 : btnStyles.presetButton
             }
             onPress={() => loadPreset(index)}
-            onLongPress={() => savePreset(index)}
-            delayLongPress={380}
             accessibilityLabel={`Preset ${index + 1}`}
-            accessibilityHint="Tap to switch preset; the previous slot is saved automatically. Long press to save to this slot."
           >
             <LinearGradientExpo
               colors={
@@ -413,6 +429,27 @@ export default function PreviewPanel() {
         >
           {displayInputText || " "}
         </Text>
+        <Text
+          style={[
+            styles.contentsInput,
+            {
+              position: "absolute",
+              opacity: 0,
+              left: -TEXT_MAX_WIDTH,
+              width: TEXT_MAX_WIDTH,
+              fontFamily: appFontFamilyForText(
+                font,
+                fontWeight === "bold" ? "bold" : "normal",
+              ),
+            },
+          ]}
+          onTextLayout={handleInputHeightMeasureLayout}
+          pointerEvents="none"
+        >
+          {Array.from({ length: inputMaxLines })
+            .map(() => INPUT_HEIGHT_SAMPLE_GLYPH)
+            .join("\n")}
+        </Text>
         <ScrollView
           horizontal
           nestedScrollEnabled
@@ -431,14 +468,18 @@ export default function PreviewPanel() {
         >
           <TextInput
             editable
-            multiline={playOption === "multi"}
-            scrollEnabled
+            multiline={playOption === "multi" && !isNanumGothic}
+            scrollEnabled={false}
             style={[
               styles.contentsInput,
               {
                 flex: 0,
                 width: inputHorizontalCanvasWidth,
-                minHeight: 72,
+                height: inputFixedHeight,
+                maxHeight: inputFixedHeight,
+                paddingTop: 0,
+                paddingBottom: 0,
+                includeFontPadding: false,
                 fontFamily: appFontFamilyForText(
                   font,
                   fontWeight === "bold" ? "bold" : "normal",
