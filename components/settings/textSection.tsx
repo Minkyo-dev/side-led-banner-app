@@ -3,7 +3,13 @@ import { ColorPicker } from "@/components/colorPicker";
 import { textColorPalette } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
 import React, { useMemo } from "react";
-import { Dimensions, ScrollView, Text, View } from "react-native";
+import {
+  Dimensions,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../../contexts/settingsContext";
@@ -28,7 +34,7 @@ export const TextSection = ({}: TextSectionProps) => {
   );
 
   const { config, updateConfig, fontItems } = useSettings();
-  const { playOption } = config.content;
+  const { playOption, oneLineJoinMode } = config.content;
   const {
     font,
     fontSize,
@@ -52,6 +58,8 @@ export const TextSection = ({}: TextSectionProps) => {
     updateConfig("appearance", { outLine: value });
   const setDropShadow = (value: number) =>
     updateConfig("appearance", { dropShadow: value });
+  const setOneLineJoinMode = (value: "space3" | "concat") =>
+    updateConfig("content", { oneLineJoinMode: value });
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -111,6 +119,38 @@ export const TextSection = ({}: TextSectionProps) => {
         step={1}
         // disabled={playOption === "one"}
       />
+
+      <View style={styles.settingsRow}>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          One-line Join
+        </Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity
+            onPress={() => setOneLineJoinMode("space3")}
+            style={[
+              styles.settingsRowValueContainer,
+              oneLineJoinMode === "space3" && { backgroundColor: "#D0D0D0" },
+            ]}
+            disabled={playOption !== "one"}
+          >
+            <Text style={styles.settingsRowValue} allowFontScaling={false}>
+              3 Spaces
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setOneLineJoinMode("concat")}
+            style={[
+              styles.settingsRowValueContainer,
+              oneLineJoinMode === "concat" && { backgroundColor: "#D0D0D0" },
+            ]}
+            disabled={playOption !== "one"}
+          >
+            <Text style={styles.settingsRowValue} allowFontScaling={false}>
+              No Gap
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* text - color picker */}
       <View

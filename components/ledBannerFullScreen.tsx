@@ -35,7 +35,7 @@ export const LedBannerFullScreen = ({
   onClose,
   config,
 }: LedBannerFullScreenProps) => {
-  const { previewText, playOption } = config.content;
+  const { previewText, playOption, oneLineJoinMode } = config.content;
   const {
     font,
     fontSize,
@@ -86,6 +86,7 @@ export const LedBannerFullScreen = ({
     text: previewText,
     speed: textMoveSpeed,
     playOption,
+    oneLineJoinMode,
   });
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();

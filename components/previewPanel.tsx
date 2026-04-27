@@ -104,7 +104,7 @@ export default function PreviewPanel() {
   } = useSettings();
   const { activePreset } = ui;
 
-  const { previewText, playOption } = config.content;
+  const { previewText, playOption, oneLineJoinMode } = config.content;
   const {
     font,
     fontSize,
@@ -140,6 +140,7 @@ export default function PreviewPanel() {
     text: previewText,
     speed: textMoveSpeed,
     playOption,
+    oneLineJoinMode,
   });
 
   const previewFontSize = useMemo(() => {

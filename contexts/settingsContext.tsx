@@ -38,6 +38,7 @@ export interface BannerConfig {
   content: {
     previewText: string;
     playOption: "one" | "multi";
+    oneLineJoinMode: "space3" | "concat";
     blurColor: string;
   };
   appearance: {
@@ -128,6 +129,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     previewText:
       "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
     playOption: "one",
+    oneLineJoinMode: "space3",
     blurColor: "",
   },
   appearance: {
