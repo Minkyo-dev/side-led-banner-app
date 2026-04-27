@@ -2,13 +2,13 @@ import React, { useEffect, useMemo } from "react";
 import {
   Modal,
   Pressable,
-  StyleSheet,
   Text,
   TouchableOpacity,
   useColorScheme,
   useWindowDimensions,
   View,
 } from "react-native";
+import { backgroundPhotoSheetStyles as styles } from "@/constants/styles";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -160,40 +160,3 @@ export function BackgroundPhotoSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  dim: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheet: {
-    paddingHorizontal: 10,
-  },
-  group: {
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  row: {
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  rowText: {
-    fontSize: 17,
-    fontWeight: "400",
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-  },
-  cancelWrap: {
-    marginTop: 10,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  cancelText: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-});

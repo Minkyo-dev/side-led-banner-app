@@ -1,5 +1,3 @@
-import { BackgroundEffectLayer } from "@/components/BackgroundEffectLayer";
-import { MarqueeTextCanvas } from "@/components/MarqueeTextCanvas";
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
@@ -7,6 +5,10 @@ import {
   GRADIENT_BACKDROP_IDS,
   type GradientBackdropId,
 } from "@/constants/gradientBackgroundPresets";
+import {
+  isSpeechBubblePreset,
+  SPEECH_BUBBLE_PRESETS,
+} from "@/constants/speechBubblePresets";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimation";
@@ -17,17 +19,18 @@ import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  NativeSyntheticEvent,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextLayoutEvent,
   TextInput,
-  TextLayoutEventData,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
+import { MarqueeCanvas } from "./animation/MarqueeCanvas";
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
@@ -37,7 +40,6 @@ const INTENTIONAL_NEWLINE_MARKER = "↵";
 
 const TEXT_MAX_WIDTH = 100_000;
 const INPUT_WIDTH_CURSOR_PAD = 28;
-const SPEECH_TEXT_INSET_PREVIEW = 0;
 
 function formatMultiLineInputDisplay(stored: string): string {
   const clean = stored.replace(/↵/g, "");
@@ -185,10 +187,13 @@ export default function PreviewPanel() {
   );
   const backgroundEdgeEffectAnim =
     useBackgroundEffectAnimation(backgroundEffectPreset);
-  const isSpeechBgActive =
-    backgroundEdgeEffectAnim.kind === "speechBg1" ||
-    backgroundEdgeEffectAnim.kind === "speechBg2";
-  const speechInsetPx = isSpeechBgActive ? SPEECH_TEXT_INSET_PREVIEW : 0;
+  let previewTextContainerSize: { width: `${number}%`; height: `${number}%` } | null =
+    null;
+  if (isSpeechBubblePreset(backgroundEdgeEffectAnim.id)) {
+    const previewBox =
+      SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].previewTextBox;
+    previewTextContainerSize = previewBox.portrait;
+  }
 
   const onPreviewLayout = (e: LayoutEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -247,9 +252,7 @@ export default function PreviewPanel() {
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
 
-  const handleInputMeasureLayout = (
-    e: NativeSyntheticEvent<TextLayoutEventData>,
-  ) => {
+  const handleInputMeasureLayout = (e: TextLayoutEvent) => {
     const maxWidth = e.nativeEvent.lines.reduce(
       (widest, line) => Math.max(widest, line.width),
       0,
@@ -285,29 +288,59 @@ export default function PreviewPanel() {
           isPortrait={isPortrait}
           mode="preview"
         />
-        <View
-          style={StyleSheet.absoluteFill}
-          onLayout={canvas.onSkiaCanvasLayout}
-        >
-          <MarqueeTextCanvas
-            canvas={canvas}
-            isPixelEffect={isPixelEffect}
-            pixelShaderSize={pixelShaderSize}
-            showGradientBackdrop={showGradientBackdrop}
-            gradientBackgroundPreset={gradientBackgroundPreset}
-            hasBgPhoto={hasBgPhoto}
-            blinkOpacity={blinkOpacity}
-            segmentCount={5}
-            spacer={SPACER}
-            isGlowEffect={isGlowEffect}
-            glowBlurRadius={glowBlurRadius}
-            glowLayerColor={glowLayerColor}
-            skiaStrokeWidth={skiaStrokeWidth}
-            dropShadow={dropShadow}
-            previewTextColor={previewTextColor}
-            speechInsetPx={speechInsetPx}
-          />
-        </View>
+        {previewTextContainerSize ? (
+          <View
+            style={{
+              position: "absolute",
+              width: previewTextContainerSize.width as `${number}%`,
+              height: previewTextContainerSize.height as `${number}%`,
+              alignSelf: "center",
+              top: "14%",
+            }}
+            onLayout={canvas.onSkiaCanvasLayout}
+          >
+            <MarqueeCanvas
+              canvas={canvas}
+              isPixelEffect={isPixelEffect}
+              pixelShaderSize={pixelShaderSize}
+              showGradientBackdrop={showGradientBackdrop}
+              gradientBackgroundPreset={gradientBackgroundPreset}
+              hasBgPhoto={hasBgPhoto}
+              blinkOpacity={blinkOpacity}
+              segmentCount={5}
+              spacer={SPACER}
+              isGlowEffect={isGlowEffect}
+              glowBlurRadius={glowBlurRadius}
+              glowLayerColor={glowLayerColor}
+              skiaStrokeWidth={skiaStrokeWidth}
+              dropShadow={dropShadow}
+              previewTextColor={previewTextColor}
+            />
+          </View>
+        ) : (
+          <View
+            style={StyleSheet.absoluteFill}
+            onLayout={canvas.onSkiaCanvasLayout}
+          >
+            <MarqueeCanvas
+              canvas={canvas}
+              isPixelEffect={isPixelEffect}
+              pixelShaderSize={pixelShaderSize}
+              showGradientBackdrop={showGradientBackdrop}
+              gradientBackgroundPreset={gradientBackgroundPreset}
+              hasBgPhoto={hasBgPhoto}
+              blinkOpacity={blinkOpacity}
+              segmentCount={5}
+              spacer={SPACER}
+              isGlowEffect={isGlowEffect}
+              glowBlurRadius={glowBlurRadius}
+              glowLayerColor={glowLayerColor}
+              skiaStrokeWidth={skiaStrokeWidth}
+              dropShadow={dropShadow}
+              previewTextColor={previewTextColor}
+            />
+          </View>
+        )}
       </View>
 
       <View style={styles.presetButtonsContainer}>

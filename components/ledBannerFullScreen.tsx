@@ -1,10 +1,11 @@
-import { BackgroundEffectLayer } from "@/components/BackgroundEffectLayer";
-import { MarqueeTextCanvas } from "@/components/MarqueeTextCanvas";
+import { BackgroundEffectLayer } from "@/components/animation/BackgroundEffectLayer";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
   GRADIENT_BACKDROP_IDS,
   type GradientBackdropId,
 } from "@/constants/gradientBackgroundPresets";
+import { SPEECH_BUBBLE_PRESETS } from "@/constants/speechBubblePresets";
+import { ledBannerFullScreenStyles as styles } from "@/constants/styles";
 import { BannerConfig } from "@/contexts/settingsContext";
 import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimation";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
@@ -19,15 +20,15 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
+  type ViewStyle,
 } from "react-native";
+import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
 
 interface LedBannerFullScreenProps {
   visible: boolean;
   onClose: () => void;
   config: BannerConfig;
 }
-
-const SPEECH_TEXT_INSET_FULLSCREEN = 0;
 
 export const LedBannerFullScreen = ({
   visible,
@@ -90,6 +91,15 @@ export const LedBannerFullScreen = ({
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
 
+  const isSpeechBgActive =
+    backgroundEdgeEffectAnim.id === "speechBg1" ||
+    backgroundEdgeEffectAnim.id === "speechBg2";
+  const speechTextContainerStyle: ViewStyle = isSpeechBgActive
+    ? isPortrait
+      ? SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].fullscreenTextBox.portrait
+      : SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].fullscreenTextBox.landscape
+    : {};
+  
   const canvas = usePreviewPanelCanvas({
     displayText,
     translateX,
@@ -100,10 +110,8 @@ export const LedBannerFullScreen = ({
     letterSpacing: lineSpacing,
     fallbackLayout: { width: windowWidth, height: windowHeight },
   });
-  const isSpeechBgActive =
-    backgroundEdgeEffectAnim.kind === "speechBg1" ||
-    backgroundEdgeEffectAnim.kind === "speechBg2";
-  const speechInsetPx = isSpeechBgActive ? SPEECH_TEXT_INSET_FULLSCREEN : 0;
+  
+  
   return (
     <Modal
       visible={visible}
@@ -142,24 +150,53 @@ export const LedBannerFullScreen = ({
               isPortrait={isPortrait}
               mode="fullscreen"
             />
-            <MarqueeTextCanvas
-              canvas={canvas}
-              isPixelEffect={isPixelEffect}
-              pixelShaderSize={pixelShaderSize}
-              showGradientBackdrop={showGradientBackdrop}
-              gradientBackgroundPreset={gradientBackgroundPreset}
-              hasBgPhoto={hasBgPhoto}
-              blinkOpacity={blinkOpacity}
-              segmentCount={10}
-              spacer={SPACER}
-              isGlowEffect={isGlowEffect}
-              glowBlurRadius={glowBlurRadius}
-              glowLayerColor={glowLayerColor}
-              skiaStrokeWidth={skiaStrokeWidth}
-              dropShadow={dropShadow}
-              previewTextColor={textSelectedColor}
-              speechInsetPx={speechInsetPx}
-            />
+            {isSpeechBgActive ? (
+              <View
+                style={{
+                  position: "absolute",
+                  alignSelf: "center",
+                  top: 0,
+                  ...speechTextContainerStyle,
+                }}
+                onLayout={canvas.onSkiaCanvasLayout}
+              >
+                <MarqueeCanvas
+                  canvas={canvas}
+                  isPixelEffect={isPixelEffect}
+                  pixelShaderSize={pixelShaderSize}
+                  showGradientBackdrop={showGradientBackdrop}
+                  gradientBackgroundPreset={gradientBackgroundPreset}
+                  hasBgPhoto={hasBgPhoto}
+                  blinkOpacity={blinkOpacity}
+                  segmentCount={10}
+                  spacer={SPACER}
+                  isGlowEffect={isGlowEffect}
+                  glowBlurRadius={glowBlurRadius}
+                  glowLayerColor={glowLayerColor}
+                  skiaStrokeWidth={skiaStrokeWidth}
+                  dropShadow={dropShadow}
+                  previewTextColor={textSelectedColor}
+                />
+              </View>
+            ) : (
+              <MarqueeCanvas
+                canvas={canvas}
+                isPixelEffect={isPixelEffect}
+                pixelShaderSize={pixelShaderSize}
+                showGradientBackdrop={showGradientBackdrop}
+                gradientBackgroundPreset={gradientBackgroundPreset}
+                hasBgPhoto={hasBgPhoto}
+                blinkOpacity={blinkOpacity}
+                segmentCount={10}
+                spacer={SPACER}
+                isGlowEffect={isGlowEffect}
+                glowBlurRadius={glowBlurRadius}
+                glowLayerColor={glowLayerColor}
+                skiaStrokeWidth={skiaStrokeWidth}
+                dropShadow={dropShadow}
+                previewTextColor={textSelectedColor}
+              />
+            )}
           </View>
         </View>
         <Pressable
@@ -172,14 +209,3 @@ export const LedBannerFullScreen = ({
   );
 };
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  flex: {
-    flex: 1,
-  },
-  layerPassThrough: {
-    ...StyleSheet.absoluteFillObject,
-  },
-});

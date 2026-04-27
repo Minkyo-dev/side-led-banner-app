@@ -228,3 +228,126 @@ export const styles = StyleSheet.create({
     aspectRatio: undefined,
   },
 });
+
+export const backgroundPhotoSheetStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  dim: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sheet: {
+    paddingHorizontal: 10,
+  },
+  group: {
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  row: {
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  rowText: {
+    fontSize: 17,
+    fontWeight: "400",
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+  },
+  cancelWrap: {
+    marginTop: 10,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  cancelText: {
+    fontSize: 17,
+    fontWeight: "600",
+  },
+});
+
+export const heartBackgroundTickerStyles = StyleSheet.create({
+  clip: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: "hidden",
+  },
+  row: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "row",
+  },
+});
+
+export const colorPickerStyles = StyleSheet.create({
+  colorPickerContainer: {
+    gap: 10,
+    marginHorizontal: 15,
+    marginBottom: 5,
+  },
+  colorPickerRow: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
+  colorPickerItemButton: {
+    position: "relative",
+  },
+  colorPickerItem: {
+    width: 32,
+    height: 32,
+    borderRadius: 50,
+  },
+  colorPickerItemActive: {
+    position: "absolute",
+    top: -4,
+    left: -4,
+    borderWidth: 2.5,
+    borderColor: "black",
+    width: 40,
+    height: 40,
+    borderRadius: 50,
+  },
+});
+
+export const sliderComponentStyles = StyleSheet.create({
+  sliderContainer: {
+    height: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 15,
+    paddingBottom: 30,
+    marginBottom: 5,
+    borderBottomWidth: 2,
+    borderBottomColor: "#DDDDDD",
+  },
+  slider: {
+    flex: 1,
+    height: 40,
+    paddingTop: 4,
+  },
+  sliderButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sliderButtonText: {
+    fontSize: 30,
+    color: "#B4B4B4",
+    fontWeight: "400",
+  },
+});
+
+export const ledBannerFullScreenStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  layerPassThrough: {
+    ...StyleSheet.absoluteFillObject,
+  },
+});

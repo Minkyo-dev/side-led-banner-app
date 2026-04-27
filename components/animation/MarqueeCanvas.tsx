@@ -2,19 +2,19 @@ import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
 import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
-    Blur,
-    Canvas,
-    Group,
-    Paint,
-    RuntimeShader,
-    Shadow,
-    Skia,
-    Text as SkiaText,
+  Blur,
+  Canvas,
+  Group,
+  Paint,
+  RuntimeShader,
+  Shadow,
+  Skia,
+  Text as SkiaText,
 } from "@shopify/react-native-skia";
 import React from "react";
 import type { SharedValue } from "react-native-reanimated";
 
-interface MarqueeTextCanvasProps {
+interface MarqueeCanvasProps {
   canvas: ReturnType<typeof usePreviewPanelCanvas>;
   isPixelEffect: boolean;
   pixelShaderSize: number;
@@ -30,7 +30,6 @@ interface MarqueeTextCanvasProps {
   skiaStrokeWidth: number;
   dropShadow: number;
   previewTextColor: string;
-  speechInsetPx: number;
 }
 
 const PIXELATE_SOURCE = Skia.RuntimeEffect.Make(`
@@ -44,7 +43,7 @@ const PIXELATE_SOURCE = Skia.RuntimeEffect.Make(`
 `)!;
 
 // Preview/Fullscreen 공통 Skia 마퀴 텍스트
-export function MarqueeTextCanvas({
+export function MarqueeCanvas({
   canvas,
   isPixelEffect,
   pixelShaderSize,
@@ -60,8 +59,7 @@ export function MarqueeTextCanvas({
   skiaStrokeWidth,
   dropShadow,
   previewTextColor,
-  speechInsetPx,
-}: MarqueeTextCanvasProps) {
+}: MarqueeCanvasProps) {
   return (
     <Canvas style={{ flex: 1 }} opaque={false}>
       <Group
@@ -88,7 +86,7 @@ export function MarqueeTextCanvas({
         <Group opacity={blinkOpacity} transform={canvas.skiaMarqueeTransform}>
           {[...Array(segmentCount)].map((_, seg) => {
             const segment = canvas.skiaTextWidth + spacer;
-            const baseX = speechInsetPx + seg * segment;
+            const baseX = seg * segment;
             return (
               <Group key={`marquee-${seg}`}>
                 {isGlowEffect ? (

@@ -2,6 +2,7 @@ import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
+import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import React, {
   createContext,
   useCallback,
@@ -62,8 +63,7 @@ export interface BannerConfig {
       | "none"
       | "effect1"
       | "heartBgA"
-      | "speechBg1"
-      | "speechBg2";
+      | SpeechBubblePresetId;
   };
   background: {
     backgroundColor: string;

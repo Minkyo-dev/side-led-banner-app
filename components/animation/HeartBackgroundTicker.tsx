@@ -1,3 +1,4 @@
+import { heartBackgroundTickerStyles as styles } from "@/constants/styles";
 import { Image as ExpoImage } from "expo-image";
 import React, { useCallback, useMemo, useState } from "react";
 import { LayoutChangeEvent, Image as RNImage, StyleSheet, View } from "react-native";
@@ -29,7 +30,7 @@ export function HeartBackgroundTicker({
     resolved?.width && resolved?.height ? resolved.width / resolved.height : 1;
   // 현 컨테이너 높이 기준 타일 폭
   const tileWidth = size.height > 0 ? size.height * imageAspectRatio : 0;
-  // 화면을 채울 타일 개수
+  // 타일 개수
   const tileCount = useMemo(() => {
     if (tileWidth <= 0) return 0;
     const needed = Math.max(3, Math.ceil(size.width / tileWidth) + 2);
@@ -43,7 +44,7 @@ export function HeartBackgroundTicker({
   // 마퀴 이동값을 타일 단위로 루프
   const tickerStyle = useAnimatedStyle(() => {
     if (tileWidth <= 0) return { transform: [{ translateX: 0 }] };
-    
+
     const loopOffset =
       ((-translateX.value % tileWidth) + tileWidth) % tileWidth;
     return {
@@ -89,14 +90,3 @@ export function HeartBackgroundTicker({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  clip: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: "hidden",
-  },
-  row: {
-    ...StyleSheet.absoluteFillObject,
-    flexDirection: "row",
-  },
-});

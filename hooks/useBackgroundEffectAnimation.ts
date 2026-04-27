@@ -1,11 +1,21 @@
+/**
+ * 사용 방법 (새로 background effect 추가할 때)
+ * 1. BackgroundEffectPreset 타입에 새로운 키 추가
+ * 2) 정적인 이미지의 경우에는 heartBgA 참조해서 넣어주세요 (isEnabled는 응원봉 반짝이는 효과 여부입니다)
+ * 3) 애니메이션 (effect1)의 경우에는 sources 로 Effect1Soruces참고해주세요
+ * 4) id는 effect 식별자입니다.
+ */
+import {
+  isSpeechBubblePreset,
+  type SpeechBubblePresetId,
+} from "@/constants/speechBubblePresets";
 import { useEffect, useMemo, useState } from "react";
 
 type BackgroundEffectPreset =
   | "none"
   | "effect1"
   | "heartBgA"
-  | "speechBg1"
-  | "speechBg2";
+  | SpeechBubblePresetId;
 type BackgroundEffectFrame = "on" | "light" | "off";
 type Effect1Sources = {
   left: number;
@@ -34,26 +44,26 @@ const HEART_BG_A_SOURCE = require("@/assets/images/Heart BG_A.png");
 
 export type BackgroundEffectAnimationResult =
   | {
-      kind: "none";
+      id: "none";
       isEnabled: false;
       imageSource: null;
       sources: null;
     }
   | {
-      kind: "effect1";
+      id: "effect1";
       isEnabled: true;
       imageSource: null;
       sources: Effect1Sources;
     }
   | {
-      kind: "heartBgA";
-      isEnabled: true;
+      id: "heartBgA";
+      isEnabled: false;
       imageSource: number;
       sources: null;
     }
   | {
-      kind: "speechBg1" | "speechBg2";
-      isEnabled: true;
+      id: SpeechBubblePresetId;
+      isEnabled: false;
       imageSource: null;
       sources: null;
     };
@@ -63,8 +73,7 @@ export function useBackgroundEffectAnimation(preset: BackgroundEffectPreset) {
   const [frameIndex, setFrameIndex] = useState(0);
   const isEnabled = preset === "effect1";
   const isHeartEnabled = preset === "heartBgA";
-  const isSpeechBg1 = preset === "speechBg1";
-  const isSpeechBg2 = preset === "speechBg2";
+  const isSpeechBubble = isSpeechBubblePreset(preset);
 
   useEffect(() => {
     if (!isEnabled) {
@@ -80,24 +89,16 @@ export function useBackgroundEffectAnimation(preset: BackgroundEffectPreset) {
   return useMemo<BackgroundEffectAnimationResult>(() => {
     if (isHeartEnabled) {
       return {
-        kind: "heartBgA",
-        isEnabled: true,
+        id: "heartBgA",
+        isEnabled: false,
         imageSource: HEART_BG_A_SOURCE,
         sources: null,
       } as const;
     }
-    if (isSpeechBg1) {
+    if (isSpeechBubble) {
       return {
-        kind: "speechBg1",
-        isEnabled: true,
-        imageSource: null,
-        sources: null,
-      } as const;
-    }
-    if (isSpeechBg2) {
-      return {
-        kind: "speechBg2",
-        isEnabled: true,
+        id: preset,
+        isEnabled: false,
         imageSource: null,
         sources: null,
       } as const;
@@ -105,7 +106,7 @@ export function useBackgroundEffectAnimation(preset: BackgroundEffectPreset) {
 
     if (!isEnabled) {
       return {
-        kind: "none",
+        id: "none",
         isEnabled: false,
         imageSource: null,
         sources: null,
@@ -113,10 +114,10 @@ export function useBackgroundEffectAnimation(preset: BackgroundEffectPreset) {
     }
     const frame = FRAME_SEQUENCE[frameIndex];
     return {
-      kind: "effect1",
+      id: "effect1",
       isEnabled: true,
       imageSource: null,
       sources: EFFECT_1_SOURCES[frame],
     } as const;
-  }, [frameIndex, isEnabled, isHeartEnabled, isSpeechBg1, isSpeechBg2]);
+  }, [frameIndex, isEnabled, isHeartEnabled, isSpeechBubble, preset]);
 }
