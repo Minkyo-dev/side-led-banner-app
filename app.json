@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Led Pop",
-    "slug": "Led Pop",
+    "slug": "side-led-banner-app",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/splash-icon.png",

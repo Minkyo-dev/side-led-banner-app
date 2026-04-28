@@ -4,10 +4,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSettings } from "../../contexts/settingsContext";
 import { BackgroundPhotoSheet } from "./backgroundPhotoSheet";
-import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 interface BackgroundSectionProps {}
 
@@ -56,11 +62,7 @@ const chip = StyleSheet.create({
 export const BackgroundSection = ({}: BackgroundSectionProps) => {
   const [photoSheet, setPhotoSheet] = useState(false);
   const { config, updateConfig } = useSettings();
-  const {
-    backgroundColor,
-    backgroundBlur,
-    backgroundImageUri,
-  } =
+  const { backgroundColor, backgroundBlur, backgroundImageUri } =
     config.background;
 
   const setBackgroundBlur = (value: number) =>
@@ -73,8 +75,7 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
     });
 
   const openAlbum = useCallback(async () => {
-    const { status } =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
         "Permission",
@@ -128,72 +129,45 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
     moreRows.push(tail.slice(i, i + COLS));
   }
 
-  const hasBgPhoto =
-    backgroundImageUri != null && backgroundImageUri !== "";
+  const hasBgPhoto = backgroundImageUri != null && backgroundImageUri !== "";
 
   return (
     <>
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={base.scrollViewContainer}
-    >
-      <View
-        style={[
-          base.settingsRow,
-          { borderBottomWidth: 0, marginBottom: 0 },
-        ]}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={base.scrollViewContainer}
       >
-        <Text style={base.settingsRowLabel} allowFontScaling={false}>
-          Background
-        </Text>
-      </View>
-
-      <View style={chip.colorPickerContainer}>
-        <View style={chip.colorPickerRow}>
-          <TouchableOpacity
-            style={chip.colorPickerItemButton}
-            onPress={() => setPhotoSheet(true)}
-            accessibilityLabel="Background photo"
-          >
-            {hasBgPhoto ? (
-              <Image
-                source={{ uri: backgroundImageUri! }}
-                style={[chip.colorPickerItem, { overflow: "hidden" }]}
-                contentFit="cover"
-              />
-            ) : (
-              <View
-                style={[chip.colorPickerItem, chip.photoEmpty]}
-              >
-                <Ionicons name="image-outline" size={18} color="#555" />
-              </View>
-            )}
-            {hasBgPhoto ? <View style={chip.colorPickerItemActive} /> : null}
-          </TouchableOpacity>
-          {row1.map((color, index) => (
-            <TouchableOpacity
-              key={`bg-color-first-${index}`}
-              style={chip.colorPickerItemButton}
-              onPress={() => setBgColor(color)}
-            >
-              {!hasBgPhoto && backgroundColor === color ? (
-                <View style={chip.colorPickerItemActive} />
-              ) : null}
-              <View
-                style={[chip.colorPickerItem, { backgroundColor: color }]}
-              />
-            </TouchableOpacity>
-          ))}
+        <View
+          style={[base.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+        >
+          <Text style={base.settingsRowLabel} allowFontScaling={false}>
+            Background
+          </Text>
         </View>
 
-        {moreRows.map((row, rowIndex) => (
-          <View
-            key={`bg-color-row-${rowIndex}`}
-            style={chip.colorPickerRow}
-          >
-            {row.map((color, index) => (
+        <View style={chip.colorPickerContainer}>
+          <View style={chip.colorPickerRow}>
+            <TouchableOpacity
+              style={chip.colorPickerItemButton}
+              onPress={() => setPhotoSheet(true)}
+              accessibilityLabel="Background photo"
+            >
+              {hasBgPhoto ? (
+                <Image
+                  source={{ uri: backgroundImageUri! }}
+                  style={[chip.colorPickerItem, { overflow: "hidden" }]}
+                  contentFit="cover"
+                />
+              ) : (
+                <View style={[chip.colorPickerItem, chip.photoEmpty]}>
+                  <Ionicons name="image-outline" size={18} color="#555" />
+                </View>
+              )}
+              {hasBgPhoto ? <View style={chip.colorPickerItemActive} /> : null}
+            </TouchableOpacity>
+            {row1.map((color, index) => (
               <TouchableOpacity
-                key={`bg-color-${rowIndex}-${index}`}
+                key={`bg-color-first-${index}`}
                 style={chip.colorPickerItemButton}
                 onPress={() => setBgColor(color)}
               >
@@ -201,33 +175,48 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
                   <View style={chip.colorPickerItemActive} />
                 ) : null}
                 <View
-                  style={[
-                    chip.colorPickerItem,
-                    { backgroundColor: color },
-                  ]}
+                  style={[chip.colorPickerItem, { backgroundColor: color }]}
                 />
               </TouchableOpacity>
             ))}
           </View>
-        ))}
-      </View>
 
-      <SettingsSliderBlock
-        label="Background Blur"
-        value={backgroundBlur}
-        onChange={setBackgroundBlur}
-        minimumValue={0}
-        maximumValue={100}
-        step={1}
+          {moreRows.map((row, rowIndex) => (
+            <View key={`bg-color-row-${rowIndex}`} style={chip.colorPickerRow}>
+              {row.map((color, index) => (
+                <TouchableOpacity
+                  key={`bg-color-${rowIndex}-${index}`}
+                  style={chip.colorPickerItemButton}
+                  onPress={() => setBgColor(color)}
+                >
+                  {!hasBgPhoto && backgroundColor === color ? (
+                    <View style={chip.colorPickerItemActive} />
+                  ) : null}
+                  <View
+                    style={[chip.colorPickerItem, { backgroundColor: color }]}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </View>
+
+        {/* <SettingsSliderBlock
+          label="Background Blur"
+          value={backgroundBlur}
+          onChange={setBackgroundBlur}
+          minimumValue={0}
+          maximumValue={100}
+          step={1}
+        /> */}
+      </ScrollView>
+      <BackgroundPhotoSheet
+        visible={photoSheet}
+        onClose={() => setPhotoSheet(false)}
+        onGallery={() => void openAlbum()}
+        onCamera={() => void openCamera()}
+        onDefault={clearBgPhoto}
       />
-    </ScrollView>
-    <BackgroundPhotoSheet
-      visible={photoSheet}
-      onClose={() => setPhotoSheet(false)}
-      onGallery={() => void openAlbum()}
-      onCamera={() => void openCamera()}
-      onDefault={clearBgPhoto}
-    />
     </>
   );
 };

@@ -1,4 +1,6 @@
 import { BackgroundEffectLayer } from "@/components/animation/BackgroundEffectLayer";
+import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
+import { PixelatedBackgroundImage } from "@/components/animation/PixelBackgroundImage";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
   GRADIENT_BACKDROP_IDS,
@@ -11,7 +13,6 @@ import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimati
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
-import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
   Modal,
@@ -23,7 +24,6 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
-import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
 
 interface LedBannerFullScreenProps {
   visible: boolean;
@@ -54,8 +54,12 @@ export const LedBannerFullScreen = ({
     pixelSize: configPixelSize,
   } = config.appearance;
 
-  const { backgroundColor, backgroundImageUri, backgroundBlur } =
-    config.background;
+  const {
+    backgroundColor,
+    backgroundImageUri,
+    backgroundBlur,
+    backgroundPixelSize,
+  } = config.background;
 
   const isPixelEffect = effectSelectedItems.includes("Pixel");
   const isGlowEffect = effectSelectedItems.includes("Glow");
@@ -78,17 +82,20 @@ export const LedBannerFullScreen = ({
 
   const { animatedStyle: blinkStyle, opacity: blinkOpacity } =
     useBlinkOpacityStyle(effectSelectedItems.includes("Blink"), blinkSpeed);
-  const backgroundEdgeEffectAnim =
-    useBackgroundEffectAnimation(backgroundEffectPreset);
+  const backgroundEdgeEffectAnim = useBackgroundEffectAnimation(
+    backgroundEffectPreset,
+  );
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
-  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation({
-    text: previewText,
-    speed: textMoveSpeed,
-    playOption,
-    oneLineJoinMode,
-  });
+  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
+    {
+      text: previewText,
+      speed: textMoveSpeed,
+      playOption,
+      oneLineJoinMode,
+    },
+  );
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
@@ -106,7 +113,7 @@ export const LedBannerFullScreen = ({
       ? speechPresetPlatform!.fullscreenTextBox.portrait
       : speechPresetPlatform!.fullscreenTextBox.landscape
     : {};
-  
+
   const canvas = usePreviewPanelCanvas({
     displayText,
     translateX,
@@ -117,8 +124,7 @@ export const LedBannerFullScreen = ({
     letterSpacing: lineSpacing,
     fallbackLayout: { width: windowWidth, height: windowHeight },
   });
-  
-  
+
   return (
     <Modal
       visible={visible}
@@ -144,11 +150,10 @@ export const LedBannerFullScreen = ({
             pointerEvents="box-none"
           >
             {hasBgPhoto ? (
-              <Image
-                source={{ uri: backgroundImageUri }}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                blurRadius={backgroundBlur / 8}
+              <PixelatedBackgroundImage
+                uri={backgroundImageUri}
+                pixelSize={backgroundPixelSize}
+                blurRadius={backgroundBlur / 3}
               />
             ) : null}
             <BackgroundEffectLayer
@@ -215,4 +220,3 @@ export const LedBannerFullScreen = ({
     </Modal>
   );
 };
-

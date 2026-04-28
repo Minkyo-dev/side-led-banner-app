@@ -15,7 +15,6 @@ import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimati
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
-import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
@@ -23,14 +22,15 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextLayoutEvent,
   TextInput,
+  TextLayoutEvent,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
 import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
 import { MarqueeCanvas } from "./animation/MarqueeCanvas";
+import { PixelatedBackgroundImage } from "./animation/PixelBackgroundImage";
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
@@ -90,7 +90,9 @@ export default function PreviewPanel() {
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
   const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
-  const [inputFixedHeight, setInputFixedHeight] = useState(INPUT_HEIGHT_FALLBACK);
+  const [inputFixedHeight, setInputFixedHeight] = useState(
+    INPUT_HEIGHT_FALLBACK,
+  );
   const [pendingSelection, setPendingSelection] = useState<
     { start: number; end: number } | undefined
   >(undefined);
@@ -123,25 +125,25 @@ export default function PreviewPanel() {
   } = config.appearance;
   const isNanumGothic = font === "nanum_gothic";
   const inputMaxLines = isNanumGothic ? 1 : INPUT_MAX_LINES;
-  const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
+  const {
+    backgroundColor,
+    backgroundImageUri,
+    backgroundBlur,
+    backgroundPixelSize,
+  } = config.background;
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
 
-  const {
-    displayText,
-    translateX,
-    onContainerLayout,
-    onTextLayout,
-    SPACER,
-  } = useMarqueeAnimation({
-    text: previewText,
-    speed: textMoveSpeed,
-    playOption,
-    oneLineJoinMode,
-  });
+  const { displayText, translateX, onContainerLayout, onTextLayout, SPACER } =
+    useMarqueeAnimation({
+      text: previewText,
+      speed: textMoveSpeed,
+      playOption,
+      oneLineJoinMode,
+    });
 
   const previewFontSize = useMemo(() => {
     if (previewHeight === 0) return 100;
@@ -192,14 +194,19 @@ export default function PreviewPanel() {
     effectSelectedItems.includes("Blink"),
     blinkSpeed,
   );
-  const backgroundEdgeEffectAnim =
-    useBackgroundEffectAnimation(backgroundEffectPreset);
-  let previewTextContainerSize: { width: `${number}%`; height: `${number}%` } | null =
-    null;
+  const backgroundEdgeEffectAnim = useBackgroundEffectAnimation(
+    backgroundEffectPreset,
+  );
+  let previewTextContainerSize: {
+    width: `${number}%`;
+    height: `${number}%`;
+  } | null = null;
   if (isSpeechBubblePreset(backgroundEdgeEffectAnim.id)) {
     const preset = SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id];
     const previewBox =
-      Platform.OS === "ios" ? preset.ios.previewTextBox : preset.android.previewTextBox;
+      Platform.OS === "ios"
+        ? preset.ios.previewTextBox
+        : preset.android.previewTextBox;
     previewTextContainerSize = previewBox.portrait;
   }
 
@@ -247,11 +254,15 @@ export default function PreviewPanel() {
     const working = merged.text;
     const stripped = stripMarkersForStorage(working);
     const forStorage = isNanumGothic
-      ? stripped.split("\n")[0] ?? ""
+      ? (stripped.split("\n")[0] ?? "")
       : stripped;
     handleTextChange(forStorage);
 
-    if (!isNanumGothic && playOption === "multi" && merged.cursorInMerged !== undefined) {
+    if (
+      !isNanumGothic &&
+      playOption === "multi" &&
+      merged.cursorInMerged !== undefined
+    ) {
       const storageIdx = stripMarkersForStorage(
         working.slice(0, merged.cursorInMerged),
       ).length;
@@ -296,11 +307,10 @@ export default function PreviewPanel() {
         onLayout={onPreviewLayout}
       >
         {hasBgPhoto ? (
-          <Image
-            source={{ uri: backgroundImageUri }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            blurRadius={backgroundBlur / 8}
+          <PixelatedBackgroundImage
+            uri={backgroundImageUri}
+            pixelSize={backgroundPixelSize}
+            blurRadius={backgroundBlur / 3}
           />
         ) : null}
         <BackgroundEffectLayer
