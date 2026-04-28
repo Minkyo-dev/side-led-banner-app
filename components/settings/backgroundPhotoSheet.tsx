@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   Modal,
   Pressable,
@@ -14,14 +14,12 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { scheduleOnRN } from "react-native-worklets";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   onGallery: () => void;
-  onCamera: () => void;
   onDefault: () => void;
 };
 
@@ -53,7 +51,6 @@ export function BackgroundPhotoSheet({
   visible,
   onClose,
   onGallery,
-  onCamera,
   onDefault,
 }: Props) {
   const insets = useSafeAreaInsets();
@@ -68,12 +65,21 @@ export function BackgroundPhotoSheet({
   const sheetMax = isLandscape ? Math.min(520, winW * 0.92) : undefined;
 
   const y = useSharedValue(slideH);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!visible) {
       y.value = slideH;
     }
   }, [slideH, visible, y]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current != null) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!visible) return;
@@ -85,19 +91,25 @@ export function BackgroundPhotoSheet({
     transform: [{ translateY: y.value }],
   }));
 
-  const closeSheet = () => {
-    y.value = withTiming(slideH, { duration: 220 }, (done) => {
-      if (done) scheduleOnRN(onClose);
-    });
+  const closeSheetAnimated = (afterClose?: () => void) => {
+    y.value = withTiming(slideH, { duration: 220 });
+    if (closeTimerRef.current != null) {
+      clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = setTimeout(() => {
+      closeTimerRef.current = null;
+      onClose();
+      afterClose?.();
+    }, 220);
   };
+  const closeSheet = () => closeSheetAnimated();
 
   const row = (label: string, action: () => void) => (
     <TouchableOpacity
       style={styles.row}
       activeOpacity={0.65}
       onPress={() => {
-        action();
-        closeSheet();
+        closeSheetAnimated(action);
       }}
     >
       <Text
@@ -134,8 +146,6 @@ export function BackgroundPhotoSheet({
             ]}
           >
             {row("Choose from Gallery", onGallery)}
-            <View style={[styles.divider, { backgroundColor: colors.divider }]} />
-            {row("Take a Photo", onCamera)}
             <View style={[styles.divider, { backgroundColor: colors.divider }]} />
             {row("Default Image", onDefault)}
           </View>

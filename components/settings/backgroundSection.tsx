@@ -94,27 +94,6 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
     });
   }, [updateConfig]);
 
-  const openCamera = useCallback(async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission",
-        "Allow camera access to take a photo for the background.",
-      );
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.85,
-      aspect: [16, 9],
-    });
-    if (result.canceled || !result.assets[0]) return;
-    updateConfig("background", {
-      backgroundImageUri: result.assets[0].uri,
-    });
-  }, [updateConfig]);
-
   const clearBgPhoto = useCallback(
     () => updateConfig("background", { backgroundImageUri: null }),
     [updateConfig],
@@ -225,7 +204,6 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
       visible={photoSheet}
       onClose={() => setPhotoSheet(false)}
       onGallery={() => void openAlbum()}
-      onCamera={() => void openCamera()}
       onDefault={clearBgPhoto}
     />
     </>
