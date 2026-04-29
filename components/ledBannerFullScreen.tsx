@@ -1,4 +1,5 @@
 import { BackgroundEffectLayer } from "@/components/animation/BackgroundEffectLayer";
+import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
   GRADIENT_BACKDROP_IDS,
@@ -11,6 +12,11 @@ import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimati
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
+import {
+  getFullscreenTextMetrics,
+  getHeightScaledFontSize,
+  getTextSizingPolicy,
+} from "@/utils/textSizing";
 import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
@@ -23,7 +29,6 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
-import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
 
 interface LedBannerFullScreenProps {
   visible: boolean;
@@ -89,34 +94,73 @@ export const LedBannerFullScreen = ({
     playOption,
     oneLineJoinMode,
   });
-
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const isPortrait = windowHeight >= windowWidth;
-
   const isSpeechBgActive =
     backgroundEdgeEffectAnim.id === "speechBg1" ||
     backgroundEdgeEffectAnim.id === "speechBg2";
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const isPortrait = windowHeight >= windowWidth;
+  const sizingPolicy = useMemo(
+    () =>
+      getTextSizingPolicy({
+        effectId: backgroundEdgeEffectAnim.id,
+        isPortrait,
+      }),
+    [backgroundEdgeEffectAnim.id, isPortrait],
+  );
+  const speechBgId = sizingPolicy.speechBubbleId;
+  const landscapeHeight = Math.max(1, Math.min(windowWidth, windowHeight));
+  const heightScaledFontSize = useMemo(() => {
+    const scaled = getHeightScaledFontSize({
+      baseFontSize: fontSize,
+      targetHeight: windowHeight,
+      referenceHeight: landscapeHeight,
+    });
+    return isPortrait
+      ? Math.max(1, Math.floor(scaled * sizingPolicy.portraitFontBoost))
+      : scaled;
+  }, [fontSize, windowHeight, landscapeHeight, isPortrait, sizingPolicy.portraitFontBoost]);
+  const fullscreenTextMetrics = useMemo(() => {
+    return getFullscreenTextMetrics({
+      displayText,
+      baseFontSize: heightScaledFontSize,
+      lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
+      maxHeight: sizingPolicy.fullscreenMaxHeight ?? Math.max(1, windowHeight),
+      padding: sizingPolicy.speechTextHeightPadding,
+      clampByMaxHeight: sizingPolicy.clampByMaxHeight,
+    });
+  }, [displayText, heightScaledFontSize, sizingPolicy, windowHeight]);
   const speechPresetPlatform = isSpeechBgActive
     ? Platform.OS === "ios"
       ? SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].ios
       : SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].android
     : null;
-  const speechTextContainerStyle: ViewStyle = isSpeechBgActive
+  const speechTextBoxConfig = isSpeechBgActive
     ? isPortrait
       ? speechPresetPlatform!.fullscreenTextBox.portrait
       : speechPresetPlatform!.fullscreenTextBox.landscape
+    : null;
+  const speechTextContainerStyle: ViewStyle = isSpeechBgActive
+    ? {
+        width: speechTextBoxConfig!.width,
+        height: fullscreenTextMetrics.height,
+        transform: [{ translateY: speechTextBoxConfig!.yOffset }],
+      }
     : {};
   
   const canvas = usePreviewPanelCanvas({
     displayText,
     translateX,
     onTextLayout,
-    previewFontSize: fontSize,
+    previewFontSize: fullscreenTextMetrics.fontSize,
     appearanceFont: font,
     fontWeight,
     letterSpacing: lineSpacing,
     fallbackLayout: { width: windowWidth, height: windowHeight },
+    lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
   });
+  const handleFullscreenLayout = isSpeechBgActive
+    ? undefined
+    : canvas.onSkiaCanvasLayout;
   
   
   return (
@@ -140,7 +184,7 @@ export const LedBannerFullScreen = ({
                 overflow: "hidden",
               },
             ]}
-            onLayout={canvas.onSkiaCanvasLayout}
+            onLayout={handleFullscreenLayout}
             pointerEvents="box-none"
           >
             {hasBgPhoto ? (
@@ -160,30 +204,34 @@ export const LedBannerFullScreen = ({
             {isSpeechBgActive ? (
               <View
                 style={{
-                  position: "absolute",
-                  alignSelf: "center",
-                  top: 0,
-                  ...speechTextContainerStyle,
+                  ...StyleSheet.absoluteFillObject,
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
-                onLayout={canvas.onSkiaCanvasLayout}
+                pointerEvents="none"
               >
-                <MarqueeCanvas
-                  canvas={canvas}
-                  isPixelEffect={isPixelEffect}
-                  pixelShaderSize={pixelShaderSize}
-                  showGradientBackdrop={showGradientBackdrop}
-                  gradientBackgroundPreset={gradientBackgroundPreset}
-                  hasBgPhoto={hasBgPhoto}
-                  blinkOpacity={blinkOpacity}
-                  segmentCount={10}
-                  spacer={SPACER}
-                  isGlowEffect={isGlowEffect}
-                  glowBlurRadius={glowBlurRadius}
-                  glowLayerColor={glowLayerColor}
-                  skiaStrokeWidth={skiaStrokeWidth}
-                  dropShadow={dropShadow}
-                  previewTextColor={textSelectedColor}
-                />
+                <View
+                  style={speechTextContainerStyle}
+                  onLayout={canvas.onSkiaCanvasLayout}
+                >
+                  <MarqueeCanvas
+                    canvas={canvas}
+                    isPixelEffect={isPixelEffect}
+                    pixelShaderSize={pixelShaderSize}
+                    showGradientBackdrop={showGradientBackdrop}
+                    gradientBackgroundPreset={gradientBackgroundPreset}
+                    hasBgPhoto={hasBgPhoto}
+                    blinkOpacity={blinkOpacity}
+                    segmentCount={10}
+                    spacer={SPACER}
+                    isGlowEffect={isGlowEffect}
+                    glowBlurRadius={glowBlurRadius}
+                    glowLayerColor={glowLayerColor}
+                    skiaStrokeWidth={skiaStrokeWidth}
+                    dropShadow={dropShadow}
+                    previewTextColor={textSelectedColor}
+                  />
+                </View>
               </View>
             ) : (
               <MarqueeCanvas

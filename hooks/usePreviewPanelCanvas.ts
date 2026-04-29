@@ -41,8 +41,8 @@ function skiaGlyphLayouts(
   return out;
 }
 
-/** PreviewPanel `previewFontSize` 계산과 동일한 줄 간격 */
-const LINE_HEIGHT_RATIO = 1.2;
+/** PreviewPanel 기본 줄 간격 */
+const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
 
 function layoutMultilineSkiaGlyphs(
   font: SkFont,
@@ -50,9 +50,10 @@ function layoutMultilineSkiaGlyphs(
   letterSpacing: number,
   previewFontSize: number,
   canvasHeight: number,
+  lineHeightRatio: number,
 ): { x: number; y: number; text: string }[] {
   const lines = displayText.split("\n");
-  const lineHeightPx = previewFontSize * LINE_HEIGHT_RATIO;
+  const lineHeightPx = previewFontSize * lineHeightRatio;
   const m = font.getMetrics();
   const verticalCenterOffset = (m.ascent + m.descent) / 2;
   const n = lines.length;
@@ -86,6 +87,7 @@ export interface UsePreviewPanelCanvasParams {
    * 글리프·그라데이션 크기 보정용
    */
   fallbackLayout?: { width: number; height: number };
+  lineHeightRatio?: number;
 }
 
 /**
@@ -100,6 +102,7 @@ export function usePreviewPanelCanvas({
   fontWeight,
   letterSpacing,
   fallbackLayout,
+  lineHeightRatio = DEFAULT_LINE_HEIGHT_RATIO,
 }: UsePreviewPanelCanvasParams) {
   const skiaFont = useSkiaAppearanceFont(
     appearanceFont,
@@ -138,6 +141,7 @@ export function usePreviewPanelCanvas({
       letterSpacing,
       previewFontSize,
       drawH,
+      lineHeightRatio,
     );
   }, [
     displayText,
@@ -145,6 +149,7 @@ export function usePreviewPanelCanvas({
     letterSpacing,
     previewFontSize,
     drawH,
+    lineHeightRatio,
   ]);
 
   const skiaMarqueeTransform = useDerivedValue(() => [

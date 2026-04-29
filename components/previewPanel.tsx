@@ -15,6 +15,12 @@ import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimati
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
+import {
+  getFullscreenTextMetrics,
+  getHeightScaledFontSize,
+  getPreviewTextMetrics,
+  getTextSizingPolicy,
+} from "@/utils/textSizing";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -129,6 +135,18 @@ export default function PreviewPanel() {
   const { textMoveSpeed } = config.motion;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
+  const backgroundEdgeEffectAnim =
+    useBackgroundEffectAnimation(backgroundEffectPreset);
+  const sizingPolicy = useMemo(
+    () =>
+      getTextSizingPolicy({
+        effectId: backgroundEdgeEffectAnim.id,
+        isPortrait: false,
+      }),
+    [backgroundEdgeEffectAnim.id],
+  );
+  const speechBgId = sizingPolicy.speechBubbleId;
+  const landscapeHeight = Math.max(1, Math.min(windowWidth, windowHeight));
 
   const {
     displayText,
@@ -142,19 +160,48 @@ export default function PreviewPanel() {
     playOption,
     oneLineJoinMode,
   });
+  const fullscreenLandscapeBaseFontSize = useMemo(
+    () => {
+      return getFullscreenTextMetrics({
+        displayText,
+        baseFontSize: fontSize,
+        lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
+        maxHeight: sizingPolicy.fullscreenMaxHeight ?? landscapeHeight,
+        padding: sizingPolicy.speechTextHeightPadding,
+        clampByMaxHeight: sizingPolicy.clampByMaxHeight,
+      }).fontSize;
+    },
+    [displayText, fontSize, landscapeHeight, sizingPolicy],
+  );
+  const scaledPreviewBaseFontSize = useMemo(
+    () =>
+      getHeightScaledFontSize({
+        baseFontSize: fullscreenLandscapeBaseFontSize,
+        targetHeight: previewHeight,
+        referenceHeight: landscapeHeight,
+      }),
+    [fullscreenLandscapeBaseFontSize, previewHeight, landscapeHeight],
+  );
 
-  const previewFontSize = useMemo(() => {
-    if (previewHeight === 0) return 100;
-    const lineCount =
-      playOption === "one"
-        ? 1
-        : Math.min((previewText.match(/\n/g) || []).length + 1, 3);
-    const lineHeightRatio = 1.2;
-    const maxFontSize = Math.floor(
-      previewHeight / (lineCount * lineHeightRatio),
-    );
-    return Math.floor(maxFontSize * (fontSize / 100));
-  }, [previewHeight, playOption, previewText, fontSize]);
+  const previewTextMetrics = useMemo(
+    () =>
+      getPreviewTextMetrics({
+        previewHeight,
+        baseFontSize: scaledPreviewBaseFontSize,
+        playOption,
+        text: previewText,
+        padding: sizingPolicy.previewPadding,
+        lineHeightRatio: sizingPolicy.previewLineHeightRatio,
+      }),
+    [
+      previewHeight,
+      scaledPreviewBaseFontSize,
+      playOption,
+      previewText,
+      sizingPolicy,
+    ],
+  );
+  const previewFontSize = previewTextMetrics.fontSize;
 
   const previewTextColor = textSelectedColor;
 
@@ -192,9 +239,7 @@ export default function PreviewPanel() {
     effectSelectedItems.includes("Blink"),
     blinkSpeed,
   );
-  const backgroundEdgeEffectAnim =
-    useBackgroundEffectAnimation(backgroundEffectPreset);
-  let previewTextContainerSize: { width: `${number}%`; height: `${number}%` } | null =
+  let previewTextContainerSize: { width: `${number}%`; yOffset?: number | `${number}%` } | null =
     null;
   if (isSpeechBubblePreset(backgroundEdgeEffectAnim.id)) {
     const preset = SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id];
@@ -314,9 +359,9 @@ export default function PreviewPanel() {
             style={{
               position: "absolute",
               width: previewTextContainerSize.width as `${number}%`,
-              height: previewTextContainerSize.height as `${number}%`,
+              height: previewTextMetrics.height,
               alignSelf: "center",
-              top: "14%",
+              top: previewTextContainerSize.yOffset ?? "14%",
             }}
             onLayout={canvas.onSkiaCanvasLayout}
           >
