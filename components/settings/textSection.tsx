@@ -113,15 +113,16 @@ export const TextSection = ({}: TextSectionProps) => {
         step={1}
       />
 
-      <SettingsSliderBlock
-        label="Line Spacing"
-        value={lineSpacing}
-        onChange={setLineSpacing}
-        minimumValue={0}
-        maximumValue={40}
-        step={1}
-        // disabled={playOption === "one"}
-      />
+      {playOption === "multi" ? (
+        <SettingsSliderBlock
+          label="Line Spacing"
+          value={lineSpacing}
+          onChange={setLineSpacing}
+          minimumValue={0}
+          maximumValue={40}
+          step={1}
+        />
+      ) : null}
       <SettingsSliderBlock
         label="Letter Spacing"
         value={letterSpacing}
