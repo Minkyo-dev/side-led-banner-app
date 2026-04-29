@@ -16,8 +16,9 @@ import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
+  getFontScaledLineSpacingPx,
   getFullscreenTextMetrics,
-  getHeightScaledFontSize,
+  scaleFontSizeByHeight,
   getPreviewTextMetrics,
   getTextSizingPolicy,
 } from "@/utils/textSizing";
@@ -117,6 +118,7 @@ export default function PreviewPanel() {
     textSelectedColor,
     outLine,
     lineSpacing,
+    letterSpacing,
     dropShadow,
     fontWeight,
     effectSelectedItems,
@@ -127,8 +129,7 @@ export default function PreviewPanel() {
     glowIntensity,
     glowColor,
   } = config.appearance;
-  const isNanumGothic = font === "nanum_gothic";
-  const inputMaxLines = isNanumGothic ? 1 : INPUT_MAX_LINES;
+  const inputMaxLines = INPUT_MAX_LINES;
   const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
@@ -147,6 +148,14 @@ export default function PreviewPanel() {
   );
   const speechBgId = sizingPolicy.speechBubbleId;
   const landscapeHeight = Math.max(1, Math.min(windowWidth, windowHeight));
+  const effectiveLineSpacing = useMemo(
+    () =>
+      getFontScaledLineSpacingPx({
+        requestedLineSpacingPx: lineSpacing,
+        fontSizePercent: fontSize,
+      }),
+    [lineSpacing, fontSize],
+  );
 
   const {
     displayText,
@@ -166,16 +175,17 @@ export default function PreviewPanel() {
         displayText,
         baseFontSize: fontSize,
         lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
+        lineSpacingPx: effectiveLineSpacing,
         maxHeight: sizingPolicy.fullscreenMaxHeight ?? landscapeHeight,
         padding: sizingPolicy.speechTextHeightPadding,
         clampByMaxHeight: sizingPolicy.clampByMaxHeight,
       }).fontSize;
     },
-    [displayText, fontSize, landscapeHeight, sizingPolicy],
+    [displayText, fontSize, effectiveLineSpacing, landscapeHeight, sizingPolicy],
   );
   const scaledPreviewBaseFontSize = useMemo(
     () =>
-      getHeightScaledFontSize({
+      scaleFontSizeByHeight({
         baseFontSize: fullscreenLandscapeBaseFontSize,
         targetHeight: previewHeight,
         referenceHeight: landscapeHeight,
@@ -192,12 +202,14 @@ export default function PreviewPanel() {
         text: previewText,
         padding: sizingPolicy.previewPadding,
         lineHeightRatio: sizingPolicy.previewLineHeightRatio,
+        lineSpacingPx: effectiveLineSpacing,
       }),
     [
       previewHeight,
       scaledPreviewBaseFontSize,
       playOption,
       previewText,
+      effectiveLineSpacing,
       sizingPolicy,
     ],
   );
@@ -231,7 +243,8 @@ export default function PreviewPanel() {
     previewFontSize,
     appearanceFont: font,
     fontWeight,
-    letterSpacing: lineSpacing,
+    letterSpacing,
+    lineSpacingPx: effectiveLineSpacing,
     fallbackLayout: previewBox,
   });
 
@@ -291,12 +304,10 @@ export default function PreviewPanel() {
 
     const working = merged.text;
     const stripped = stripMarkersForStorage(working);
-    const forStorage = isNanumGothic
-      ? stripped.split("\n")[0] ?? ""
-      : stripped;
+    const forStorage = stripped;
     handleTextChange(forStorage);
 
-    if (!isNanumGothic && playOption === "multi" && merged.cursorInMerged !== undefined) {
+    if (playOption === "multi" && merged.cursorInMerged !== undefined) {
       const storageIdx = stripMarkersForStorage(
         working.slice(0, merged.cursorInMerged),
       ).length;
@@ -515,7 +526,7 @@ export default function PreviewPanel() {
         >
           <TextInput
             editable
-            multiline={playOption === "multi" && !isNanumGothic}
+            multiline={playOption === "multi"}
             scrollEnabled={false}
             style={[
               styles.contentsInput,

@@ -83,6 +83,7 @@ export interface UsePreviewPanelCanvasParams {
   appearanceFont: string;
   fontWeight: "normal" | "bold" | string;
   letterSpacing: number;
+  lineSpacingPx?: number;
   /**
    * 글리프·그라데이션 크기 보정용
    */
@@ -101,6 +102,7 @@ export function usePreviewPanelCanvas({
   appearanceFont,
   fontWeight,
   letterSpacing,
+  lineSpacingPx,
   fallbackLayout,
   lineHeightRatio = DEFAULT_LINE_HEIGHT_RATIO,
 }: UsePreviewPanelCanvasParams) {
@@ -132,6 +134,10 @@ export function usePreviewPanelCanvas({
   const fbH = fallbackLayout?.height ?? 0;
   const drawW = skiaCanvasLayout.width > 0 ? skiaCanvasLayout.width : fbW;
   const drawH = skiaCanvasLayout.height > 0 ? skiaCanvasLayout.height : fbH;
+  const resolvedLineHeightRatio =
+    lineSpacingPx != null
+      ? lineHeightRatio + lineSpacingPx / Math.max(1, previewFontSize)
+      : lineHeightRatio;
 
   const skiaGlyphs = useMemo(() => {
     if (!skiaFont || drawH <= 0) return [];
@@ -141,7 +147,7 @@ export function usePreviewPanelCanvas({
       letterSpacing,
       previewFontSize,
       drawH,
-      lineHeightRatio,
+      resolvedLineHeightRatio,
     );
   }, [
     displayText,
@@ -149,7 +155,7 @@ export function usePreviewPanelCanvas({
     letterSpacing,
     previewFontSize,
     drawH,
-    lineHeightRatio,
+    resolvedLineHeightRatio,
   ]);
 
   const skiaMarqueeTransform = useDerivedValue(() => [

@@ -45,6 +45,7 @@ export interface BannerConfig {
     font: string;
     fontSize: number;
     lineSpacing: number;
+    letterSpacing: number;
     textSelectedColor: string;
     outLine: number;
     dropShadow: number;
@@ -136,6 +137,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     font: "nanum_gothic",
     fontSize: 50,
     lineSpacing: 10,
+    letterSpacing: 10,
     textSelectedColor: "#000000",
     outLine: 0,
     dropShadow: 0,
@@ -184,9 +186,21 @@ function normalizePresetSlot(raw: unknown): PresetSnapshot {
       ? (o.appearance as Partial<BannerConfig["appearance"]>)
       : {};
 
+  const legacyLineSpacing =
+    typeof (appearancePartial as { lineSpacing?: unknown }).lineSpacing === "number"
+      ? (appearancePartial as { lineSpacing: number }).lineSpacing
+      : undefined;
+  const legacyLetterSpacing =
+    typeof (appearancePartial as { letterSpacing?: unknown }).letterSpacing ===
+    "number"
+      ? (appearancePartial as { letterSpacing: number }).letterSpacing
+      : undefined;
+
   const appearance = dupAppearance({
     ...base.appearance,
     ...appearancePartial,
+    lineSpacing: legacyLineSpacing ?? base.appearance.lineSpacing,
+    letterSpacing: legacyLetterSpacing ?? base.appearance.letterSpacing,
     effectSelectedItems: Array.isArray(appearancePartial.effectSelectedItems)
       ? [...appearancePartial.effectSelectedItems]
       : base.appearance.effectSelectedItems,

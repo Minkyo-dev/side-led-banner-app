@@ -13,8 +13,9 @@ import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
+  getFontScaledLineSpacingPx,
   getFullscreenTextMetrics,
-  getHeightScaledFontSize,
+  scaleFontSizeByHeight,
   getTextSizingPolicy,
 } from "@/utils/textSizing";
 import { Image } from "expo-image";
@@ -48,6 +49,7 @@ export const LedBannerFullScreen = ({
     dropShadow,
     textSelectedColor,
     lineSpacing,
+    letterSpacing,
     fontWeight,
     glowIntensity,
     glowColor,
@@ -109,8 +111,16 @@ export const LedBannerFullScreen = ({
   );
   const speechBgId = sizingPolicy.speechBubbleId;
   const landscapeHeight = Math.max(1, Math.min(windowWidth, windowHeight));
+  const effectiveLineSpacing = useMemo(
+    () =>
+      getFontScaledLineSpacingPx({
+        requestedLineSpacingPx: lineSpacing,
+        fontSizePercent: fontSize,
+      }),
+    [lineSpacing, fontSize],
+  );
   const heightScaledFontSize = useMemo(() => {
-    const scaled = getHeightScaledFontSize({
+    const scaled = scaleFontSizeByHeight({
       baseFontSize: fontSize,
       targetHeight: windowHeight,
       referenceHeight: landscapeHeight,
@@ -124,11 +134,12 @@ export const LedBannerFullScreen = ({
       displayText,
       baseFontSize: heightScaledFontSize,
       lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
+      lineSpacingPx: effectiveLineSpacing,
       maxHeight: sizingPolicy.fullscreenMaxHeight ?? Math.max(1, windowHeight),
       padding: sizingPolicy.speechTextHeightPadding,
       clampByMaxHeight: sizingPolicy.clampByMaxHeight,
     });
-  }, [displayText, heightScaledFontSize, sizingPolicy, windowHeight]);
+  }, [displayText, heightScaledFontSize, effectiveLineSpacing, sizingPolicy, windowHeight]);
   const speechPresetPlatform = isSpeechBgActive
     ? Platform.OS === "ios"
       ? SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].ios
@@ -154,7 +165,8 @@ export const LedBannerFullScreen = ({
     previewFontSize: fullscreenTextMetrics.fontSize,
     appearanceFont: font,
     fontWeight,
-    letterSpacing: lineSpacing,
+    letterSpacing,
+    lineSpacingPx: effectiveLineSpacing,
     fallbackLayout: { width: windowWidth, height: windowHeight },
     lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
   });

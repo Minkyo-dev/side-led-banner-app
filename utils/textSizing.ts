@@ -1,7 +1,9 @@
 const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
 const FULLSCREEN_LINE_HEIGHT_RATIO = 1.16;
+const FONT_SIZE_MIN = 10;
+const FONT_SIZE_MAX = 100;
 const SPEECH_TEXT_HEIGHT_PADDING = 24;
-const PORTRAIT_FONT_BOOST = 4.05;
+const PORTRAIT_FONT_BOOST = 0.8;
 const PREVIEW_VERTICAL_TEXT_PADDING = {
   default: 0,
   speechBg1: 12,
@@ -45,6 +47,19 @@ export function getTextSizingPolicy(params: {
   };
 }
 
+export function getFontScaledLineSpacingPx(params: {
+  requestedLineSpacingPx: number;
+  fontSizePercent: number;
+}) {
+  const { requestedLineSpacingPx, fontSizePercent } = params;
+  const requested = Math.max(0, requestedLineSpacingPx);
+  const clampedFontSize = Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, fontSizePercent));
+  const t =
+    (clampedFontSize - FONT_SIZE_MIN) / (FONT_SIZE_MAX - FONT_SIZE_MIN);
+  const scale = 1 - t;
+  return requested * scale;
+}
+
 export function getLineCountForMode(params: {
   text: string;
   playOption: "one" | "multi";
@@ -76,6 +91,7 @@ export function getPreviewTextMetrics(params: {
   text: string;
   padding?: number;
   lineHeightRatio?: number;
+  lineSpacingPx?: number;
   maxLines?: number;
   fallbackFontSize?: number;
 }) {
@@ -87,6 +103,7 @@ export function getPreviewTextMetrics(params: {
     text,
     padding = 0,
     lineHeightRatio = DEFAULT_LINE_HEIGHT_RATIO,
+    lineSpacingPx,
     maxLines = 3,
     fallbackFontSize = 100,
   } = params;
@@ -96,21 +113,47 @@ export function getPreviewTextMetrics(params: {
   }
   const lineCount = getLineCountForMode({ text, playOption, maxLines });
   const availableHeight = Math.max(1, previewHeight - padding);
+  const requestedLineSpacingPx = Math.max(0, lineSpacingPx ?? 0);
+  const effectiveLineHeightRatio = lineHeightRatio;
+  const maxLineSpacingPx =
+    lineCount > 1
+      ? Math.max(
+          0,
+          Math.floor(
+            (availableHeight -
+              Math.max(1, (baseFontSize ?? fallbackFontSize)) *
+                effectiveLineHeightRatio *
+                lineCount) /
+              (lineCount - 1),
+          ),
+        )
+      : requestedLineSpacingPx;
+  const interLineGapPx = Math.min(requestedLineSpacingPx, maxLineSpacingPx);
+  const totalLineGapPx = Math.max(0, lineCount - 1) * interLineGapPx;
   const maxFontSize = Math.max(
     1,
-    Math.floor(availableHeight / (lineCount * lineHeightRatio)),
+    lineSpacingPx == null
+      ? Math.floor(availableHeight / (lineCount * lineHeightRatio))
+      : Math.floor(
+          (availableHeight - totalLineGapPx) /
+            (lineCount * effectiveLineHeightRatio),
+        ),
   );
   const percentBasedFontSize = Math.floor(maxFontSize * ((fontSizePercent ?? 100) / 100));
   const desiredFontSize = baseFontSize ?? percentBasedFontSize;
   const fontSize = Math.max(1, Math.min(desiredFontSize, maxFontSize));
   const height = Math.max(
     1,
-    Math.ceil(fontSize * lineHeightRatio * lineCount + padding),
+    lineSpacingPx == null
+      ? Math.ceil(fontSize * lineHeightRatio * lineCount + padding)
+      : Math.ceil(
+          fontSize * effectiveLineHeightRatio * lineCount + totalLineGapPx + padding,
+        ),
   );
   return { lineCount, fontSize, height };
 }
 
-export function getHeightScaledFontSize(params: {
+export function scaleFontSizeByHeight(params: {
   baseFontSize: number;
   targetHeight: number;
   referenceHeight: number;
@@ -125,6 +168,7 @@ export function getFullscreenTextMetrics(params: {
   displayText: string;
   baseFontSize: number;
   lineHeightRatio: number;
+  lineSpacingPx?: number;
   maxHeight: number;
   padding: number;
   clampByMaxHeight: boolean;
@@ -133,6 +177,7 @@ export function getFullscreenTextMetrics(params: {
     displayText,
     baseFontSize,
     lineHeightRatio,
+    lineSpacingPx,
     maxHeight,
     padding,
     clampByMaxHeight,
@@ -140,9 +185,29 @@ export function getFullscreenTextMetrics(params: {
 
   const lineCount = Math.max(1, displayText.split("\n").length);
   const availableHeight = Math.max(1, maxHeight - padding);
+  const requestedLineSpacingPx = Math.max(0, lineSpacingPx ?? 0);
+  const effectiveLineHeightRatio = lineHeightRatio;
+  const maxLineSpacingPx =
+    lineCount > 1
+      ? Math.max(
+          0,
+          Math.floor(
+            (availableHeight -
+              Math.max(1, baseFontSize) * effectiveLineHeightRatio * lineCount) /
+              (lineCount - 1),
+          ),
+        )
+      : requestedLineSpacingPx;
+  const interLineGapPx = Math.min(requestedLineSpacingPx, maxLineSpacingPx);
+  const totalLineGapPx = Math.max(0, lineCount - 1) * interLineGapPx;
   const maxFontSizeByHeight = Math.max(
     1,
-    Math.floor(availableHeight / (lineHeightRatio * lineCount)),
+    lineSpacingPx == null
+      ? Math.floor(availableHeight / (lineHeightRatio * lineCount))
+      : Math.floor(
+          (availableHeight - totalLineGapPx) /
+            (effectiveLineHeightRatio * lineCount),
+        ),
   );
   const fontSize = clampByMaxHeight
     ? Math.max(1, Math.min(baseFontSize, maxFontSizeByHeight))
@@ -150,7 +215,11 @@ export function getFullscreenTextMetrics(params: {
 
   const rawHeight = Math.max(
     1,
-    Math.ceil(fontSize * lineHeightRatio * lineCount + padding),
+    lineSpacingPx == null
+      ? Math.ceil(fontSize * lineHeightRatio * lineCount + padding)
+      : Math.ceil(
+          fontSize * effectiveLineHeightRatio * lineCount + totalLineGapPx + padding,
+        ),
   );
   const height = clampByMaxHeight ? Math.min(rawHeight, maxHeight) : rawHeight;
 

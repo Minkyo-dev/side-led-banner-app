@@ -39,6 +39,7 @@ export const TextSection = ({}: TextSectionProps) => {
     font,
     fontSize,
     lineSpacing,
+    letterSpacing,
     textSelectedColor,
     outLine,
     dropShadow,
@@ -51,7 +52,9 @@ export const TextSection = ({}: TextSectionProps) => {
   const setFontSize = (value: number) =>
     updateConfig("appearance", { fontSize: value });
   const setLineSpacing = (value: number) =>
-    updateConfig("appearance", { lineSpacing: Math.max(10, value) });
+    updateConfig("appearance", { lineSpacing: Math.max(0, value) });
+  const setLetterSpacing = (value: number) =>
+    updateConfig("appearance", { letterSpacing: Math.max(0, value) });
   const setTextSelectedColor = (color: string) =>
     updateConfig("appearance", { textSelectedColor: color });
   const setOutLine = (value: number) =>
@@ -114,15 +117,23 @@ export const TextSection = ({}: TextSectionProps) => {
         label="Line Spacing"
         value={lineSpacing}
         onChange={setLineSpacing}
-        minimumValue={10}
-        maximumValue={100}
+        minimumValue={0}
+        maximumValue={40}
         step={1}
         // disabled={playOption === "one"}
+      />
+      <SettingsSliderBlock
+        label="Letter Spacing"
+        value={letterSpacing}
+        onChange={setLetterSpacing}
+        minimumValue={0}
+        maximumValue={40}
+        step={1}
       />
 
       <View style={styles.settingsRow}>
         <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          One-line Join
+          View Mode
         </Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <TouchableOpacity
@@ -131,10 +142,9 @@ export const TextSection = ({}: TextSectionProps) => {
               styles.settingsRowValueContainer,
               oneLineJoinMode === "space3" && { backgroundColor: "#D0D0D0" },
             ]}
-            disabled={playOption !== "one"}
           >
             <Text style={styles.settingsRowValue} allowFontScaling={false}>
-              3 Spaces
+              Style A
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -143,10 +153,9 @@ export const TextSection = ({}: TextSectionProps) => {
               styles.settingsRowValueContainer,
               oneLineJoinMode === "concat" && { backgroundColor: "#D0D0D0" },
             ]}
-            disabled={playOption !== "one"}
           >
             <Text style={styles.settingsRowValue} allowFontScaling={false}>
-              No Gap
+              Style B
             </Text>
           </TouchableOpacity>
         </View>
