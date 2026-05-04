@@ -2,12 +2,12 @@ import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
-    GRADIENT_BACKDROP_IDS,
-    type GradientBackdropId,
+  GRADIENT_BACKDROP_IDS,
+  type GradientBackdropId,
 } from "@/constants/gradientBackgroundPresets";
 import {
-    isSpeechBubblePreset,
-    SPEECH_BUBBLE_PRESETS,
+  isSpeechBubblePreset,
+  SPEECH_BUBBLE_PRESETS,
 } from "@/constants/speechBubblePresets";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
@@ -17,28 +17,27 @@ import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import { usePreviewPanelTextInput } from "@/hooks/usePreviewPanelTextInput";
 import {
-    getFontScaledLineSpacingPx,
-    getFullscreenTextMetrics,
-    getPreviewTextMetrics,
-    getTextSizingPolicy,
-    scaleFontSizeByHeight,
+  getFontScaledLineSpacingPx,
+  getFullscreenTextMetrics,
+  getPreviewTextMetrics,
+  getTextSizingPolicy,
+  scaleFontSizeByHeight,
 } from "@/utils/textSizing";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useMemo, useState } from "react";
 import {
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
 import { MarqueeCanvas } from "./animation/MarqueeCanvas";
-import { PixelatedBackgroundImage } from "./animation/PixelBackgroundImage";
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
@@ -77,14 +76,16 @@ export default function PreviewPanel() {
     glowIntensity,
     glowColor,
   } = config.appearance;
-  const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
+  const { backgroundColor, backgroundImageUri, backgroundBlur } =
+    config.background;
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
-  const backgroundEdgeEffectAnim =
-    useBackgroundEffectAnimation(backgroundEffectPreset);
+  const backgroundEdgeEffectAnim = useBackgroundEffectAnimation(
+    backgroundEffectPreset,
+  );
   const sizingPolicy = useMemo(
     () =>
       getTextSizingPolicy({
@@ -103,32 +104,30 @@ export default function PreviewPanel() {
     [lineSpacing, fontSize],
   );
 
-  const {
+  const { displayText, translateX, onContainerLayout, onTextLayout, SPACER } =
+    useMarqueeAnimation({
+      text: previewText,
+      speed: textMoveSpeed,
+      playOption,
+      oneLineJoinMode,
+    });
+  const fullscreenLandscapeBaseFontSize = useMemo(() => {
+    return getFullscreenTextMetrics({
+      displayText,
+      baseFontSize: fontSize,
+      lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
+      lineSpacingPx: effectiveLineSpacing,
+      maxHeight: sizingPolicy.fullscreenMaxHeight ?? landscapeHeight,
+      padding: sizingPolicy.speechTextHeightPadding,
+      clampByMaxHeight: sizingPolicy.clampByMaxHeight,
+    }).fontSize;
+  }, [
     displayText,
-    translateX,
-    onContainerLayout,
-    onTextLayout,
-    SPACER,
-  } = useMarqueeAnimation({
-    text: previewText,
-    speed: textMoveSpeed,
-    playOption,
-    oneLineJoinMode,
-  });
-  const fullscreenLandscapeBaseFontSize = useMemo(
-    () => {
-      return getFullscreenTextMetrics({
-        displayText,
-        baseFontSize: fontSize,
-        lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
-        lineSpacingPx: effectiveLineSpacing,
-        maxHeight: sizingPolicy.fullscreenMaxHeight ?? landscapeHeight,
-        padding: sizingPolicy.speechTextHeightPadding,
-        clampByMaxHeight: sizingPolicy.clampByMaxHeight,
-      }).fontSize;
-    },
-    [displayText, fontSize, effectiveLineSpacing, landscapeHeight, sizingPolicy],
-  );
+    fontSize,
+    effectiveLineSpacing,
+    landscapeHeight,
+    sizingPolicy,
+  ]);
   const scaledPreviewBaseFontSize = useMemo(
     () =>
       scaleFontSizeByHeight({
@@ -198,8 +197,10 @@ export default function PreviewPanel() {
     effectSelectedItems.includes("Blink"),
     blinkSpeed,
   );
-  let previewTextContainerSize: { width: `${number}%`; yOffset?: number | `${number}%` } | null =
-    null;
+  let previewTextContainerSize: {
+    width: `${number}%`;
+    yOffset?: number | `${number}%`;
+  } | null = null;
   if (isSpeechBubblePreset(backgroundEdgeEffectAnim.id)) {
     const preset = SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id];
     const previewBox =
@@ -254,10 +255,11 @@ export default function PreviewPanel() {
         onLayout={onPreviewLayout}
       >
         {hasBgPhoto ? (
-          <PixelatedBackgroundImage
-            uri={backgroundImageUri}
-            pixelSize={backgroundPixelSize}
-            blurRadius={backgroundBlur / 3}
+          <Image
+            source={{ uri: backgroundImageUri }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            blurRadius={backgroundBlur / 8}
           />
         ) : null}
         <BackgroundEffectLayer

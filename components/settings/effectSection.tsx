@@ -22,15 +22,11 @@ function getSliderPropsForEffect(
     glowIntensity: number;
     blinkSpeed: number;
     pixelSize: number;
-    backgroundPixelSize: number;
-    backgroundBlur: number;
   },
   setters: {
     setGlowIntensity: (v: number) => void;
     setBlinkSpeed: (v: number) => void;
     setPixelSize: (v: number) => void;
-    setBackgroundPixelSize: (v: number) => void;
-    setBackgroundBlur: (v: number) => void;
   },
   tEffect: (key: EffectSectionLabelKey) => string,
 ): Omit<SettingsSliderBlockProps, "containerStyle"> | null {
@@ -87,8 +83,6 @@ export const EffectSection = ({}: EffectSectionProps) => {
     pixelSize,
   } = config.appearance;
 
-  const { backgroundPixelSize, backgroundBlur } = config.background;
-
   const fxVals = effectParamValues ?? {};
 
   const setGlowIntensity = (value: number) =>
@@ -109,32 +103,14 @@ export const EffectSection = ({}: EffectSectionProps) => {
       effectParamValues: { ...fxVals, Pixel: value },
     });
 
-  const setBackgroundPixelSize = (value: number) =>
-    updateConfig("background", {
-      backgroundPixelSize: value,
-    });
-
-  const setBackgroundBlur = (value: number) =>
-    updateConfig("background", {
-      backgroundBlur: value,
-    });
-
   const setFontWeight = (value: "normal" | "bold") =>
     updateConfig("appearance", { fontWeight: value });
 
-  const values = {
-    glowIntensity,
-    blinkSpeed,
-    pixelSize,
-    backgroundPixelSize,
-    backgroundBlur,
-  };
+  const values = { glowIntensity, blinkSpeed, pixelSize };
   const setters = {
     setGlowIntensity,
     setBlinkSpeed,
     setPixelSize,
-    setBackgroundPixelSize,
-    setBackgroundBlur,
   };
   const stackedSliderBlocks: {
     key: string;
@@ -149,9 +125,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
       effectSectionLabel,
     );
     if (!props) continue;
-    for (const prop of props) {
-      stackedSliderBlocks.push({ key: effect, props: prop });
-    }
+    stackedSliderBlocks.push({ key: effect, props });
   }
 
   return (

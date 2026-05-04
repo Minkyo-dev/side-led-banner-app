@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useSettings } from "../../contexts/settingsContext";
 import { BackgroundPhotoSheet } from "./backgroundPhotoSheet";
+import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 interface BackgroundSectionProps {}
 
@@ -62,11 +63,7 @@ const chip = StyleSheet.create({
 export const BackgroundSection = ({}: BackgroundSectionProps) => {
   const [photoSheet, setPhotoSheet] = useState(false);
   const { config, updateConfig, textSectionLabel } = useSettings();
-  const {
-    backgroundColor,
-    backgroundBlur,
-    backgroundImageUri,
-  } =
+  const { backgroundColor, backgroundBlur, backgroundImageUri } =
     config.background;
 
   const setBackgroundBlur = (value: number) =>
@@ -120,10 +117,13 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={base.scrollViewContainer}
       >
-        <Text style={base.settingsRowLabel} allowFontScaling={false}>
-          {textSectionLabel("backgroundColor")}
-        </Text>
-      </View>
+        <View
+          style={[base.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
+        >
+          <Text style={base.settingsRowLabel} allowFontScaling={false}>
+            {textSectionLabel("backgroundColor")}
+          </Text>
+        </View>
 
         <View style={chip.colorPickerContainer}>
           <View style={chip.colorPickerRow}>
@@ -161,21 +161,41 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
             ))}
           </View>
 
-      <SettingsSliderBlock
-        label={textSectionLabel("blur")}
-        value={backgroundBlur}
-        onChange={setBackgroundBlur}
-        minimumValue={0}
-        maximumValue={100}
-        step={1}
+          {moreRows.map((row, rowIndex) => (
+            <View key={`bg-color-row-${rowIndex}`} style={chip.colorPickerRow}>
+              {row.map((color, index) => (
+                <TouchableOpacity
+                  key={`bg-color-${rowIndex}-${index}`}
+                  style={chip.colorPickerItemButton}
+                  onPress={() => setBgColor(color)}
+                >
+                  {!hasBgPhoto && backgroundColor === color ? (
+                    <View style={chip.colorPickerItemActive} />
+                  ) : null}
+                  <View
+                    style={[chip.colorPickerItem, { backgroundColor: color }]}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </View>
+
+        <SettingsSliderBlock
+          label={textSectionLabel("blur")}
+          value={backgroundBlur}
+          onChange={setBackgroundBlur}
+          minimumValue={0}
+          maximumValue={100}
+          step={1}
+        />
+      </ScrollView>
+      <BackgroundPhotoSheet
+        visible={photoSheet}
+        onClose={() => setPhotoSheet(false)}
+        onGallery={() => void openAlbum()}
+        onDefault={clearBgPhoto}
       />
-    </ScrollView>
-    <BackgroundPhotoSheet
-      visible={photoSheet}
-      onClose={() => setPhotoSheet(false)}
-      onGallery={() => void openAlbum()}
-      onDefault={clearBgPhoto}
-    />
     </>
   );
 };

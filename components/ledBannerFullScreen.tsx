@@ -1,6 +1,5 @@
 import { BackgroundEffectLayer } from "@/components/animation/BackgroundEffectLayer";
 import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
-import { PixelatedBackgroundImage } from "@/components/animation/PixelBackgroundImage";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
   GRADIENT_BACKDROP_IDS,
@@ -16,8 +15,8 @@ import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
   getFontScaledLineSpacingPx,
   getFullscreenTextMetrics,
-  scaleFontSizeByHeight,
   getTextSizingPolicy,
+  scaleFontSizeByHeight,
 } from "@/utils/textSizing";
 import { Image } from "expo-image";
 import React, { useMemo } from "react";
@@ -62,12 +61,8 @@ export const LedBannerFullScreen = ({
     pixelSize: configPixelSize,
   } = config.appearance;
 
-  const {
-    backgroundColor,
-    backgroundImageUri,
-    backgroundBlur,
-    backgroundPixelSize,
-  } = config.background;
+  const { backgroundColor, backgroundImageUri, backgroundBlur } =
+    config.background;
 
   const isPixelEffect = effectSelectedItems.includes("Pixel");
   const isGlowEffect = effectSelectedItems.includes("Glow");
@@ -96,12 +91,14 @@ export const LedBannerFullScreen = ({
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
-  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation({
-    text: previewText,
-    speed: textMoveSpeed,
-    playOption,
-    oneLineJoinMode,
-  });
+  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
+    {
+      text: previewText,
+      speed: textMoveSpeed,
+      playOption,
+      oneLineJoinMode,
+    },
+  );
   const isSpeechBgActive =
     backgroundEdgeEffectAnim.id === "speechBg1" ||
     backgroundEdgeEffectAnim.id === "speechBg2";
@@ -134,7 +131,13 @@ export const LedBannerFullScreen = ({
     return isPortrait
       ? Math.max(1, Math.floor(scaled * sizingPolicy.portraitFontBoost))
       : scaled;
-  }, [fontSize, windowHeight, landscapeHeight, isPortrait, sizingPolicy.portraitFontBoost]);
+  }, [
+    fontSize,
+    windowHeight,
+    landscapeHeight,
+    isPortrait,
+    sizingPolicy.portraitFontBoost,
+  ]);
   const fullscreenTextMetrics = useMemo(() => {
     return getFullscreenTextMetrics({
       displayText,
@@ -145,7 +148,13 @@ export const LedBannerFullScreen = ({
       padding: sizingPolicy.speechTextHeightPadding,
       clampByMaxHeight: sizingPolicy.clampByMaxHeight,
     });
-  }, [displayText, heightScaledFontSize, effectiveLineSpacing, sizingPolicy, windowHeight]);
+  }, [
+    displayText,
+    heightScaledFontSize,
+    effectiveLineSpacing,
+    sizingPolicy,
+    windowHeight,
+  ]);
   const speechPresetPlatform = isSpeechBgActive
     ? Platform.OS === "ios"
       ? SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].ios
@@ -176,7 +185,6 @@ export const LedBannerFullScreen = ({
     fallbackLayout: { width: windowWidth, height: windowHeight },
     lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
   });
-
   const handleFullscreenLayout = isSpeechBgActive
     ? undefined
     : canvas.onSkiaCanvasLayout;
@@ -206,10 +214,11 @@ export const LedBannerFullScreen = ({
             pointerEvents="box-none"
           >
             {hasBgPhoto ? (
-              <PixelatedBackgroundImage
-                uri={backgroundImageUri}
-                pixelSize={backgroundPixelSize}
-                blurRadius={backgroundBlur / 3}
+              <Image
+                source={{ uri: backgroundImageUri }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                blurRadius={backgroundBlur / 8}
               />
             ) : null}
             <BackgroundEffectLayer
