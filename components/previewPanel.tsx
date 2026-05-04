@@ -38,6 +38,7 @@ import {
 } from "react-native";
 import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
 import { MarqueeCanvas } from "./animation/MarqueeCanvas";
+import { PixelatedBackgroundImage } from "./animation/PixelBackgroundImage";
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
@@ -202,7 +203,9 @@ export default function PreviewPanel() {
   if (isSpeechBubblePreset(backgroundEdgeEffectAnim.id)) {
     const preset = SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id];
     const previewBox =
-      Platform.OS === "ios" ? preset.ios.previewTextBox : preset.android.previewTextBox;
+      Platform.OS === "ios"
+        ? preset.ios.previewTextBox
+        : preset.android.previewTextBox;
     previewTextContainerSize = previewBox.portrait;
   }
 
@@ -251,11 +254,10 @@ export default function PreviewPanel() {
         onLayout={onPreviewLayout}
       >
         {hasBgPhoto ? (
-          <Image
-            source={{ uri: backgroundImageUri }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            blurRadius={backgroundBlur / 8}
+          <PixelatedBackgroundImage
+            uri={backgroundImageUri}
+            pixelSize={backgroundPixelSize}
+            blurRadius={backgroundBlur / 3}
           />
         ) : null}
         <BackgroundEffectLayer

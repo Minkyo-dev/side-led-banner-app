@@ -1,3 +1,4 @@
+import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import {
   APP_LOCALE_KEYS,
   type AppLanguagePreference,
@@ -106,6 +107,7 @@ export interface BannerConfig {
     /** 사진 배경 uri · 없으면 단색만 */
     backgroundImageUri: string | null;
     backgroundBlur: number;
+    backgroundPixelSize: number;
   };
   motion: {
     textMoveSpeed: number;
@@ -195,6 +197,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     backgroundColor: "#FFFFFF",
     backgroundImageUri: null,
     backgroundBlur: 50,
+    backgroundPixelSize: 0,
   },
   motion: {
     textMoveSpeed: 50,

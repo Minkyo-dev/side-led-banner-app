@@ -1,5 +1,6 @@
 import { BackgroundEffectLayer } from "@/components/animation/BackgroundEffectLayer";
 import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
+import { PixelatedBackgroundImage } from "@/components/animation/PixelBackgroundImage";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
   GRADIENT_BACKDROP_IDS,
@@ -61,8 +62,12 @@ export const LedBannerFullScreen = ({
     pixelSize: configPixelSize,
   } = config.appearance;
 
-  const { backgroundColor, backgroundImageUri, backgroundBlur } =
-    config.background;
+  const {
+    backgroundColor,
+    backgroundImageUri,
+    backgroundBlur,
+    backgroundPixelSize,
+  } = config.background;
 
   const isPixelEffect = effectSelectedItems.includes("Pixel");
   const isGlowEffect = effectSelectedItems.includes("Glow");
@@ -85,8 +90,9 @@ export const LedBannerFullScreen = ({
 
   const { animatedStyle: blinkStyle, opacity: blinkOpacity } =
     useBlinkOpacityStyle(effectSelectedItems.includes("Blink"), blinkSpeed);
-  const backgroundEdgeEffectAnim =
-    useBackgroundEffectAnimation(backgroundEffectPreset);
+  const backgroundEdgeEffectAnim = useBackgroundEffectAnimation(
+    backgroundEffectPreset,
+  );
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { textMoveSpeed } = config.motion;
@@ -157,7 +163,7 @@ export const LedBannerFullScreen = ({
         transform: [{ translateY: speechTextBoxConfig!.yOffset }],
       }
     : {};
-  
+
   const canvas = usePreviewPanelCanvas({
     displayText,
     translateX,
@@ -170,11 +176,11 @@ export const LedBannerFullScreen = ({
     fallbackLayout: { width: windowWidth, height: windowHeight },
     lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
   });
+
   const handleFullscreenLayout = isSpeechBgActive
     ? undefined
     : canvas.onSkiaCanvasLayout;
-  
-  
+
   return (
     <Modal
       visible={visible}
@@ -200,11 +206,10 @@ export const LedBannerFullScreen = ({
             pointerEvents="box-none"
           >
             {hasBgPhoto ? (
-              <Image
-                source={{ uri: backgroundImageUri }}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                blurRadius={backgroundBlur / 8}
+              <PixelatedBackgroundImage
+                uri={backgroundImageUri}
+                pixelSize={backgroundPixelSize}
+                blurRadius={backgroundBlur / 3}
               />
             ) : null}
             <BackgroundEffectLayer
@@ -275,4 +280,3 @@ export const LedBannerFullScreen = ({
     </Modal>
   );
 };
-

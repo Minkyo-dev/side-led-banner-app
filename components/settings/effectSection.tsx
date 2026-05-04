@@ -6,18 +6,9 @@ import {
 import { styles } from "@/constants/styles";
 import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import React from "react";
-import {
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
-import {
-  type BannerConfig,
-  useSettings,
-} from "../../contexts/settingsContext";
+import { type BannerConfig, useSettings } from "../../contexts/settingsContext";
 import {
   SettingsSliderBlock,
   type SettingsSliderBlockProps,
@@ -31,11 +22,15 @@ function getSliderPropsForEffect(
     glowIntensity: number;
     blinkSpeed: number;
     pixelSize: number;
+    backgroundPixelSize: number;
+    backgroundBlur: number;
   },
   setters: {
     setGlowIntensity: (v: number) => void;
     setBlinkSpeed: (v: number) => void;
     setPixelSize: (v: number) => void;
+    setBackgroundPixelSize: (v: number) => void;
+    setBackgroundBlur: (v: number) => void;
   },
   tEffect: (key: EffectSectionLabelKey) => string,
 ): Omit<SettingsSliderBlockProps, "containerStyle"> | null {
@@ -92,6 +87,8 @@ export const EffectSection = ({}: EffectSectionProps) => {
     pixelSize,
   } = config.appearance;
 
+  const { backgroundPixelSize, backgroundBlur } = config.background;
+
   const fxVals = effectParamValues ?? {};
 
   const setGlowIntensity = (value: number) =>
@@ -112,17 +109,37 @@ export const EffectSection = ({}: EffectSectionProps) => {
       effectParamValues: { ...fxVals, Pixel: value },
     });
 
+  const setBackgroundPixelSize = (value: number) =>
+    updateConfig("background", {
+      backgroundPixelSize: value,
+    });
+
+  const setBackgroundBlur = (value: number) =>
+    updateConfig("background", {
+      backgroundBlur: value,
+    });
+
   const setFontWeight = (value: "normal" | "bold") =>
     updateConfig("appearance", { fontWeight: value });
 
-  const values = { glowIntensity, blinkSpeed, pixelSize };
+  const values = {
+    glowIntensity,
+    blinkSpeed,
+    pixelSize,
+    backgroundPixelSize,
+    backgroundBlur,
+  };
   const setters = {
     setGlowIntensity,
     setBlinkSpeed,
     setPixelSize,
+    setBackgroundPixelSize,
+    setBackgroundBlur,
   };
-  const stackedSliderBlocks: { key: string; props: SettingsSliderBlockProps }[] =
-    [];
+  const stackedSliderBlocks: {
+    key: string;
+    props: SettingsSliderBlockProps;
+  }[] = [];
   for (const effect of effectItems) {
     if (!effectSelectedItems.includes(effect)) continue;
     const props = getSliderPropsForEffect(
@@ -132,7 +149,9 @@ export const EffectSection = ({}: EffectSectionProps) => {
       effectSectionLabel,
     );
     if (!props) continue;
-    stackedSliderBlocks.push({ key: effect, props });
+    for (const prop of props) {
+      stackedSliderBlocks.push({ key: effect, props: prop });
+    }
   }
 
   return (
