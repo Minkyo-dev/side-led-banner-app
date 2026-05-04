@@ -1,8 +1,28 @@
 import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import {
+  APP_LOCALE_KEYS,
+  type AppLanguagePreference,
+  type AppLocaleKey,
+} from "@/constants/language";
+import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
+import {
+  type GoogleSheetLocaleRow,
+  type GoogleSheetParseResult,
+  useGoogleSheets,
+} from "@/hooks/useGoogleSheets";
+import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
+import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
+import {
+  effectChipLabel as resolveEffectChipLabel,
+  tEffectSectionLabel,
+} from "@/language/effectSectionLabels";
+import type { TextSectionLabelKey } from "@/language/textSectionLabels";
+import { tTextSectionLabel } from "@/language/textSectionLabels";
+import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
+import { useLocales } from "expo-localization";
 import React, {
   createContext,
   useCallback,
@@ -12,6 +32,21 @@ import React, {
   useRef,
   useState,
 } from "react";
+
+/** 시트 B~F 셀 내용이 바뀌면 같이 바뀌는 정수*/
+function sheetRowsLayoutRevision(rows: GoogleSheetLocaleRow[]): number {
+  let h = 0;
+  for (const r of rows) {
+    h = (h * 47 + r.sheetRow) | 0;
+    for (const k of APP_LOCALE_KEYS) {
+      const s = r.locales[k] ?? "";
+      for (let i = 0; i < s.length; i++) {
+        h = (h * 31 + s.charCodeAt(i)) | 0;
+      }
+    }
+  }
+  return h;
+}
 
 /**
  * SettingsContext 사용 매뉴얼
@@ -45,6 +80,7 @@ export interface BannerConfig {
     font: string;
     fontSize: number;
     lineSpacing: number;
+    letterSpacing: number;
     textSelectedColor: string;
     outLine: number;
     dropShadow: number;
@@ -87,7 +123,7 @@ export type PresetSnapshot = {
 };
 
 export const PRESET_SLOT_COUNT = 5;
-const PRESET_AUTOSAVE_DEBOUNCE_MS = 100;
+const PRESET_AUTOSAVE_DEBOUNCE_MS = 500;
 
 /** appearance만 deep copy용 (배열·맵 참조 끊기) */
 function dupAppearance(
@@ -137,6 +173,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     font: "nanum_gothic",
     fontSize: 50,
     lineSpacing: 10,
+    letterSpacing: 10,
     textSelectedColor: "#000000",
     outLine: 0,
     dropShadow: 0,
@@ -186,9 +223,21 @@ function normalizePresetSlot(raw: unknown): PresetSnapshot {
       ? (o.appearance as Partial<BannerConfig["appearance"]>)
       : {};
 
+  const legacyLineSpacing =
+    typeof (appearancePartial as { lineSpacing?: unknown }).lineSpacing === "number"
+      ? (appearancePartial as { lineSpacing: number }).lineSpacing
+      : undefined;
+  const legacyLetterSpacing =
+    typeof (appearancePartial as { letterSpacing?: unknown }).letterSpacing ===
+    "number"
+      ? (appearancePartial as { letterSpacing: number }).letterSpacing
+      : undefined;
+
   const appearance = dupAppearance({
     ...base.appearance,
     ...appearancePartial,
+    lineSpacing: legacyLineSpacing ?? base.appearance.lineSpacing,
+    letterSpacing: legacyLetterSpacing ?? base.appearance.letterSpacing,
     effectSelectedItems: Array.isArray(appearancePartial.effectSelectedItems)
       ? [...appearancePartial.effectSelectedItems]
       : base.appearance.effectSelectedItems,
@@ -225,11 +274,17 @@ export interface UIState {
   activeTab: TabType;
   /** 선택된 프리셋 버튼 (0~4) */
   activePreset: number;
+  /**
+   * 설정 화면에서 언어 전환 UI를 붙일 때 `updateUI({ appLanguage: "ko" })` 등으로 갱신해주세요.
+   */
+  appLanguage: AppLanguagePreference;
 }
 //여기서 제공할 config 및 업데이트 함수 정의
 interface SettingsContextValue {
   config: BannerConfig;
   ui: UIState;
+  /** `appLanguage === "system"`일 때 기기 로케일, 아니면 `appLanguage`와 동일 */
+  resolvedAppLocale: AppLocaleKey;
   updateConfig: <K extends keyof BannerConfig>(
     group: K,
     updates: Partial<BannerConfig[K]>,
@@ -242,6 +297,19 @@ interface SettingsContextValue {
   /** playOption은 유지된 채로 이전 슬롯을 자동 저장합니다*/
   loadPreset: (index: number) => void;
   resetPresetSlot: (index: number) => void;
+  /** 파싱 전체(디버그용). */
+  sheetParseResult: GoogleSheetParseResult | null;
+  sheetStringsLoading: boolean;
+  sheetStringsError: Error | null;
+  refetchSheetStrings: () => Promise<void>;
+  /** 시트 우선, 없으면 코드 fallback */
+  textSectionLabel: (key: TextSectionLabelKey) => string;
+  effectSectionLabel: (key: EffectSectionLabelKey) => string;
+  effectChipLabel: (effectId: string) => string;
+  /**
+   * 게시 CSV 행·셀 내용이 바뀔 때마다 바뀜.
+   */
+  sheetStringsRevision: number;
 }
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 //해당 context 값을 제공하는 provider 컴포넌트
@@ -252,6 +320,29 @@ export const useSettings = () => {
 };
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
+  /**스프레드 시트 데이터 */
+  const {
+    data: sheetData,
+    loading: sheetStringsLoading,
+    error: sheetStringsError,
+    refetch: refetchSheetStrings,
+  } = useGoogleSheets();
+
+  /** 기기 로케일 */
+  const locales = useLocales();
+  const primaryLocale = locales[0];
+  /** 기기 로케일을 AppLocaleKey (ko, en, ja, zhTC, zhSC)로 변환 */
+  const deviceAppLocale = useMemo(
+    () =>
+      deviceLocaleToAppLocale(primaryLocale ?? { languageCode: "en" }),
+    [
+      primaryLocale?.languageTag,
+      primaryLocale?.languageCode,
+      primaryLocale?.languageScriptCode,
+      primaryLocale?.regionCode,
+    ],
+  );
+
   const [config, setConfig] = useState<BannerConfig>(DEFAULT_BANNER_CONFIG);
 
   const [presetSlots, setPresetSlots] = useState<PresetSnapshot[]>(() =>
@@ -269,7 +360,38 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     isPlaying: false,
     activeTab: "TEXT",
     activePreset: 0,
+    appLanguage: "system",
   });
+
+  const resolvedAppLocale: AppLocaleKey =
+    ui.appLanguage === "system" ? deviceAppLocale : ui.appLanguage;
+
+  const sheetParseResult = sheetData ?? null;
+  const sheetRows = sheetData?.rows ?? null;
+
+  const sheetStringsRevision = useMemo(
+    () =>
+      sheetData?.rows?.length ? sheetRowsLayoutRevision(sheetData.rows) : 0,
+    [sheetData],
+  );
+
+  const textSectionLabel = useCallback(
+    (key: TextSectionLabelKey) =>
+      tTextSectionLabel(key, resolvedAppLocale, sheetRows),
+    [resolvedAppLocale, sheetRows],
+  );
+
+  const effectSectionLabel = useCallback(
+    (key: EffectSectionLabelKey) =>
+      tEffectSectionLabel(key, resolvedAppLocale, sheetRows),
+    [resolvedAppLocale, sheetRows],
+  );
+
+  const effectChipLabel = useCallback(
+    (effectId: string) =>
+      resolveEffectChipLabel(effectId, resolvedAppLocale, sheetRows),
+    [resolvedAppLocale, sheetRows],
+  );
 
   /** 프리셋 저장/로드 시 최신 state용 */
   const configRef = useRef(config);
@@ -457,6 +579,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     () => ({
       config,
       ui,
+      resolvedAppLocale,
       updateConfig,
       updateUI,
       handleTextChange,
@@ -465,15 +588,32 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       savePreset,
       loadPreset,
       resetPresetSlot,
+      sheetParseResult,
+      sheetStringsLoading,
+      sheetStringsError,
+      refetchSheetStrings,
+      textSectionLabel,
+      effectSectionLabel,
+      effectChipLabel,
+      sheetStringsRevision,
     }),
     [
       config,
       ui,
+      resolvedAppLocale,
       fontItems,
       effectItems,
       savePreset,
       loadPreset,
       resetPresetSlot,
+      sheetParseResult,
+      sheetStringsLoading,
+      sheetStringsError,
+      refetchSheetStrings,
+      textSectionLabel,
+      effectSectionLabel,
+      effectChipLabel,
+      sheetStringsRevision,
     ],
   );
 

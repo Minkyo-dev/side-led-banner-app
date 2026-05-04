@@ -61,8 +61,12 @@ const chip = StyleSheet.create({
 
 export const BackgroundSection = ({}: BackgroundSectionProps) => {
   const [photoSheet, setPhotoSheet] = useState(false);
-  const { config, updateConfig } = useSettings();
-  const { backgroundColor, backgroundBlur, backgroundImageUri } =
+  const { config, updateConfig, textSectionLabel } = useSettings();
+  const {
+    backgroundColor,
+    backgroundBlur,
+    backgroundImageUri,
+  } =
     config.background;
 
   const setBackgroundBlur = (value: number) =>
@@ -95,27 +99,6 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
     });
   }, [updateConfig]);
 
-  const openCamera = useCallback(async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission",
-        "Allow camera access to take a photo for the background.",
-      );
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.85,
-      aspect: [16, 9],
-    });
-    if (result.canceled || !result.assets[0]) return;
-    updateConfig("background", {
-      backgroundImageUri: result.assets[0].uri,
-    });
-  }, [updateConfig]);
-
   const clearBgPhoto = useCallback(
     () => updateConfig("background", { backgroundImageUri: null }),
     [updateConfig],
@@ -137,13 +120,10 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={base.scrollViewContainer}
       >
-        <View
-          style={[base.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
-        >
-          <Text style={base.settingsRowLabel} allowFontScaling={false}>
-            Background
-          </Text>
-        </View>
+        <Text style={base.settingsRowLabel} allowFontScaling={false}>
+          {textSectionLabel("backgroundColor")}
+        </Text>
+      </View>
 
         <View style={chip.colorPickerContainer}>
           <View style={chip.colorPickerRow}>
@@ -181,42 +161,21 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
             ))}
           </View>
 
-          {moreRows.map((row, rowIndex) => (
-            <View key={`bg-color-row-${rowIndex}`} style={chip.colorPickerRow}>
-              {row.map((color, index) => (
-                <TouchableOpacity
-                  key={`bg-color-${rowIndex}-${index}`}
-                  style={chip.colorPickerItemButton}
-                  onPress={() => setBgColor(color)}
-                >
-                  {!hasBgPhoto && backgroundColor === color ? (
-                    <View style={chip.colorPickerItemActive} />
-                  ) : null}
-                  <View
-                    style={[chip.colorPickerItem, { backgroundColor: color }]}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-          ))}
-        </View>
-
-        {/* <SettingsSliderBlock
-          label="Background Blur"
-          value={backgroundBlur}
-          onChange={setBackgroundBlur}
-          minimumValue={0}
-          maximumValue={100}
-          step={1}
-        /> */}
-      </ScrollView>
-      <BackgroundPhotoSheet
-        visible={photoSheet}
-        onClose={() => setPhotoSheet(false)}
-        onGallery={() => void openAlbum()}
-        onCamera={() => void openCamera()}
-        onDefault={clearBgPhoto}
+      <SettingsSliderBlock
+        label={textSectionLabel("blur")}
+        value={backgroundBlur}
+        onChange={setBackgroundBlur}
+        minimumValue={0}
+        maximumValue={100}
+        step={1}
       />
+    </ScrollView>
+    <BackgroundPhotoSheet
+      visible={photoSheet}
+      onClose={() => setPhotoSheet(false)}
+      onGallery={() => void openAlbum()}
+      onDefault={clearBgPhoto}
+    />
     </>
   );
 };

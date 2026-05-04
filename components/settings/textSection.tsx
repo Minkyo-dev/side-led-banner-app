@@ -1,6 +1,8 @@
 // components/TextSection.tsx
 import { ColorPicker } from "@/components/colorPicker";
+import { btnStyles } from "@/constants/btnStyles";
 import { textColorPalette } from "@/constants/colorPalette";
+import type { AppLocaleKey } from "@/constants/language";
 import { styles } from "@/constants/styles";
 import React, { useMemo } from "react";
 import {
@@ -33,12 +35,20 @@ export const TextSection = ({}: TextSectionProps) => {
     [insets.bottom],
   );
 
-  const { config, updateConfig, fontItems } = useSettings();
+  const {
+    config,
+    updateConfig,
+    fontItems,
+    updateUI,
+    textSectionLabel,
+    resolvedAppLocale,
+  } = useSettings();
   const { playOption, oneLineJoinMode } = config.content;
   const {
     font,
     fontSize,
     lineSpacing,
+    letterSpacing,
     textSelectedColor,
     outLine,
     dropShadow,
@@ -51,7 +61,9 @@ export const TextSection = ({}: TextSectionProps) => {
   const setFontSize = (value: number) =>
     updateConfig("appearance", { fontSize: value });
   const setLineSpacing = (value: number) =>
-    updateConfig("appearance", { lineSpacing: Math.max(10, value) });
+    updateConfig("appearance", { lineSpacing: Math.max(0, value) });
+  const setLetterSpacing = (value: number) =>
+    updateConfig("appearance", { letterSpacing: Math.max(0, value) });
   const setTextSelectedColor = (color: string) =>
     updateConfig("appearance", { textSelectedColor: color });
   const setOutLine = (value: number) =>
@@ -60,21 +72,61 @@ export const TextSection = ({}: TextSectionProps) => {
     updateConfig("appearance", { dropShadow: value });
   const setOneLineJoinMode = (value: "space3" | "concat") =>
     updateConfig("content", { oneLineJoinMode: value });
+  const onAppLanguageChange = (item: { value: string }) =>
+    updateUI({ appLanguage: item.value as AppLocaleKey });
+
+  /** Follow device 항목 없음 — `appLanguage === "system"`이면 표시값은 `resolvedAppLocale` */
+  const languageDropdownItems = useMemo(
+    () => [
+      { label: "한국어", value: "ko" as const },
+      { label: "English", value: "en" as const },
+      { label: "日本語", value: "ja" as const },
+      { label: "繁體中文", value: "zhTC" as const },
+      { label: "简体中文", value: "zhSC" as const },
+    ],
+    [],
+  );
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.scrollViewContainer}
     >
+      <View style={styles.settingsRow}>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          {textSectionLabel("language")}
+        </Text>
+        <Dropdown
+          data={languageDropdownItems}
+          labelField="label"
+          valueField="value"
+          value={resolvedAppLocale}
+          onChange={onAppLanguageChange}
+          autoScroll={false}
+          maxHeight={fontDropdownMaxHeight}
+          showsVerticalScrollIndicator
+          flatListProps={fontDropdownFlatListProps}
+          style={[styles.dropdownContainer, { width: "56%" }]}
+          containerStyle={[styles.dropdownContainer, { width: "56%" }]}
+          selectedTextStyle={styles.dropdownSelectedTextStyle}
+          selectedTextProps={{ allowFontScaling: false }}
+          itemContainerStyle={styles.dropdownItemContainerStyle}
+          itemTextStyle={styles.dropdownItemTextStyle}
+          iconStyle={styles.dropdownIconStyle}
+          iconColor="black"
+        />
+      </View>
+
       {/* text - font select */}
       <View style={styles.settingsRow}>
         <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          Font
+          {textSectionLabel("font")}
         </Text>
         <Dropdown
           data={fontItems}
           labelField="label"
           valueField="value"
-          placeholder="Select font"
+          placeholder={textSectionLabel("fontPlaceholder")}
           iconColor="black"
           value={font}
           onChange={onFontChange}
@@ -93,7 +145,7 @@ export const TextSection = ({}: TextSectionProps) => {
       </View>
 
       <SettingsSliderBlock
-        label="Speed"
+        label={textSectionLabel("speed")}
         value={textMoveSpeed}
         onChange={setTextMoveSpeed}
         minimumValue={0}
@@ -102,51 +154,81 @@ export const TextSection = ({}: TextSectionProps) => {
       />
 
       <SettingsSliderBlock
-        label="Size"
+        slotId="fontSize"
+        label={textSectionLabel("size")}
         value={fontSize}
         onChange={setFontSize}
         minimumValue={10}
         maximumValue={100}
         step={1}
       />
-
       <SettingsSliderBlock
-        label="Line Spacing"
-        value={lineSpacing}
-        onChange={setLineSpacing}
-        minimumValue={10}
-        maximumValue={100}
+        label={textSectionLabel("letterSpacing")}
+        value={letterSpacing}
+        onChange={setLetterSpacing}
+        minimumValue={0}
+        maximumValue={40}
         step={1}
-        // disabled={playOption === "one"}
       />
+      {playOption === "multi" ? (
+        <SettingsSliderBlock
+          label={textSectionLabel("lineSpacing")}
+          value={lineSpacing}
+          onChange={setLineSpacing}
+          minimumValue={0}
+          maximumValue={40}
+          step={1}
+        />
+      ) : null}
+      
 
       <View style={styles.settingsRow}>
         <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          One-line Join
+          {textSectionLabel("viewMode")}
         </Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+            alignItems: "center",
+          }}
+        >
           <TouchableOpacity
             onPress={() => setOneLineJoinMode("space3")}
             style={[
-              styles.settingsRowValueContainer,
-              oneLineJoinMode === "space3" && { backgroundColor: "#D0D0D0" },
+              btnStyles.effectItemButton,
+              oneLineJoinMode === "space3" && btnStyles.effectItemButtonActive,
             ]}
-            disabled={playOption !== "one"}
           >
-            <Text style={styles.settingsRowValue} allowFontScaling={false}>
-              3 Spaces
+            <Text
+              style={[
+                btnStyles.effectItemButtonText,
+                oneLineJoinMode === "space3" &&
+                  btnStyles.effectItemButtonTextActive,
+              ]}
+              allowFontScaling={false}
+            >
+              {textSectionLabel("viewModeReset")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setOneLineJoinMode("concat")}
             style={[
-              styles.settingsRowValueContainer,
-              oneLineJoinMode === "concat" && { backgroundColor: "#D0D0D0" },
+              btnStyles.effectItemButton,
+              oneLineJoinMode === "concat" && btnStyles.effectItemButtonActive,
             ]}
-            disabled={playOption !== "one"}
           >
-            <Text style={styles.settingsRowValue} allowFontScaling={false}>
-              No Gap
+            <Text
+              style={[
+                btnStyles.effectItemButtonText,
+                oneLineJoinMode === "concat" &&
+                  btnStyles.effectItemButtonTextActive,
+              ]}
+              allowFontScaling={false}
+            >
+              {textSectionLabel("viewModeContinuous")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -156,7 +238,9 @@ export const TextSection = ({}: TextSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text allowFontScaling={false}>Color</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          {textSectionLabel("color")}
+        </Text>
       </View>
       <View style={styles.colorPickerContainer}>
         <ColorPicker
@@ -167,7 +251,7 @@ export const TextSection = ({}: TextSectionProps) => {
       </View>
 
       <SettingsSliderBlock
-        label="Out Line"
+        label={textSectionLabel("outline")}
         value={outLine}
         onChange={setOutLine}
         minimumValue={0}
@@ -176,7 +260,7 @@ export const TextSection = ({}: TextSectionProps) => {
       />
 
       <SettingsSliderBlock
-        label="Drop Shadow"
+        label={textSectionLabel("dropShadow")}
         value={dropShadow}
         onChange={setDropShadow}
         minimumValue={0}

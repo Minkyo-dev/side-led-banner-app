@@ -7,8 +7,6 @@ import {
   withTiming,
 } from "react-native-reanimated";
 import type { SkFont } from "@shopify/react-native-skia";
-const SPACER = 80;
-
 export interface UseMarqueePixelAnimationParams {
   text: string;
   speed: number;
@@ -35,14 +33,17 @@ export function useMarqueePixelAnimation({
   const translateX = useSharedValue(0);
   const [textWidth, setTextWidth] = useState(0);
 
-  const oneLineText = text.replace(/\n/g, "");
+  const baseText = playOption === "one" ? text.replace(/\n/g, "") : text;
   const displayText =
-    playOption === "one"
-      ? oneLineJoinMode === "space3"
-        ? `${oneLineText}   `
-        : oneLineText
-      : text;
-  const spacer = playOption === "one" ? 0 : SPACER;
+    oneLineJoinMode === "space3"
+      ? playOption === "one"
+        ? `${baseText}      `
+        : baseText
+            .split("\n")
+            .map((line) => `${line}      `)
+            .join("\n")
+      : baseText;
+  const spacer = 0;
 
   useEffect(() => {
     if (speed === 0 || textWidth === 0) {
