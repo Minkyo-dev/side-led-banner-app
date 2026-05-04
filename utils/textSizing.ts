@@ -115,40 +115,44 @@ export function getPreviewTextMetrics(params: {
   const availableHeight = Math.max(1, previewHeight - padding);
   const requestedLineSpacingPx = Math.max(0, lineSpacingPx ?? 0);
   const effectiveLineHeightRatio = lineHeightRatio;
-  const maxLineSpacingPx =
-    lineCount > 1
-      ? Math.max(
-          0,
-          Math.floor(
-            (availableHeight -
-              Math.max(1, (baseFontSize ?? fallbackFontSize)) *
-                effectiveLineHeightRatio *
-                lineCount) /
-              (lineCount - 1),
-          ),
-        )
-      : requestedLineSpacingPx;
-  const interLineGapPx = Math.min(requestedLineSpacingPx, maxLineSpacingPx);
-  const totalLineGapPx = Math.max(0, lineCount - 1) * interLineGapPx;
-  const maxFontSize = Math.max(
+
+  const maxFontSizeForBox = Math.max(
     1,
-    lineSpacingPx == null
-      ? Math.floor(availableHeight / (lineCount * lineHeightRatio))
-      : Math.floor(
-          (availableHeight - totalLineGapPx) /
-            (lineCount * effectiveLineHeightRatio),
-        ),
+    Math.floor(availableHeight / (lineCount * effectiveLineHeightRatio)),
   );
-  const percentBasedFontSize = Math.floor(maxFontSize * ((fontSizePercent ?? 100) / 100));
+
+  if (lineSpacingPx == null) {
+    const percentBasedFontSize = Math.floor(
+      maxFontSizeForBox * ((fontSizePercent ?? 100) / 100),
+    );
+    const desiredFontSize = baseFontSize ?? percentBasedFontSize;
+    const fontSize = Math.max(1, Math.min(desiredFontSize, maxFontSizeForBox));
+    const height = Math.max(
+      1,
+      Math.ceil(fontSize * effectiveLineHeightRatio * lineCount + padding),
+    );
+    return { lineCount, fontSize, height };
+  }
+
+  const percentBasedFontSize = Math.floor(
+    maxFontSizeForBox * ((fontSizePercent ?? 100) / 100),
+  );
   const desiredFontSize = baseFontSize ?? percentBasedFontSize;
-  const fontSize = Math.max(1, Math.min(desiredFontSize, maxFontSize));
+  const fontSize = Math.max(1, Math.min(desiredFontSize, maxFontSizeForBox));
+
+  const lineBodyPx = fontSize * effectiveLineHeightRatio * lineCount;
+  const gapBudgetPx = Math.max(0, availableHeight - lineBodyPx);
+  const interLineGapPx =
+    lineCount > 1
+      ? Math.min(
+          requestedLineSpacingPx,
+          Math.floor(gapBudgetPx / (lineCount - 1)),
+        )
+      : 0;
+  const totalLineGapPx = Math.max(0, lineCount - 1) * interLineGapPx;
   const height = Math.max(
     1,
-    lineSpacingPx == null
-      ? Math.ceil(fontSize * lineHeightRatio * lineCount + padding)
-      : Math.ceil(
-          fontSize * effectiveLineHeightRatio * lineCount + totalLineGapPx + padding,
-        ),
+    Math.ceil(lineBodyPx + totalLineGapPx + padding),
   );
   return { lineCount, fontSize, height };
 }

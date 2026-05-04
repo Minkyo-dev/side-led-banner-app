@@ -3,6 +3,7 @@ import {
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
+import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
 import PreviewPanel from "@/components/previewPanel";
 import { BackgroundSection } from "@/components/settings/backgroundSection";
@@ -20,7 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function Index() {
   const insets = useSafeAreaInsets();
 
-  const { config, ui, updateConfig, updateUI } = useSettings();
+  const { config, ui, updateConfig, updateUI, textSectionLabel } = useSettings();
   const { playOption } = config.content;
   const { isPlaying, activeTab } = ui;
 
@@ -72,22 +73,32 @@ export default function Index() {
       </View>
       {/* tab container */}
       <View id="tabContainer" style={styles.tabContainer}>
-        {["TEXT", "BACKGROUND", "EFFECT"].map((tab) => (
+        {(
+          [
+            { id: "TEXT" as const, labelKey: "tabText" as const },
+            { id: "BACKGROUND" as const, labelKey: "tabBackground" as const },
+            { id: "EFFECT" as const, labelKey: "tabEffects" as const },
+          ] satisfies readonly {
+            id: TabType;
+            labelKey:
+              | "tabText"
+              | "tabBackground"
+              | "tabEffects";
+          }[]
+        ).map(({ id, labelKey }) => (
           <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() =>
-              handleTabPress(tab as "TEXT" | "BACKGROUND" | "EFFECT")
-            }
+            key={id}
+            style={[styles.tab, activeTab === id && styles.activeTab]}
+            onPress={() => handleTabPress(id)}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === tab && styles.activeTabText,
+                activeTab === id && styles.activeTabText,
               ]}
               allowFontScaling={false}
             >
-              {tab}
+              {textSectionLabel(labelKey)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -107,6 +118,7 @@ export default function Index() {
         onClose={handleStop}
         config={config}
       />
+      <SheetFetchDebugPanel />
     </View>
   );
 }

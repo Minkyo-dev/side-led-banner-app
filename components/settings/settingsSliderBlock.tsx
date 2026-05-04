@@ -1,5 +1,6 @@
 import { SliderComponent } from "@/components/slider";
 import { styles } from "@/constants/styles";
+import { useSettings } from "@/contexts/settingsContext";
 import React from "react";
 import { StyleProp, Text, View, ViewStyle } from "react-native";
 
@@ -9,6 +10,7 @@ const rowNoBottomBorder: ViewStyle = {
 };
 
 export type SettingsSliderBlockProps = {
+  slotId?: string;
   label: string;
   value: number;
   onChange: (value: number) => void;
@@ -26,6 +28,7 @@ export type SettingsSliderBlockProps = {
  * text, effect등 설정 패널용 라벨과 숫자행과 슬라이더 묶음 컴포넌트
  */
 export function SettingsSliderBlock({
+  slotId,
   label,
   value,
   onChange,
@@ -36,10 +39,17 @@ export function SettingsSliderBlock({
   disabled = false,
   containerStyle,
 }: SettingsSliderBlockProps) {
+  const { sheetStringsRevision, resolvedAppLocale } = useSettings();
+  /** Slider 네이티브 뷰 옆의 라벨 Text가 안 갱신되는 경우 리마운트로 동기화 */
+  const blockKey = `ssb-${slotId ?? "default"}-${sheetStringsRevision}-${resolvedAppLocale}-${label}`;
   return (
-    <View style={containerStyle}>
-      <View style={[styles.settingsRow, rowNoBottomBorder]}>
-        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+    <View key={blockKey} style={containerStyle} collapsable={false}>
+      <View style={[styles.settingsRow, rowNoBottomBorder]} collapsable={false}>
+        <Text
+          key={`lbl-${sheetStringsRevision}-${label}`}
+          style={styles.settingsRowLabel}
+          allowFontScaling={false}
+        >
           {label}
         </Text>
         <View style={styles.settingsRowValueContainer}>

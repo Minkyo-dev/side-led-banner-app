@@ -4,6 +4,7 @@ import {
   GRADIENT_BACKGROUND_PRESETS,
 } from "@/constants/gradientBackgroundPresets";
 import { styles } from "@/constants/styles";
+import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import React from "react";
 import {
   Image,
@@ -36,12 +37,13 @@ function getSliderPropsForEffect(
     setBlinkSpeed: (v: number) => void;
     setPixelSize: (v: number) => void;
   },
+  tEffect: (key: EffectSectionLabelKey) => string,
 ): Omit<SettingsSliderBlockProps, "containerStyle"> | null {
   switch (effect) {
     case "Glow":
     case "Pixel Glow":
       return {
-        label: "Glow Intensity",
+        label: tEffect("effectGlowIntensity"),
         value: values.glowIntensity,
         onChange: setters.setGlowIntensity,
         minimumValue: 0,
@@ -50,7 +52,7 @@ function getSliderPropsForEffect(
       };
     case "Blink":
       return {
-        label: "Blink frequency",
+        label: tEffect("effectBlinkFrequency"),
         value: values.blinkSpeed,
         onChange: setters.setBlinkSpeed,
         minimumValue: 1,
@@ -59,7 +61,7 @@ function getSliderPropsForEffect(
       };
     case "Pixel":
       return {
-        label: "Pixel block size",
+        label: tEffect("effectPixelBlockSize"),
         value: values.pixelSize,
         onChange: setters.setPixelSize,
         minimumValue: 0,
@@ -72,7 +74,13 @@ function getSliderPropsForEffect(
 }
 
 export const EffectSection = ({}: EffectSectionProps) => {
-  const { config, updateConfig, effectItems } = useSettings();
+  const {
+    config,
+    updateConfig,
+    effectItems,
+    effectSectionLabel,
+    effectChipLabel,
+  } = useSettings();
 
   const {
     effectSelectedItems,
@@ -117,7 +125,12 @@ export const EffectSection = ({}: EffectSectionProps) => {
     [];
   for (const effect of effectItems) {
     if (!effectSelectedItems.includes(effect)) continue;
-    const props = getSliderPropsForEffect(effect, values, setters);
+    const props = getSliderPropsForEffect(
+      effect,
+      values,
+      setters,
+      effectSectionLabel,
+    );
     if (!props) continue;
     stackedSliderBlocks.push({ key: effect, props });
   }
@@ -132,7 +145,9 @@ export const EffectSection = ({}: EffectSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text allowFontScaling={false}>Effect</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          {effectSectionLabel("effectHeading")}
+        </Text>
       </View>
 
       <ScrollView
@@ -192,7 +207,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
               ]}
               allowFontScaling={false}
             >
-              {effect}
+              {effectChipLabel(effect)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -203,6 +218,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
           {stackedSliderBlocks.map(({ key, props }, i) => (
             <SettingsSliderBlock
               key={key}
+              slotId={`effect-${key}`}
               {...props}
               containerStyle={{ marginTop: i === 0 ? 0 : 10 }}
             />
@@ -212,8 +228,11 @@ export const EffectSection = ({}: EffectSectionProps) => {
 
       {effectSelectedItems.includes("Gradient") ? (
         <View style={{ marginTop: 14, marginHorizontal: 15 }}>
-          <Text allowFontScaling={false} style={{ marginBottom: 8 }}>
-            Gradient background
+          <Text
+            allowFontScaling={false}
+            style={[styles.settingsRowLabel, { marginBottom: 8 }]}
+          >
+            {effectSectionLabel("gradientBackgroundHeading")}
           </Text>
           <ScrollView
             horizontal
@@ -256,15 +275,56 @@ export const EffectSection = ({}: EffectSectionProps) => {
       <View
         style={[styles.settingsRow, { borderBottomWidth: 0, marginBottom: 0 }]}
       >
-        <Text allowFontScaling={false}>Background Effect</Text>
+        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
+          {effectSectionLabel("backgroundEffectHeading")}
+        </Text>
       </View>
 
-      <View
-        style={[
-          styles.effectImageContainer,
-          styles.backgroundEffectRow,
-        ]}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.effectImageContainer}
+        contentContainerStyle={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: 10,
+          paddingRight: 5,
+          minHeight: 188,
+        }}
       >
+        <TouchableOpacity
+          style={[
+            styles.backgroundEffectCard,
+            backgroundEffectPreset === "none" && {
+              borderColor: "#FF6E00",
+            },
+          ]}
+          onPress={() =>
+            updateConfig("appearance", {
+              backgroundEffectPreset: "none",
+            })
+          }
+        >
+          <View
+            style={{
+              height: 180,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Text
+              allowFontScaling={false}
+              style={{
+                fontSize: 16,
+                fontWeight: "400",
+                color:
+                  backgroundEffectPreset === "none" ? "#FF6E00" : "#000000",
+              }}
+            >
+              {effectSectionLabel("noEffect")}
+            </Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.backgroundEffectCard}
           onPress={() =>
@@ -325,7 +385,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
             resizeMode="contain"
           />
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </ScrollView>
   );
 };

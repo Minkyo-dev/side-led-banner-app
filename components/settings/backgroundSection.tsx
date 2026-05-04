@@ -55,7 +55,7 @@ const chip = StyleSheet.create({
 
 export const BackgroundSection = ({}: BackgroundSectionProps) => {
   const [photoSheet, setPhotoSheet] = useState(false);
-  const { config, updateConfig } = useSettings();
+  const { config, updateConfig, textSectionLabel } = useSettings();
   const {
     backgroundColor,
     backgroundBlur,
@@ -123,7 +123,7 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
         ]}
       >
         <Text style={base.settingsRowLabel} allowFontScaling={false}>
-          Background
+          {textSectionLabel("backgroundColor")}
         </Text>
       </View>
 
@@ -192,7 +192,7 @@ export const BackgroundSection = ({}: BackgroundSectionProps) => {
       </View>
 
       <SettingsSliderBlock
-        label="Background Blur"
+        label={textSectionLabel("blur")}
         value={backgroundBlur}
         onChange={setBackgroundBlur}
         minimumValue={0}

@@ -1,5 +1,7 @@
 import { Dimensions, StyleSheet } from "react-native";
 
+/** 미리보기 하단 `TextInput`·측정용 `Text`와 동일 */
+export const CONTENTS_INPUT_FONT_SIZE = 18;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
@@ -52,7 +54,7 @@ export const styles = StyleSheet.create({
     marginBottom: 11,
   },
   contentsInput: {
-    fontSize: 18,
+    fontSize: CONTENTS_INPUT_FONT_SIZE,
     flex: 0.8,
     color: "white",
   },
