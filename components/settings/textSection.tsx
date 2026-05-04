@@ -1,5 +1,6 @@
 // components/TextSection.tsx
 import { ColorPicker } from "@/components/colorPicker";
+import { btnStyles } from "@/constants/btnStyles";
 import { textColorPalette } from "@/constants/colorPalette";
 import type { AppLocaleKey } from "@/constants/language";
 import { styles } from "@/constants/styles";
@@ -185,27 +186,49 @@ export const TextSection = ({}: TextSectionProps) => {
         <Text style={styles.settingsRowLabel} allowFontScaling={false}>
           {textSectionLabel("viewMode")}
         </Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+            alignItems: "center",
+          }}
+        >
           <TouchableOpacity
             onPress={() => setOneLineJoinMode("space3")}
             style={[
-              styles.settingsRowValueContainer,
-              oneLineJoinMode === "space3" && { backgroundColor: "#D0D0D0" },
+              btnStyles.effectItemButton,
+              oneLineJoinMode === "space3" && btnStyles.effectItemButtonActive,
             ]}
           >
-            <Text style={styles.settingsRowValue} allowFontScaling={false}>
-              {textSectionLabel("styleA")}
+            <Text
+              style={[
+                btnStyles.effectItemButtonText,
+                oneLineJoinMode === "space3" &&
+                  btnStyles.effectItemButtonTextActive,
+              ]}
+              allowFontScaling={false}
+            >
+              {textSectionLabel("viewModeReset")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setOneLineJoinMode("concat")}
             style={[
-              styles.settingsRowValueContainer,
-              oneLineJoinMode === "concat" && { backgroundColor: "#D0D0D0" },
+              btnStyles.effectItemButton,
+              oneLineJoinMode === "concat" && btnStyles.effectItemButtonActive,
             ]}
           >
-            <Text style={styles.settingsRowValue} allowFontScaling={false}>
-              {textSectionLabel("styleB")}
+            <Text
+              style={[
+                btnStyles.effectItemButtonText,
+                oneLineJoinMode === "concat" &&
+                  btnStyles.effectItemButtonTextActive,
+              ]}
+              allowFontScaling={false}
+            >
+              {textSectionLabel("viewModeContinuous")}
             </Text>
           </TouchableOpacity>
         </View>

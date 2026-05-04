@@ -1,9 +1,6 @@
 import type { AppLocaleKey } from "@/constants/language";
 import type { GoogleSheetLocaleRow } from "@/hooks/useGoogleSheets";
-import {
-  pickLocaleFromSheetRows,
-  type SheetRowPickOptions,
-} from "@/language/matchSheetRows";
+import { pickLocaleFromSheetRows } from "@/language/matchSheetRows";
 
 export type EffectSectionLabelKey =
   | "effectHeading"
@@ -106,19 +103,7 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
   },
 };
 
-/**
- * 게시 시트에서 효과·배경 관련 줄을 **우선** 집는다(`strictSheetRow` 없음 → 그 줄에
- * 현재 언어 칸이 비면 C/B 앵커 매칭으로 이어짐). 줄 번호는 사용 중인 CSV와 맞출 것.
- */
-const EFFECT_SHEET_PICK: Partial<
-  Record<EffectSectionLabelKey, SheetRowPickOptions>
-> = {
-  effectBlinkFrequency: { sheetRow: 24 },
-  backgroundEffectHeading: { sheetRow: 25 },
-  effectPixelBlockSize: { sheetRow: 26 },
-  effectGlowIntensity: { sheetRow: 27 },
-  gradientBackgroundHeading: { sheetRow: 28 },
-};
+/** 시트 C열(영어)·B열(한글)이 `LABELS[key].en` / `.ko`와 일치하는 행에서 현재 locale 값을 씀. */
 
 export function tEffectSectionLabel(
   key: EffectSectionLabelKey,
@@ -131,7 +116,6 @@ export function tEffectSectionLabel(
     locale,
     fb.en,
     fb.ko,
-    EFFECT_SHEET_PICK[key],
   );
   if (fromSheet) return fromSheet;
   const s = fb[locale];
