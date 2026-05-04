@@ -1,7 +1,7 @@
 // components/TextSection.tsx
 import { ColorPicker } from "@/components/colorPicker";
 import { textColorPalette } from "@/constants/colorPalette";
-import type { AppLanguagePreference } from "@/constants/language";
+import type { AppLocaleKey } from "@/constants/language";
 import { styles } from "@/constants/styles";
 import React, { useMemo } from "react";
 import {
@@ -38,9 +38,9 @@ export const TextSection = ({}: TextSectionProps) => {
     config,
     updateConfig,
     fontItems,
-    ui,
     updateUI,
     textSectionLabel,
+    resolvedAppLocale,
   } = useSettings();
   const { playOption, oneLineJoinMode } = config.content;
   const {
@@ -72,23 +72,18 @@ export const TextSection = ({}: TextSectionProps) => {
   const setOneLineJoinMode = (value: "space3" | "concat") =>
     updateConfig("content", { oneLineJoinMode: value });
   const onAppLanguageChange = (item: { value: string }) =>
-    updateUI({ appLanguage: item.value as AppLanguagePreference });
+    updateUI({ appLanguage: item.value as AppLocaleKey });
 
-  /** 언어 드롭다운 아이템 */
-  const langFollowDeviceLabel = textSectionLabel("langFollowDevice");
+  /** Follow device 항목 없음 — `appLanguage === "system"`이면 표시값은 `resolvedAppLocale` */
   const languageDropdownItems = useMemo(
     () => [
-      {
-        label: langFollowDeviceLabel,
-        value: "system" as const,
-      },
       { label: "한국어", value: "ko" as const },
       { label: "English", value: "en" as const },
       { label: "日本語", value: "ja" as const },
       { label: "繁體中文", value: "zhTC" as const },
       { label: "简体中文", value: "zhSC" as const },
     ],
-    [langFollowDeviceLabel],
+    [],
   );
 
   return (
@@ -104,7 +99,7 @@ export const TextSection = ({}: TextSectionProps) => {
           data={languageDropdownItems}
           labelField="label"
           valueField="value"
-          value={ui.appLanguage}
+          value={resolvedAppLocale}
           onChange={onAppLanguageChange}
           autoScroll={false}
           maxHeight={fontDropdownMaxHeight}
@@ -166,7 +161,14 @@ export const TextSection = ({}: TextSectionProps) => {
         maximumValue={100}
         step={1}
       />
-
+      <SettingsSliderBlock
+        label={textSectionLabel("letterSpacing")}
+        value={letterSpacing}
+        onChange={setLetterSpacing}
+        minimumValue={0}
+        maximumValue={40}
+        step={1}
+      />
       {playOption === "multi" ? (
         <SettingsSliderBlock
           label={textSectionLabel("lineSpacing")}
@@ -177,14 +179,7 @@ export const TextSection = ({}: TextSectionProps) => {
           step={1}
         />
       ) : null}
-      <SettingsSliderBlock
-        label={textSectionLabel("letterSpacing")}
-        value={letterSpacing}
-        onChange={setLetterSpacing}
-        minimumValue={0}
-        maximumValue={40}
-        step={1}
-      />
+      
 
       <View style={styles.settingsRow}>
         <Text style={styles.settingsRowLabel} allowFontScaling={false}>
