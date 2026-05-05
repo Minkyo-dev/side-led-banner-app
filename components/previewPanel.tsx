@@ -1,3 +1,4 @@
+import { DeleteAllButton } from "@/assets/svg/deleteAllButton";
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
@@ -363,13 +364,19 @@ export default function PreviewPanel() {
         onPress={() => resetPresetSlot(activePreset)}
         accessibilityRole="button"
         accessibilityLabel="Reset current preset slot"
-        style={{ alignSelf: "flex-end", marginTop: 6, marginRight: 2 }}
+        style={{
+          alignSelf: "flex-end",
+          marginTop: 2,
+          marginRight: 2,
+          marginBottom: 0,
+        }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <Text style={{ fontSize: 13, color: "#888" }} allowFontScaling={false}>
           Reset slot
         </Text>
       </TouchableOpacity>
+
       {/* contents input container */}
       <View id="contentsInputContainer" style={styles.contentsInputContainer}>
         <Text
@@ -391,7 +398,7 @@ export default function PreviewPanel() {
           nestedScrollEnabled
           keyboardShouldPersistTaps="handled"
           showsHorizontalScrollIndicator
-          style={{ flex: 0.8 }}
+          style={{ flex: 0.9, backgroundColor: "red" }}
           contentContainerStyle={{ flexGrow: 1 }}
           onLayout={(e) => setInputScrollViewportW(e.nativeEvent.layout.width)}
           {...(Platform.OS === "ios"
@@ -404,6 +411,7 @@ export default function PreviewPanel() {
         >
           <TextInput
             editable
+            allowFontScaling={false}
             multiline={playOption === "multi"}
             scrollEnabled={false}
             style={[
@@ -438,7 +446,7 @@ export default function PreviewPanel() {
             onPress={() => setPreviewText("")}
             style={btnStyles.contentsInputResetButton}
           >
-            <Text style={btnStyles.contentsInputResetButtonText}>×</Text>
+            <DeleteAllButton />
           </TouchableOpacity>
         </View>
       </View>

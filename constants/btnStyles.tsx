@@ -42,12 +42,11 @@ export const btnStyles = StyleSheet.create({
     color: "#B1B1AF",
   },
   contentsInputResetButton: {
-    width: "60%",
     aspectRatio: 1,
     borderRadius: 999,
-    backgroundColor: "rgba(120, 120, 120, 0.30)",
     justifyContent: "center",
     alignItems: "center",
+    marginRight: 3,
   },
   contentsInputResetButtonText: {
     color: "white",
