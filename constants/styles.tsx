@@ -16,11 +16,11 @@ export const styles = StyleSheet.create({
     paddingBottom: 30,
   },
 
-  
   previewContainer: {
     height: (SCREEN_WIDTH - 18) * (355 / 373),
+    // height: 224,
     flexDirection: "column",
-    padding: 10,
+    padding: 5,
     marginHorizontal: 9,
     backgroundColor: "black",
     borderRadius: 20,
@@ -47,11 +47,10 @@ export const styles = StyleSheet.create({
 
   // ===
   contentsInputContainer: {
-    // flex: 0.3,
-    height: 90,
+    height: 60,
     flexDirection: "row",
-    marginHorizontal: 10,
-    marginTop: 8,
+    paddingHorizontal: 5,
+    marginTop: 2,
     marginBottom: 11,
   },
   contentsInput: {
@@ -62,9 +61,9 @@ export const styles = StyleSheet.create({
 
   // ===
   contentsInputResetButtonContainer: {
-    flex: 0.2,
+    flex: 0.25,
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-end",
   },
 
   // ===
@@ -344,10 +343,10 @@ export const sliderComponentStyles = StyleSheet.create({
     alignItems: "center",
   },
   sliderButtonText: {
-    ...uiThemeFontStyle,
-    fontSize: 30,
+    fontSize: 40,
     color: "#B4B4B4",
-    fontWeight: "400",
+    fontWeight: "300",
+    fontFamily: "Nunito",
   },
 });
 

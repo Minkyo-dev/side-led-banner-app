@@ -1,8 +1,12 @@
-import { Text, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
 
+import {
+  SliderMinusButton,
+  SliderPlusButton,
+} from "@/assets/svg/sliderButtons";
+import { sliderComponentStyles as styles } from "@/constants/styles";
 import Slider from "@react-native-community/slider";
 import { View } from "react-native";
-import { sliderComponentStyles as styles } from "@/constants/styles";
 
 export const SliderComponent = ({
   value,
@@ -25,9 +29,10 @@ export const SliderComponent = ({
         style={styles.sliderButton}
         onPress={() => onChange(Math.max(minimumValue, value - step))}
       >
-        <Text style={styles.sliderButtonText} allowFontScaling={false}>
+        {/* <Text style={styles.sliderButtonText} allowFontScaling={false}>
           −
-        </Text>
+        </Text> */}
+        <SliderMinusButton />
       </TouchableOpacity>
       <Slider
         disabled={disabled}
@@ -46,11 +51,11 @@ export const SliderComponent = ({
         style={styles.sliderButton}
         onPress={() => onChange(Math.min(maximumValue, value + step))}
       >
-        <Text style={styles.sliderButtonText} allowFontScaling={false}>
+        {/* <Text style={styles.sliderButtonText} allowFontScaling={false}>
           +
-        </Text>
+        </Text> */}
+        <SliderPlusButton />
       </TouchableOpacity>
     </View>
   );
 };
-
