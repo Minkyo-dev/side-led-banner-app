@@ -1,4 +1,4 @@
-import { appFontFamilyForText } from "@/constants/appFonts";
+import { appFontFamilyForText, uiThemeFontStyle } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
@@ -366,7 +366,10 @@ export default function PreviewPanel() {
         style={{ alignSelf: "flex-end", marginTop: 6, marginRight: 2 }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={{ fontSize: 13, color: "#888" }} allowFontScaling={false}>
+        <Text
+          style={[uiThemeFontStyle, { fontSize: 13, color: "#888" }]}
+          allowFontScaling={false}
+        >
           Reset slot
         </Text>
       </TouchableOpacity>

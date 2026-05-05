@@ -1,3 +1,4 @@
+import { uiThemeFontStyle } from "@/constants/appFonts";
 import { StyleSheet } from "react-native";
 
 // const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -36,9 +37,11 @@ export const btnStyles = StyleSheet.create({
     elevation: 1,
   },
   presetButtonActiveText: {
+    ...uiThemeFontStyle,
     color: "#000000",
   },
   presetButtonText: {
+    ...uiThemeFontStyle,
     color: "#B1B1AF",
   },
   contentsInputResetButton: {
@@ -50,6 +53,7 @@ export const btnStyles = StyleSheet.create({
     alignItems: "center",
   },
   contentsInputResetButtonText: {
+    ...uiThemeFontStyle,
     color: "white",
     fontSize: 25,
   },
@@ -81,6 +85,7 @@ export const btnStyles = StyleSheet.create({
     borderColor: "#FF6E00",
   },
   effectItemButtonText: {
+    ...uiThemeFontStyle,
     fontSize: 16,
     color: "black",
     fontWeight: "400",

@@ -1,3 +1,4 @@
+import { uiThemeFontStyle } from "@/constants/appFonts";
 import { Dimensions, StyleSheet } from "react-native";
 
 /** 미리보기 하단 `TextInput`·측정용 `Text`와 동일 */
@@ -97,6 +98,7 @@ export const styles = StyleSheet.create({
     borderBottomColor: "#FF6E00",
   },
   tabText: {
+    ...uiThemeFontStyle,
     fontSize: 14,
     color: "#787878",
     fontWeight: "600",
@@ -122,6 +124,7 @@ export const styles = StyleSheet.create({
     // backgroundColor: 'red',
   },
   settingsRowLabel: {
+    ...uiThemeFontStyle,
     fontSize: 16,
     color: "black",
     fontWeight: "400",
@@ -138,6 +141,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   settingsRowValue: {
+    ...uiThemeFontStyle,
     fontSize: 16,
     color: "black",
     fontWeight: "400",
@@ -160,8 +164,9 @@ export const styles = StyleSheet.create({
   },
 
   // ===
-  dropdownPlaceholderStyle: {},
+  dropdownPlaceholderStyle: { ...uiThemeFontStyle },
   dropdownSelectedTextStyle: {
+    ...uiThemeFontStyle,
     // 선택된 텍스트 스타일
     fontSize: 16,
   },
@@ -175,6 +180,7 @@ export const styles = StyleSheet.create({
     borderRadius: 0,
   },
   dropdownItemTextStyle: {
+    ...uiThemeFontStyle,
     // 아이템 텍스트 스타일
     fontSize: 16,
   },
@@ -251,6 +257,7 @@ export const backgroundPhotoSheetStyles = StyleSheet.create({
     alignItems: "center",
   },
   rowText: {
+    ...uiThemeFontStyle,
     fontSize: 17,
     fontWeight: "400",
   },
@@ -264,6 +271,7 @@ export const backgroundPhotoSheetStyles = StyleSheet.create({
     alignItems: "center",
   },
   cancelText: {
+    ...uiThemeFontStyle,
     fontSize: 17,
     fontWeight: "600",
   },
@@ -336,6 +344,7 @@ export const sliderComponentStyles = StyleSheet.create({
     alignItems: "center",
   },
   sliderButtonText: {
+    ...uiThemeFontStyle,
     fontSize: 30,
     color: "#B4B4B4",
     fontWeight: "400",

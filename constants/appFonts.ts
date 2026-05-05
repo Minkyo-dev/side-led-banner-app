@@ -77,3 +77,13 @@ function buildAppFontAssets(): Record<string, number> {
 
 /** 루트에서 `useFonts` 한 번에 올릴 맵 — 키는 `appFontFamilyForText`와 동일 규칙 */
 export const APP_FONT_ASSETS: Record<string, number> = buildAppFontAssets();
+
+export const APP_THEME_FONT_FAMILY = "AppTheme";
+export const APP_THEME_FONT_FAMILY_BOLD = "AppTheme-Bold";
+
+export const APP_THEME_FONT_ASSETS: Record<string, number> = {
+  [APP_THEME_FONT_FAMILY]: require("../assets/fonts/Tektur/static/Tektur-Regular.ttf"),
+  [APP_THEME_FONT_FAMILY_BOLD]: require("../assets/fonts/Tektur/static/Tektur-Bold.ttf"),
+};
+
+export const uiThemeFontStyle = { fontFamily: APP_THEME_FONT_FAMILY } as const;

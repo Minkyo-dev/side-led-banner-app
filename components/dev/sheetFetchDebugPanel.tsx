@@ -1,3 +1,4 @@
+import { uiThemeFontStyle } from "@/constants/appFonts";
 import { useSettings } from "@/contexts/settingsContext";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -102,6 +103,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.55)",
   },
   fabText: {
+    ...uiThemeFontStyle,
     color: "#fff",
     fontSize: 12,
     fontWeight: "600",
@@ -127,6 +129,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#333",
   },
   toolbarBtn: {
+    ...uiThemeFontStyle,
     color: "#6ae",
     fontSize: 16,
   },

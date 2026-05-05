@@ -1,3 +1,4 @@
+import { uiThemeFontStyle } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import {
   DEFAULT_GRADIENT_BACKGROUND_PRESET_ID,
@@ -308,6 +309,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
             <Text
               allowFontScaling={false}
               style={{
+                ...uiThemeFontStyle,
                 fontSize: 16,
                 fontWeight: "400",
                 color:
