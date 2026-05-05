@@ -398,7 +398,7 @@ export default function PreviewPanel() {
           nestedScrollEnabled
           keyboardShouldPersistTaps="handled"
           showsHorizontalScrollIndicator
-          style={{ flex: 0.9, backgroundColor: "red" }}
+          style={{ flex: 0.9 }}
           contentContainerStyle={{ flexGrow: 1 }}
           onLayout={(e) => setInputScrollViewportW(e.nativeEvent.layout.width)}
           {...(Platform.OS === "ios"
