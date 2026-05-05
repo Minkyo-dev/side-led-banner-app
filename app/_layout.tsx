@@ -1,4 +1,4 @@
-import { APP_FONT_ASSETS } from "@/constants/appFonts";
+import { APP_FONT_ASSETS, APP_THEME_FONT_ASSETS } from "@/constants/appFonts";
 import { SettingsProvider } from "@/contexts/settingsContext";
 import {
   DarkTheme,
@@ -20,7 +20,10 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const [fontsLoaded] = useFonts(APP_FONT_ASSETS);
+  const [fontsLoaded] = useFonts({
+    ...APP_FONT_ASSETS,
+    ...APP_THEME_FONT_ASSETS,
+  });
 
   useEffect(() => {
     if (fontsLoaded) {
