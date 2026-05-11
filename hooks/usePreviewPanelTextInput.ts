@@ -20,7 +20,7 @@ const INPUT_HEIGHT_FALLBACK = 84;
 /** 폰트마다 사이즈가 달라질 수 있어 추가한 여유분분 여유 */
 const INPUT_HEIGHT_SLACK = Math.max(8, Math.ceil(CONTENTS_INPUT_LINE_HEIGHT * 0.45));
 const INPUT_HEIGHT_BUFFER =
-  (Platform.OS === "android" ? 32 : 26) + INPUT_HEIGHT_SLACK;
+  (Platform.OS === "android" ? 0 : 26) + INPUT_HEIGHT_SLACK;
 
 /** 예전 입력란에서 쓰이던 줄바꿈 표시 문자(U+21B5)가 저장돼 있으면 제거 한 번 배포 했으면 다음 커밋에선 지워도 됩니다.*/
 function stripLegacyInputMarkers(text: string): string {
