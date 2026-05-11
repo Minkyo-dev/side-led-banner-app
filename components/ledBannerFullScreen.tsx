@@ -13,6 +13,7 @@ import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
+  FONT_SIZE_MIN,
   getFontScaledLineSpacingPx,
   getFullscreenTextMetrics,
   getTextSizingPolicy,
@@ -128,9 +129,14 @@ export const LedBannerFullScreen = ({
       targetHeight: windowHeight,
       referenceHeight: landscapeHeight,
     });
-    return isPortrait
-      ? Math.max(1, Math.floor(scaled * sizingPolicy.portraitFontBoost))
+    const portraitSized = isPortrait
+      ? Math.max(FONT_SIZE_MIN, Math.floor(scaled * sizingPolicy.portraitFontBoost))
       : scaled;
+    const atMaxSize = fontSize >= 100;
+    if (!isPortrait && atMaxSize) {
+      return Math.max(FONT_SIZE_MIN, Math.floor(portraitSized * 2));
+    }
+    return Math.max(FONT_SIZE_MIN, portraitSized);
   }, [
     fontSize,
     windowHeight,

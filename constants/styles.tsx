@@ -196,6 +196,18 @@ export const styles = StyleSheet.create({
     gap: 10,
     marginHorizontal: 15,
   },
+  effectChipSectionContainer: {
+    gap: 10,
+    marginHorizontal: 15,
+  },
+  effectChipWrapRow: {
+    flex: 0,
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    alignSelf: "stretch",
+  },
 
   // ===
   effectImageContainer: {
@@ -228,6 +240,9 @@ export const styles = StyleSheet.create({
     width: 92,
     overflow: "hidden",
     backgroundColor: "#FFF",
+  },
+  backgroundEffectCardSelected: {
+    borderColor: "#FF6E00",
   },
   backgroundEffectThumb: {
     width: "100%",

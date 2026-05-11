@@ -158,7 +158,7 @@ export const TextSection = ({}: TextSectionProps) => {
         label={textSectionLabel("size")}
         value={fontSize}
         onChange={setFontSize}
-        minimumValue={10}
+        minimumValue={20}
         maximumValue={100}
         step={1}
       />
