@@ -343,6 +343,7 @@ export const colorPickerStyles = StyleSheet.create({
   },
 });
 
+const SLIDER_WIDTH = SCREEN_WIDTH - 100; // 슬라이더의 총 너비 (버튼 공간 제외)
 export const sliderComponentStyles = StyleSheet.create({
   sliderContainer: {
     height: 40,
@@ -351,14 +352,37 @@ export const sliderComponentStyles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: 15,
     paddingBottom: 30,
+    marginHorizontal: 10,
     marginBottom: 5,
     borderBottomWidth: 2,
     borderBottomColor: "#DDDDDD",
   },
-  slider: {
-    flex: 1,
-    height: 40,
-    paddingTop: 4,
+  sliderTrack: {
+    width: SLIDER_WIDTH,
+    backgroundColor: "#8F8D8A",
+    borderRadius: 4,
+    height: 4,
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 1,
+  },
+  sliderThumb: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    borderRadius: 24,
+    height: 23,
+    width: 38,
+    elevation: 3,
   },
   sliderButton: {
     width: 40,

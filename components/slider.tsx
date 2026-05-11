@@ -2,10 +2,10 @@ import { TouchableOpacity } from "react-native";
 
 import {
   SliderMinusButton,
-  SliderPlusButton,
+  SliderPlusButton
 } from "@/assets/svg/sliderButtons";
 import { sliderComponentStyles as styles } from "@/constants/styles";
-import Slider from "@react-native-community/slider";
+import { Slider } from "@miblanchard/react-native-slider";
 import { View } from "react-native";
 
 export const SliderComponent = ({
@@ -29,31 +29,25 @@ export const SliderComponent = ({
         style={styles.sliderButton}
         onPress={() => onChange(Math.max(minimumValue, value - step))}
       >
-        {/* <Text style={styles.sliderButtonText} allowFontScaling={false}>
-          −
-        </Text> */}
         <SliderMinusButton />
       </TouchableOpacity>
       <Slider
+        animateTransitions
         disabled={disabled}
-        style={styles.slider}
-        minimumValue={minimumValue}
+        trackClickable={true}
+        trackStyle={styles.sliderTrack}
+        thumbStyle={styles.sliderThumb}
         maximumValue={maximumValue}
+        minimumValue={minimumValue}
         value={value}
-        onValueChange={(value: number) => {
-          onChange(Math.round(value));
-        }}
+        onValueChange={(value) => onChange(Math.round(value))}
         minimumTrackTintColor="#FF6E00"
-        maximumTrackTintColor="#8F8D8A"
-        thumbImage={require("@/assets/images/sliderThumbBtn.png")}
+        // renderThumbComponent={() => <SliderThumb />}
       />
       <TouchableOpacity
         style={styles.sliderButton}
         onPress={() => onChange(Math.min(maximumValue, value + step))}
       >
-        {/* <Text style={styles.sliderButtonText} allowFontScaling={false}>
-          +
-        </Text> */}
         <SliderPlusButton />
       </TouchableOpacity>
     </View>
