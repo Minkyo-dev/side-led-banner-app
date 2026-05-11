@@ -348,6 +348,7 @@ export default function PreviewPanel() {
               style={btnStyles.presetButtonGradient} //기존 스타일 적용
             >
               <Text
+                allowFontScaling={false}
                 style={
                   index === activePreset
                     ? btnStyles.presetButtonActiveText
@@ -373,8 +374,8 @@ export default function PreviewPanel() {
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <Text
-          style={[uiThemeFontStyle, { fontSize: 13, color: "#888" }]}
           allowFontScaling={false}
+          style={[uiThemeFontStyle, { fontSize: 13, color: "#888" }]}
         >
           Reset slot
         </Text>
