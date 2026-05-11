@@ -1,6 +1,6 @@
 import {
-  isSpeechBubblePreset,
-  SPEECH_BUBBLE_PRESETS,
+    isSpeechBubblePreset,
+    SPEECH_BUBBLE_PRESETS,
 } from "@/constants/speechBubblePresets";
 import type { BackgroundEffectAnimationResult } from "@/hooks/useBackgroundEffectAnimation";
 import { Image } from "expo-image";
@@ -18,9 +18,9 @@ interface BackgroundEffectLayerProps {
   mode: BackgroundEffectLayerMode;
 }
 
-const HEART_BG_B_SOURCE = require("@/assets/images/Heart BG_B.png");
-const HEART_BG_PAD_LANDSCAPE_SOURCE = require("@/assets/images/Heart BG_H_12.9.png");
-const HEART_BG_PAD_PORTRAIT_SOURCE = require("@/assets/images/Heart BG_V_12.9.png");
+const HEART_BG_B_SOURCE = require("@/assets/images/Heart_BG_B.png");
+const HEART_BG_PAD_LANDSCAPE_SOURCE = require("@/assets/images/Heart_BG_H_12.9.png");
+const HEART_BG_PAD_PORTRAIT_SOURCE = require("@/assets/images/Heart_BG_V_12.9.png");
 // 태블릿/패드 판별 기준 (Material/Apple HIG 공통: 짧은 변 600dp 이상)
 const TABLET_MIN_SHORTEST_SIDE_DP = 600;
 
@@ -84,7 +84,9 @@ export function BackgroundEffectLayer({
     const heartSource = isFullscreenPortrait
       ? HEART_BG_B_SOURCE
       : effect.imageSource;
-    return <HeartBackgroundTicker source={heartSource} translateX={translateX} />;
+    return (
+      <HeartBackgroundTicker source={heartSource} translateX={translateX} />
+    );
   }
 
   if (isSpeechBubblePreset(effect.id)) {
@@ -105,13 +107,7 @@ export function BackgroundEffectLayer({
             bottom: -previewInset,
           }
         : StyleSheet.absoluteFill;
-    return (
-      <Image
-        source={source}
-        style={imageStyle}
-        contentFit="fill"
-      />
-    );
+    return <Image source={source} style={imageStyle} contentFit="fill" />;
   }
 
   return null;
