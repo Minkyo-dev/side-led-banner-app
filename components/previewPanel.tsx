@@ -1,5 +1,5 @@
-import { appFontFamilyForText, uiThemeFontStyle } from "@/constants/appFonts";
 import { DeleteAllButton } from "@/assets/svg/deleteAllButton";
+import { appFontFamilyForText, uiThemeFontStyle } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
@@ -224,9 +224,9 @@ export default function PreviewPanel() {
     inputFixedHeight,
     pendingSelection,
     handleInputMeasureLayout,
-    handleInputHeightMeasureLayout,
+    handleWrappedHeightMeasureLayout,
+    handleInputContentSizeChange,
     measureOffscreenStyle,
-    inputHeightSampleLines,
     onSelectionChange,
   } = usePreviewPanelTextInput({
     previewText,
@@ -383,6 +383,7 @@ export default function PreviewPanel() {
       {/* contents input container */}
       <View id="contentsInputContainer" style={styles.contentsInputContainer}>
         <Text
+          allowFontScaling={false}
           style={[styles.contentsInput, measureOffscreenStyle]}
           onTextLayout={handleInputMeasureLayout}
           pointerEvents="none"
@@ -390,11 +391,16 @@ export default function PreviewPanel() {
           {displayInputText || " "}
         </Text>
         <Text
-          style={[styles.contentsInput, measureOffscreenStyle]}
-          onTextLayout={handleInputHeightMeasureLayout}
+          allowFontScaling={false}
+          style={[
+            styles.contentsInput,
+            measureOffscreenStyle,
+            { width: inputHorizontalCanvasWidth },
+          ]}
+          onTextLayout={handleWrappedHeightMeasureLayout}
           pointerEvents="none"
         >
-          {inputHeightSampleLines}
+          {displayInputText || " "}
         </Text>
         <ScrollView
           horizontal
@@ -426,7 +432,6 @@ export default function PreviewPanel() {
                 maxHeight: inputFixedHeight,
                 paddingTop: 0,
                 paddingBottom: 0,
-                includeFontPadding: false,
                 fontFamily: appFontFamilyForText(
                   font,
                   fontWeight === "bold" ? "bold" : "normal",
@@ -437,6 +442,7 @@ export default function PreviewPanel() {
             value={displayInputText}
             selection={pendingSelection}
             onChangeText={handleTextChange}
+            onContentSizeChange={handleInputContentSizeChange}
             onSelectionChange={onSelectionChange}
             textAlignVertical="top"
           />
