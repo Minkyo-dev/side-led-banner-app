@@ -6,8 +6,8 @@
  * 4) id는 effect 식별자입니다.
  */
 import {
-  isSpeechBubblePreset,
-  type SpeechBubblePresetId,
+    isSpeechBubblePreset,
+    type SpeechBubblePresetId,
 } from "@/constants/speechBubblePresets";
 import { useEffect, useMemo, useState } from "react";
 
@@ -27,20 +27,20 @@ const FRAME_DURATION_MS = 260;
 
 const EFFECT_1_SOURCES = {
   on: {
-    left: require("@/assets/images/Effect 1_on_L.png"),
-    right: require("@/assets/images/Effect 1_on_R.png"),
+    left: require("@/assets/images/Effect_1_on_L.png"),
+    right: require("@/assets/images/Effect_1_on_R.png"),
   },
   light: {
-    left: require("@/assets/images/Effect 1_light_L.png"),
-    right: require("@/assets/images/Effect 1_light_R.png"),
+    left: require("@/assets/images/Effect_1_light_L.png"),
+    right: require("@/assets/images/Effect_1_light_R.png"),
   },
   off: {
-    left: require("@/assets/images/Effect 1_off_L.png"),
-    right: require("@/assets/images/Effect 1_off_R.png"),
+    left: require("@/assets/images/Effect_1_off_L.png"),
+    right: require("@/assets/images/Effect_1_off_R.png"),
   },
 } as const;
 
-const HEART_BG_A_SOURCE = require("@/assets/images/Heart BG_A.png");
+const HEART_BG_A_SOURCE = require("@/assets/images/Heart_BG_A.png");
 
 export type BackgroundEffectAnimationResult =
   | {

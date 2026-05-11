@@ -288,7 +288,8 @@ export const EffectSection = ({}: EffectSectionProps) => {
         <TouchableOpacity
           style={[
             styles.backgroundEffectCard,
-            backgroundEffectPreset === "none" && styles.backgroundEffectCardSelected,
+            backgroundEffectPreset === "none" &&
+              styles.backgroundEffectCardSelected,
           ]}
           onPress={() =>
             updateConfig("appearance", {
@@ -331,7 +332,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
           }
         >
           <Image
-            source={require("@/assets/images/Effect 1_on_L.png")}
+            source={require("@/assets/images/Effect_1_on_L.png")}
             style={[styles.effectImage, styles.backgroundEffectThumb]}
             resizeMode="contain"
           />
@@ -350,7 +351,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
           }
         >
           <Image
-            source={require("@/assets/images/Heart BG_B.png")}
+            source={require("@/assets/images/Heart_BG_B.png")}
             style={[styles.effectImage, styles.backgroundEffectThumb]}
             resizeMode="contain"
           />
@@ -369,7 +370,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
           }
         >
           <Image
-            source={require("@/assets/images/Speech BG_1_B.png")}
+            source={require("@/assets/images/Speech_BG_1_B.png")}
             style={[styles.effectImage, styles.backgroundEffectThumb]}
             resizeMode="contain"
           />
@@ -388,7 +389,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
           }
         >
           <Image
-            source={require("@/assets/images/Speech BG_2_B.png")}
+            source={require("@/assets/images/Speech_BG_2_B.png")}
             style={[styles.effectImage, styles.backgroundEffectThumb]}
             resizeMode="contain"
           />

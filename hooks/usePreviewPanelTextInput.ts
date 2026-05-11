@@ -6,7 +6,7 @@ import {
 import { PRESET_SLOT_COUNT } from "@/contexts/settingsContext";
 import type { ComponentProps } from "react";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Platform, TextInput, TextLayoutEvent } from "react-native";
+import { TextInput, TextLayoutEvent } from "react-native";
 
 type TextInputContentSizeChangeEvent = Parameters<
   NonNullable<ComponentProps<typeof TextInput>["onContentSizeChange"]>
@@ -18,9 +18,12 @@ const INPUT_WIDTH_CURSOR_PAD = 28;
 const INPUT_LINE_WIDTH_PER_CHAR_FACTOR = 0.72;
 const INPUT_HEIGHT_FALLBACK = 84;
 /** 폰트마다 사이즈가 달라질 수 있어 추가한 여유분분 여유 */
-const INPUT_HEIGHT_SLACK = Math.max(8, Math.ceil(CONTENTS_INPUT_LINE_HEIGHT * 0.45));
-const INPUT_HEIGHT_BUFFER =
-  (Platform.OS === "android" ? 0 : 26) + INPUT_HEIGHT_SLACK;
+const INPUT_HEIGHT_SLACK = Math.max(
+  8,
+  Math.ceil(CONTENTS_INPUT_LINE_HEIGHT * 0.45),
+);
+const INPUT_HEIGHT_BUFFER = 0;
+// (Platform.OS === "android" ? 32 : 26) + INPUT_HEIGHT_SLACK;
 
 /** 예전 입력란에서 쓰이던 줄바꿈 표시 문자(U+21B5)가 저장돼 있으면 제거 한 번 배포 했으면 다음 커밋에선 지워도 됩니다.*/
 function stripLegacyInputMarkers(text: string): string {
@@ -55,7 +58,9 @@ export function usePreviewPanelTextInput(params: {
   } = params;
 
   const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
-  const [inputFixedHeight, setInputFixedHeight] = useState(INPUT_HEIGHT_FALLBACK);
+  const [inputFixedHeight, setInputFixedHeight] = useState(
+    INPUT_HEIGHT_FALLBACK,
+  );
   /** `TextInput`에서 실제로 보이는 높이 */
   const contentSizeHeightRef = useRef(0);
   /** 입력 폭과 동일하게 줄바꿈된 오프스크린 `Text`에서 합산한 높이 */
@@ -70,7 +75,9 @@ export function usePreviewPanelTextInput(params: {
   >({});
   const presetSwitchEpochRef = useRef<number | undefined>(undefined);
 
-  const displayInputText = previewText ? stripLegacyInputMarkers(previewText) : "";
+  const displayInputText = previewText
+    ? stripLegacyInputMarkers(previewText)
+    : "";
 
   /**
    * `measuredTextMaxW`은 갱신 전 프레임에도 최장 줄이 minWidth에 갇히지 않도록 하고고
@@ -82,8 +89,7 @@ export function usePreviewPanelTextInput(params: {
     for (const line of displayInputText.split("\n")) {
       if (line.length > maxChars) maxChars = line.length;
     }
-    const charPx =
-      CONTENTS_INPUT_FONT_SIZE * INPUT_LINE_WIDTH_PER_CHAR_FACTOR;
+    const charPx = CONTENTS_INPUT_FONT_SIZE * INPUT_LINE_WIDTH_PER_CHAR_FACTOR;
     return maxChars * charPx;
   }, [displayInputText]);
 
@@ -100,12 +106,7 @@ export function usePreviewPanelTextInput(params: {
         ? measuredWidth
         : Math.max(measuredWidth, heuristicWidth);
     return Math.max(viewportFloor, contentNeed);
-  }, [
-    inputScrollViewportW,
-    measuredTextMaxW,
-    windowWidth,
-    longestLineWidth,
-  ]);
+  }, [inputScrollViewportW, measuredTextMaxW, windowWidth, longestLineWidth]);
 
   useLayoutEffect(() => {
     const switched =
@@ -164,9 +165,7 @@ export function usePreviewPanelTextInput(params: {
     applyMergedInputHeight();
   };
 
-  const handleInputContentSizeChange = (
-    e: TextInputContentSizeChangeEvent,
-  ) => {
+  const handleInputContentSizeChange = (e: TextInputContentSizeChangeEvent) => {
     const h = e.nativeEvent.contentSize.height;
     contentSizeHeightRef.current = h > 0 ? h : 0;
     applyMergedInputHeight();
