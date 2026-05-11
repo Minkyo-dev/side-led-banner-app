@@ -121,6 +121,8 @@ export type PresetSnapshot = {
 };
 
 export const PRESET_SLOT_COUNT = 5;
+
+export const PREVIEW_TEXT_MAX_LINES = 3;
 const PRESET_AUTOSAVE_DEBOUNCE_MS = 500;
 
 /** appearance만 deep copy용 (배열·맵 참조 끊기) */
@@ -494,8 +496,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const handleTextChange = (text: string) => {
     const lines = text.split("\n");
-    const filteredText = lines.length > 3 ? lines.slice(0, 3).join("\n") : text;
-    updateConfig("content", { previewText: filteredText });
+    if (lines.length <= PREVIEW_TEXT_MAX_LINES) {
+      updateConfig("content", { previewText: text });
+      return;
+    }
+    const merged =
+      lines.slice(0, PREVIEW_TEXT_MAX_LINES - 1).join("\n") +
+      "\n" +
+      lines.slice(PREVIEW_TEXT_MAX_LINES - 1).join("");
+    updateConfig("content", { previewText: merged });
   };
 
   const savePreset = useCallback((index: number) => {

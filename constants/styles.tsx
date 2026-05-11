@@ -1,8 +1,11 @@
 import { uiThemeFontStyle } from "@/constants/appFonts";
-import { Dimensions, StyleSheet } from "react-native";
+import { Dimensions, Platform, StyleSheet } from "react-native";
 
 /** 미리보기 하단 `TextInput`·측정용 `Text`와 동일 */
 export const CONTENTS_INPUT_FONT_SIZE = 18;
+export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
+  CONTENTS_INPUT_FONT_SIZE * 1.00,
+);
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
@@ -47,16 +50,22 @@ export const styles = StyleSheet.create({
 
   // ===
   contentsInputContainer: {
-    height: 60,
+    minHeight: 60,
     flexDirection: "row",
+    alignItems: "stretch",
     paddingHorizontal: 5,
     marginTop: 2,
     marginBottom: 11,
   },
   contentsInput: {
     fontSize: CONTENTS_INPUT_FONT_SIZE,
+    lineHeight: CONTENTS_INPUT_LINE_HEIGHT,
     flex: 0.8,
     color: "white",
+    ...Platform.select({
+      android: { includeFontPadding: false },
+      default: {},
+    }),
   },
 
   // ===
