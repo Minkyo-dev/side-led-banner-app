@@ -144,16 +144,15 @@ export const EffectSection = ({}: EffectSectionProps) => {
         </Text>
       </View>
 
-      <ScrollView
-        horizontal={true}
-        showsHorizontalScrollIndicator={false}
-        style={styles.effectContainer}
+      <View
+        style={[styles.effectChipSectionContainer, styles.effectChipWrapRow]}
       >
         {effectItems.map((effect, index) => (
           <TouchableOpacity
             key={`effect-item-${index}`}
             style={[
               btnStyles.effectItemButton,
+              { alignSelf: "flex-start" },
               effectSelectedItems.includes(effect) &&
                 btnStyles.effectItemButtonActive,
             ]}
@@ -205,7 +204,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
             </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
       {stackedSliderBlocks.length > 0 ? (
         <View style={{ marginTop: 12 }}>
@@ -289,9 +288,7 @@ export const EffectSection = ({}: EffectSectionProps) => {
         <TouchableOpacity
           style={[
             styles.backgroundEffectCard,
-            backgroundEffectPreset === "none" && {
-              borderColor: "#FF6E00",
-            },
+            backgroundEffectPreset === "none" && styles.backgroundEffectCardSelected,
           ]}
           onPress={() =>
             updateConfig("appearance", {
@@ -321,7 +318,11 @@ export const EffectSection = ({}: EffectSectionProps) => {
           </View>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.backgroundEffectCard}
+          style={[
+            styles.backgroundEffectCard,
+            backgroundEffectPreset === "effect1" &&
+              styles.backgroundEffectCardSelected,
+          ]}
           onPress={() =>
             updateConfig("appearance", {
               backgroundEffectPreset:
@@ -336,7 +337,11 @@ export const EffectSection = ({}: EffectSectionProps) => {
           />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.backgroundEffectCard}
+          style={[
+            styles.backgroundEffectCard,
+            backgroundEffectPreset === "heartBgA" &&
+              styles.backgroundEffectCardSelected,
+          ]}
           onPress={() =>
             updateConfig("appearance", {
               backgroundEffectPreset:
@@ -351,7 +356,11 @@ export const EffectSection = ({}: EffectSectionProps) => {
           />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.backgroundEffectCard}
+          style={[
+            styles.backgroundEffectCard,
+            backgroundEffectPreset === "speechBg1" &&
+              styles.backgroundEffectCardSelected,
+          ]}
           onPress={() =>
             updateConfig("appearance", {
               backgroundEffectPreset:
@@ -366,7 +375,11 @@ export const EffectSection = ({}: EffectSectionProps) => {
           />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.backgroundEffectCard}
+          style={[
+            styles.backgroundEffectCard,
+            backgroundEffectPreset === "speechBg2" &&
+              styles.backgroundEffectCardSelected,
+          ]}
           onPress={() =>
             updateConfig("appearance", {
               backgroundEffectPreset:

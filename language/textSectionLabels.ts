@@ -150,21 +150,19 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     zhTC: "陰影",
     zhSC: "投影",
   },
-  /** 한 줄 모드: 단어 사이 공백(리셋) — 시트 C/B 앵커는 Reset / 리셋 */
   viewModeReset: {
-    ko: "리셋",
-    en: "Reset",
-    ja: "リセット",
-    zhTC: "重設",
-    zhSC: "重置",
+    ko: "스타일 A",
+    en: "Style A",
+    ja: "スタイル A",
+    zhTC: "樣式 A",
+    zhSC: "样式 A",
   },
-  /** 한 줄 모드: 문장 연속(concat) — 시트 C/B 앵커는 Continuous / 연속 */
   viewModeContinuous: {
-    ko: "연속",
-    en: "Continuous",
-    ja: "連続",
-    zhTC: "連續",
-    zhSC: "连续",
+    ko: "스타일 B",
+    en: "Style B",
+    ja: "スタイル B",
+    zhTC: "樣式 B",
+    zhSC: "样式 B",
   },
   /** 상단 탭 — 시트 첫 줄·배경·효과 구역의 영어 열과 맞춥니다 (Text / Background / Effects). */
   tabText: {

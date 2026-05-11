@@ -1,6 +1,6 @@
 const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
 const FULLSCREEN_LINE_HEIGHT_RATIO = 1.16;
-const FONT_SIZE_MIN = 10;
+export const FONT_SIZE_MIN = 20;
 const FONT_SIZE_MAX = 100;
 const SPEECH_TEXT_HEIGHT_PADDING = 24;
 const PORTRAIT_FONT_BOOST = 0.8;
@@ -10,8 +10,8 @@ const PREVIEW_VERTICAL_TEXT_PADDING = {
   speechBg2: 24,
 } as const;
 const SPEECH_BG_MAX_TEXT_HEIGHT = {
-  speechBg1: { portrait: 400, landscape: 200 },
-  speechBg2: { portrait: 400, landscape: 200 },
+  speechBg1: { portrait: 400, landscape: 300 },
+  speechBg2: { portrait: 400, landscape: 300 },
 } as const;
 type SpeechBubbleId = keyof typeof SPEECH_BG_MAX_TEXT_HEIGHT;
 
