@@ -4,7 +4,7 @@ import { btnStyles } from "@/constants/btnStyles";
 import { textColorPalette } from "@/constants/colorPalette";
 import type { AppLocaleKey } from "@/constants/language";
 import { styles } from "@/constants/styles";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ScrollView,
   Text,
@@ -34,6 +34,23 @@ export const TextSection = ({}: TextSectionProps) => {
     }),
     [insets.bottom],
   );
+
+  /** 폰트 라벨 중 가장 긴 텍스트 폭에 맞춰 드롭다운 폭을 자동 산출(두 줄 줄바꿈 방지) */
+  const [maxFontLabelWidth, setMaxFontLabelWidth] = useState(0);
+  const onFontLabelLayout = useCallback(
+    (e: { nativeEvent: { layout: { width: number } } }) => {
+      const w = e.nativeEvent.layout.width;
+      setMaxFontLabelWidth((prev) => (w > prev ? w : prev));
+    },
+    [],
+  );
+  const fontDropdownWidth = useMemo(() => {
+    if (!maxFontLabelWidth) return undefined;
+    const ICON_WIDTH = 30; // dropdownIconStyle.width
+    const HORIZONTAL_PADDING = 10 * 2; // dropdownContainer.paddingHorizontal
+    const BUFFER = 8;
+    return Math.ceil(maxFontLabelWidth) + ICON_WIDTH + HORIZONTAL_PADDING + BUFFER;
+  }, [maxFontLabelWidth]);
 
   const {
     config,
@@ -122,6 +139,27 @@ export const TextSection = ({}: TextSectionProps) => {
         <Text style={styles.settingsRowLabel} allowFontScaling={false}>
           {textSectionLabel("font")}
         </Text>
+        {/* 가장 긴 라벨 폭을 알아내기 위한 투명 view */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            opacity: 0,
+            height: 0,
+            overflow: "hidden",
+          }}
+        >
+          {fontItems.map((item) => (
+            <Text
+              key={item.value}
+              style={styles.dropdownItemTextStyle}
+              allowFontScaling={false}
+              onLayout={onFontLabelLayout}
+            >
+              {item.label}
+            </Text>
+          ))}
+        </View>
         <Dropdown
           data={fontItems}
           labelField="label"
@@ -133,10 +171,16 @@ export const TextSection = ({}: TextSectionProps) => {
           maxHeight={fontDropdownMaxHeight}
           showsVerticalScrollIndicator
           flatListProps={fontDropdownFlatListProps}
-          style={styles.dropdownContainer}
-          containerStyle={styles.dropdownContainer}
+          style={[
+            styles.dropdownContainer,
+            fontDropdownWidth ? { width: fontDropdownWidth } : null,
+          ]}
+          containerStyle={[
+            styles.dropdownContainer,
+            fontDropdownWidth ? { width: fontDropdownWidth } : null,
+          ]}
           selectedTextStyle={styles.dropdownSelectedTextStyle}
-          selectedTextProps={{ allowFontScaling: false }}
+          selectedTextProps={{ allowFontScaling: false, numberOfLines: 1 }}
           itemContainerStyle={styles.dropdownItemContainerStyle}
           itemTextStyle={styles.dropdownItemTextStyle}
           iconStyle={styles.dropdownIconStyle}

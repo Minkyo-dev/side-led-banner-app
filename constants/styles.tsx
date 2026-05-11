@@ -164,7 +164,7 @@ export const styles = StyleSheet.create({
   // ===
   dropdownContainer: {
     // 드롭다운 컨테이너 스타일
-    width: "40%",
+    width: "55%",
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 24,

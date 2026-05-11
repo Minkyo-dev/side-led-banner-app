@@ -1,11 +1,11 @@
 import {
-  SPEECH_BUBBLE_PRESETS,
   isSpeechBubblePreset,
+  SPEECH_BUBBLE_PRESETS,
 } from "@/constants/speechBubblePresets";
 import type { BackgroundEffectAnimationResult } from "@/hooks/useBackgroundEffectAnimation";
 import { Image } from "expo-image";
 import React from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import { HeartBackgroundTicker } from "./HeartBackgroundTicker";
 
@@ -19,6 +19,10 @@ interface BackgroundEffectLayerProps {
 }
 
 const HEART_BG_B_SOURCE = require("@/assets/images/Heart BG_B.png");
+const HEART_BG_PAD_LANDSCAPE_SOURCE = require("@/assets/images/Heart BG_H_12.9.png");
+const HEART_BG_PAD_PORTRAIT_SOURCE = require("@/assets/images/Heart BG_V_12.9.png");
+// 태블릿/패드 판별 기준 (Material/Apple HIG 공통: 짧은 변 600dp 이상)
+const TABLET_MIN_SHORTEST_SIDE_DP = 600;
 
 // Preview/Fullscreen 공통 배경 이펙트 레이어 렌더링용 (응원봉의 edgestyle을 참고고)
 export function BackgroundEffectLayer({
@@ -27,7 +31,10 @@ export function BackgroundEffectLayer({
   isPortrait,
   mode,
 }: BackgroundEffectLayerProps) {
-  const isFullscreenPortrait = mode === "fullscreen" && isPortrait;
+  const { width: winW, height: winH } = useWindowDimensions();
+  const isTablet = Math.min(winW, winH) >= TABLET_MIN_SHORTEST_SIDE_DP;
+  const isFullscreen = mode === "fullscreen";
+  const isFullscreenPortrait = isFullscreen && isPortrait;
   const effect1EdgeStyle = isFullscreenPortrait
     ? {
         top: "37.5%" as const,
@@ -60,6 +67,20 @@ export function BackgroundEffectLayer({
   }
 
   if (effect.id === "heartBgA" && effect.imageSource) {
+    // 패드 풀스크린: 12.9인치에서는 한 번에 화면 전체에 표시
+    if (isTablet && isFullscreen) {
+      const padHeartSource = isPortrait
+        ? HEART_BG_PAD_PORTRAIT_SOURCE
+        : HEART_BG_PAD_LANDSCAPE_SOURCE;
+      return (
+        <Image
+          source={padHeartSource}
+          style={StyleSheet.absoluteFill}
+          contentFit="contain"
+        />
+      );
+    }
+    // 폰: 풀스크린 세로 → B, 그 외 → A 를 타일링+텍스트와 함께 스크롤
     const heartSource = isFullscreenPortrait
       ? HEART_BG_B_SOURCE
       : effect.imageSource;
