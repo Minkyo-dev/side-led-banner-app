@@ -37,6 +37,15 @@ export default function RootLayout() {
         {fontsLoaded ? (
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="openSourceInfo"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="sunnyList"
+              options={{ headerShown: false }}
+            />
           </Stack>
         ) : null}
         <StatusBar style="auto" />

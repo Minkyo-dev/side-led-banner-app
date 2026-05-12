@@ -2,7 +2,6 @@
 import { ColorPicker } from "@/components/colorPicker";
 import { btnStyles } from "@/constants/btnStyles";
 import { textColorPalette } from "@/constants/colorPalette";
-import type { AppLocaleKey } from "@/constants/language";
 import { styles } from "@/constants/styles";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -56,9 +55,7 @@ export const TextSection = ({}: TextSectionProps) => {
     config,
     updateConfig,
     fontItems,
-    updateUI,
     textSectionLabel,
-    resolvedAppLocale,
   } = useSettings();
   const { playOption, oneLineJoinMode } = config.content;
   const {
@@ -89,51 +86,12 @@ export const TextSection = ({}: TextSectionProps) => {
     updateConfig("appearance", { dropShadow: value });
   const setOneLineJoinMode = (value: "space3" | "concat") =>
     updateConfig("content", { oneLineJoinMode: value });
-  const onAppLanguageChange = (item: { value: string }) =>
-    updateUI({ appLanguage: item.value as AppLocaleKey });
-
-  /** Follow device 항목 없음 — `appLanguage === "system"`이면 표시값은 `resolvedAppLocale` */
-  const languageDropdownItems = useMemo(
-    () => [
-      { label: "한국어", value: "ko" as const },
-      { label: "English", value: "en" as const },
-      { label: "日本語", value: "ja" as const },
-      { label: "繁體中文", value: "zhTC" as const },
-      { label: "简体中文", value: "zhSC" as const },
-    ],
-    [],
-  );
 
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.scrollViewContainer}
     >
-      <View style={styles.settingsRow}>
-        <Text style={styles.settingsRowLabel} allowFontScaling={false}>
-          {textSectionLabel("language")}
-        </Text>
-        <Dropdown
-          data={languageDropdownItems}
-          labelField="label"
-          valueField="value"
-          value={resolvedAppLocale}
-          onChange={onAppLanguageChange}
-          autoScroll={false}
-          maxHeight={fontDropdownMaxHeight}
-          showsVerticalScrollIndicator
-          flatListProps={fontDropdownFlatListProps}
-          style={[styles.dropdownContainer, { width: "56%" }]}
-          containerStyle={[styles.dropdownContainer, { width: "56%" }]}
-          selectedTextStyle={styles.dropdownSelectedTextStyle}
-          selectedTextProps={{ allowFontScaling: false }}
-          itemContainerStyle={styles.dropdownItemContainerStyle}
-          itemTextStyle={styles.dropdownItemTextStyle}
-          iconStyle={styles.dropdownIconStyle}
-          iconColor="black"
-        />
-      </View>
-
       {/* text - font select */}
       <View style={styles.settingsRow}>
         <Text style={styles.settingsRowLabel} allowFontScaling={false}>

@@ -57,7 +57,7 @@ export const btnStyles = StyleSheet.create({
     fontSize: 25,
   },
   playResumeButton: {
-    flex: 0.7,
+    flex: 0.55, // Setting 없으면 0.75
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#EBEBEB",
