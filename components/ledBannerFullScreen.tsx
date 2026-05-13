@@ -19,6 +19,7 @@ import {
   getTextSizingPolicy,
   scaleFontSizeByHeight,
 } from "@/utils/textSizing";
+import { computeMarqueeSegmentCount } from "@/utils/marqueeSegments";
 import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
@@ -191,6 +192,25 @@ export const LedBannerFullScreen = ({
     fallbackLayout: { width: windowWidth, height: windowHeight },
     lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
   });
+
+  const marqueeSegmentCount = useMemo(
+    () =>
+      computeMarqueeSegmentCount({
+        viewportWidthPx: canvas.skiaCanvasLayout.width,
+        textWidthPx: canvas.skiaTextWidth,
+        spacerPx: SPACER,
+        minSegments: 4,
+        maxSegments: 24,
+        bufferSegments: isGlowEffect ? 3 : 2,
+      }),
+    [
+      canvas.skiaCanvasLayout.width,
+      canvas.skiaTextWidth,
+      SPACER,
+      isGlowEffect,
+    ],
+  );
+
   const handleFullscreenLayout = isSpeechBgActive
     ? undefined
     : canvas.onSkiaCanvasLayout;
@@ -254,7 +274,7 @@ export const LedBannerFullScreen = ({
                     gradientBackgroundPreset={gradientBackgroundPreset}
                     hasBgPhoto={hasBgPhoto}
                     blinkOpacity={blinkOpacity}
-                    segmentCount={10}
+                    segmentCount={marqueeSegmentCount}
                     spacer={SPACER}
                     isGlowEffect={isGlowEffect}
                     glowBlurRadius={glowBlurRadius}
@@ -274,7 +294,7 @@ export const LedBannerFullScreen = ({
                 gradientBackgroundPreset={gradientBackgroundPreset}
                 hasBgPhoto={hasBgPhoto}
                 blinkOpacity={blinkOpacity}
-                segmentCount={10}
+                segmentCount={marqueeSegmentCount}
                 spacer={SPACER}
                 isGlowEffect={isGlowEffect}
                 glowBlurRadius={glowBlurRadius}

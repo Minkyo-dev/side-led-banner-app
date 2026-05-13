@@ -17,6 +17,7 @@ import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import { usePreviewPanelTextInput } from "@/hooks/usePreviewPanelTextInput";
+import { computeMarqueeSegmentCount } from "@/utils/marqueeSegments";
 import {
   getFontScaledLineSpacingPx,
   getFullscreenTextMetrics,
@@ -194,6 +195,24 @@ export default function PreviewPanel() {
     fallbackLayout: previewBox,
   });
 
+  const marqueeSegmentCount = useMemo(
+    () =>
+      computeMarqueeSegmentCount({
+        viewportWidthPx: canvas.skiaCanvasLayout.width,
+        textWidthPx: canvas.skiaTextWidth,
+        spacerPx: SPACER,
+        minSegments: 3,
+        maxSegments: 12,
+        bufferSegments: isGlowEffect ? 3 : 2,
+      }),
+    [
+      canvas.skiaCanvasLayout.width,
+      canvas.skiaTextWidth,
+      SPACER,
+      isGlowEffect,
+    ],
+  );
+
   const { opacity: blinkOpacity } = useBlinkOpacityStyle(
     effectSelectedItems.includes("Blink"),
     blinkSpeed,
@@ -288,7 +307,7 @@ export default function PreviewPanel() {
               gradientBackgroundPreset={gradientBackgroundPreset}
               hasBgPhoto={hasBgPhoto}
               blinkOpacity={blinkOpacity}
-              segmentCount={5}
+              segmentCount={marqueeSegmentCount}
               spacer={SPACER}
               isGlowEffect={isGlowEffect}
               glowBlurRadius={glowBlurRadius}
@@ -311,7 +330,7 @@ export default function PreviewPanel() {
               gradientBackgroundPreset={gradientBackgroundPreset}
               hasBgPhoto={hasBgPhoto}
               blinkOpacity={blinkOpacity}
-              segmentCount={5}
+              segmentCount={marqueeSegmentCount}
               spacer={SPACER}
               isGlowEffect={isGlowEffect}
               glowBlurRadius={glowBlurRadius}

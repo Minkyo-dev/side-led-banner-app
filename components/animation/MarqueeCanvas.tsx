@@ -9,7 +9,7 @@ import {
   RuntimeShader,
   Shadow,
   Skia,
-  Text as SkiaText,
+  TextBlob,
 } from "@shopify/react-native-skia";
 import React from "react";
 import type { SharedValue } from "react-native-reanimated";
@@ -42,7 +42,7 @@ const PIXELATE_SOURCE = Skia.RuntimeEffect.Make(`
   }
 `)!;
 
-// Preview/Fullscreen 공통 Skia 마퀴 텍스트
+// Preview/Fullscreen 공통 Skia Marquee Text
 export function MarqueeCanvas({
   canvas,
   isPixelEffect,
@@ -60,6 +60,10 @@ export function MarqueeCanvas({
   dropShadow,
   previewTextColor,
 }: MarqueeCanvasProps) {
+  const blob = canvas.skiaTextBlob;
+  const strokeWidthPx = Math.round((skiaStrokeWidth / 100) * 30);
+  const dropShadowBlur = Math.round((dropShadow / 100) * 5);
+
   return (
     <Canvas style={{ flex: 1 }} opaque={false}>
       <Group
@@ -84,39 +88,71 @@ export function MarqueeCanvas({
           />
         ) : null}
         <Group opacity={blinkOpacity} transform={canvas.skiaMarqueeTransform}>
-          {[...Array(segmentCount)].map((_, seg) => {
-            const segment = canvas.skiaTextWidth + spacer;
-            const baseX = seg * segment;
-            return (
-              <Group key={`marquee-${seg}`}>
-                {isGlowEffect ? (
-                  <Group
-                    layer={
-                      <Paint>
-                        <Blur blur={glowBlurRadius} mode="clamp" />
-                      </Paint>
-                    }
-                  >
-                    {canvas.skiaGlyphs.map((g, gi) => (
-                      <SkiaText
-                        key={`glow-${gi}`}
-                        x={baseX + g.x}
-                        y={g.y}
-                        text={g.text}
-                        font={canvas.skiaFont}
-                        color={glowLayerColor}
+          {blob
+            ? [...Array(segmentCount)].map((_, seg) => {
+                const segment = canvas.skiaTextWidth + spacer;
+                const baseX = seg * segment;
+                return (
+                  <Group key={`marquee-${seg}`}>
+                    {isGlowEffect ? (
+                      <Group
+                        layer={
+                          <Paint>
+                            <Blur blur={glowBlurRadius} mode="clamp" />
+                          </Paint>
+                        }
+                      >
+                        <TextBlob
+                          x={baseX}
+                          y={0}
+                          blob={blob}
+                          color={glowLayerColor}
+                        >
+                          {skiaStrokeWidth > 0 && (
+                            <Paint
+                              style="stroke"
+                              strokeWidth={strokeWidthPx}
+                              color="white"
+                            >
+                              {dropShadow > 0 && (
+                                <Shadow
+                                  dx={5}
+                                  dy={5}
+                                  blur={dropShadowBlur}
+                                  color="rgba(0, 0, 0, 0.5)"
+                                />
+                              )}
+                            </Paint>
+                          )}
+                          {dropShadow > 0 && skiaStrokeWidth === 0 && (
+                            <Shadow
+                              dx={5}
+                              dy={5}
+                              blur={dropShadowBlur}
+                              color="rgba(0, 0, 0, 0.5)"
+                            />
+                          )}
+                        </TextBlob>
+                      </Group>
+                    ) : null}
+                    <Group key={`main-${seg}`}>
+                      <TextBlob
+                        x={baseX}
+                        y={0}
+                        blob={blob}
+                        color={previewTextColor}
                       >
                         {skiaStrokeWidth > 0 && (
                           <Paint
                             style="stroke"
-                            strokeWidth={Math.round((skiaStrokeWidth / 100) * 30)}
+                            strokeWidth={strokeWidthPx}
                             color="white"
                           >
                             {dropShadow > 0 && (
                               <Shadow
                                 dx={5}
                                 dy={5}
-                                blur={Math.round((dropShadow / 100) * 5)}
+                                blur={dropShadowBlur}
                                 color="rgba(0, 0, 0, 0.5)"
                               />
                             )}
@@ -126,53 +162,16 @@ export function MarqueeCanvas({
                           <Shadow
                             dx={5}
                             dy={5}
-                            blur={Math.round((dropShadow / 100) * 5)}
+                            blur={dropShadowBlur}
                             color="rgba(0, 0, 0, 0.5)"
                           />
                         )}
-                      </SkiaText>
-                    ))}
+                      </TextBlob>
+                    </Group>
                   </Group>
-                ) : null}
-                {canvas.skiaGlyphs.map((g, gi) => (
-                  <Group key={`${seg}-${gi}`}>
-                    <SkiaText
-                      x={baseX + g.x}
-                      y={g.y}
-                      text={g.text}
-                      font={canvas.skiaFont}
-                      color={previewTextColor}
-                    >
-                      {skiaStrokeWidth > 0 && (
-                        <Paint
-                          style="stroke"
-                          strokeWidth={Math.round((skiaStrokeWidth / 100) * 30)}
-                          color="white"
-                        >
-                          {dropShadow > 0 && (
-                            <Shadow
-                              dx={5}
-                              dy={5}
-                              blur={Math.round((dropShadow / 100) * 5)}
-                              color="rgba(0, 0, 0, 0.5)"
-                            />
-                          )}
-                        </Paint>
-                      )}
-                      {dropShadow > 0 && skiaStrokeWidth === 0 && (
-                        <Shadow
-                          dx={5}
-                          dy={5}
-                          blur={Math.round((dropShadow / 100) * 5)}
-                          color="rgba(0, 0, 0, 0.5)"
-                        />
-                      )}
-                    </SkiaText>
-                  </Group>
-                ))}
-              </Group>
-            );
-          })}
+                );
+              })
+            : null}
         </Group>
       </Group>
     </Canvas>
