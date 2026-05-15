@@ -25,7 +25,6 @@ const INPUT_HEIGHT_SLACK = Math.max(
 const INPUT_HEIGHT_BUFFER = 0;
 // (Platform.OS === "android" ? 32 : 26) + INPUT_HEIGHT_SLACK;
 
-/** 예전 입력란에서 쓰이던 줄바꿈 표시 문자(U+21B5)가 저장돼 있으면 제거 한 번 배포 했으면 다음 커밋에선 지워도 됩니다.*/
 function stripLegacyInputMarkers(text: string): string {
   return text.replace(/\u21B5/g, "");
 }

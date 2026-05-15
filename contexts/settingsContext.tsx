@@ -1,35 +1,35 @@
 import {
-  APP_LOCALE_KEYS,
-  type AppLanguagePreference,
-  type AppLocaleKey,
+    APP_LOCALE_KEYS,
+    type AppLanguagePreference,
+    type AppLocaleKey,
 } from "@/constants/language";
 import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import {
-  type GoogleSheetLocaleRow,
-  type GoogleSheetParseResult,
-  useGoogleSheets,
+    type GoogleSheetLocaleRow,
+    type GoogleSheetParseResult,
+    useGoogleSheets,
 } from "@/hooks/useGoogleSheets";
 import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
 import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import {
-  effectChipLabel as resolveEffectChipLabel,
-  tEffectSectionLabel,
+    effectChipLabel as resolveEffectChipLabel,
+    tEffectSectionLabel,
 } from "@/language/effectSectionLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
 import {
-  persistPresetSlotsSnapshot,
-  readPresetSlotsJson,
+    persistPresetSlotsSnapshot,
+    readPresetSlotsJson,
 } from "@/utils/presetStorage";
 import { useLocales } from "expo-localization";
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 
 /** 시트 B~F 셀 내용이 바뀌면 같이 바뀌는 정수*/
