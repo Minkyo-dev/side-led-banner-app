@@ -6,10 +6,7 @@ import {
   GRADIENT_BACKDROP_IDS,
   type GradientBackdropId,
 } from "@/constants/gradientBackgroundPresets";
-import {
-  isSpeechBubblePreset,
-  SPEECH_BUBBLE_PRESETS,
-} from "@/constants/speechBubblePresets";
+import { SPEECH_BUBBLE_PRESETS } from "@/constants/speechBubblePresets";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimation";
@@ -20,10 +17,11 @@ import { usePreviewPanelTextInput } from "@/hooks/usePreviewPanelTextInput";
 import { computeMarqueeSegmentCount } from "@/utils/marqueeSegments";
 import {
   getFontScaledLineSpacingPx,
-  getFullscreenTextMetrics,
   getPreviewTextMetrics,
   getTextSizingPolicy,
-  scaleFontSizeByHeight,
+  getFullscreenTextMetrics,
+  resolveFullscreenMaxHeight,
+  resolveSpeechTextTopOffset,
 } from "@/utils/textSizing";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
@@ -92,11 +90,10 @@ export default function PreviewPanel() {
     () =>
       getTextSizingPolicy({
         effectId: backgroundEdgeEffectAnim.id,
-        isPortrait: false,
       }),
     [backgroundEdgeEffectAnim.id],
   );
-  const landscapeHeight = Math.max(1, Math.min(windowWidth, windowHeight));
+  const isSpeechBgActive = sizingPolicy.speechBubbleId != null;
   const effectiveLineSpacing = useMemo(
     () =>
       getFontScaledLineSpacingPx({
@@ -113,53 +110,50 @@ export default function PreviewPanel() {
       playOption,
       oneLineJoinMode,
     });
-  const fullscreenLandscapeBaseFontSize = useMemo(() => {
-    return getFullscreenTextMetrics({
+  const speechTextMaxHeight = useMemo(() => {
+    if (previewHeight <= 0) return 0;
+    return resolveFullscreenMaxHeight({
+      effectId: backgroundEdgeEffectAnim.id,
+      isPortrait,
+      viewportHeight: previewHeight,
+    });
+  }, [previewHeight, backgroundEdgeEffectAnim.id, isPortrait]);
+  const previewTextMetrics = useMemo(() => {
+    if (previewHeight <= 0) {
+      return { lineCount: 1, fontSize: 100, height: 100 };
+    }
+    const cappedMetrics = getFullscreenTextMetrics({
       displayText,
       baseFontSize: fontSize,
       lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
       lineSpacingPx: effectiveLineSpacing,
-      maxHeight: sizingPolicy.fullscreenMaxHeight ?? landscapeHeight,
-      padding: sizingPolicy.speechTextHeightPadding,
+      maxHeight: speechTextMaxHeight,
+      padding: isSpeechBgActive ? 0 : sizingPolicy.speechTextHeightPadding,
       clampByMaxHeight: sizingPolicy.clampByMaxHeight,
-    }).fontSize;
+    });
+    if (isSpeechBgActive) {
+      return cappedMetrics;
+    }
+    return getPreviewTextMetrics({
+      previewHeight,
+      baseFontSize: cappedMetrics.fontSize,
+      playOption,
+      text: previewText,
+      padding: sizingPolicy.previewPadding,
+      lineHeightRatio: sizingPolicy.previewLineHeightRatio,
+      lineSpacingPx: effectiveLineSpacing,
+    });
   }, [
+    previewHeight,
+    speechTextMaxHeight,
     displayText,
     fontSize,
     effectiveLineSpacing,
-    landscapeHeight,
     sizingPolicy,
+    isSpeechBgActive,
+    playOption,
+    previewText,
   ]);
-  const scaledPreviewBaseFontSize = useMemo(
-    () =>
-      scaleFontSizeByHeight({
-        baseFontSize: fullscreenLandscapeBaseFontSize,
-        targetHeight: previewHeight,
-        referenceHeight: landscapeHeight,
-      }),
-    [fullscreenLandscapeBaseFontSize, previewHeight, landscapeHeight],
-  );
-
-  const previewTextMetrics = useMemo(
-    () =>
-      getPreviewTextMetrics({
-        previewHeight,
-        baseFontSize: scaledPreviewBaseFontSize,
-        playOption,
-        text: previewText,
-        padding: sizingPolicy.previewPadding,
-        lineHeightRatio: sizingPolicy.previewLineHeightRatio,
-        lineSpacingPx: effectiveLineSpacing,
-      }),
-    [
-      previewHeight,
-      scaledPreviewBaseFontSize,
-      playOption,
-      previewText,
-      effectiveLineSpacing,
-      sizingPolicy,
-    ],
-  );
   const previewFontSize = previewTextMetrics.fontSize;
 
   const previewTextColor = textSelectedColor;
@@ -217,18 +211,29 @@ export default function PreviewPanel() {
     effectSelectedItems.includes("Blink"),
     blinkSpeed,
   );
-  let previewTextContainerSize: {
-    width: `${number}%`;
-    yOffset?: number | `${number}%`;
-  } | null = null;
-  if (isSpeechBubblePreset(backgroundEdgeEffectAnim.id)) {
-    const preset = SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id];
-    const previewBox =
-      Platform.OS === "ios"
-        ? preset.ios.previewTextBox
-        : preset.android.previewTextBox;
-    previewTextContainerSize = previewBox.portrait;
-  }
+  const speechPresetPlatform = isSpeechBgActive
+    ? Platform.OS === "ios"
+      ? SPEECH_BUBBLE_PRESETS[sizingPolicy.speechBubbleId!].ios
+      : SPEECH_BUBBLE_PRESETS[sizingPolicy.speechBubbleId!].android
+    : null;
+  const speechTextBoxConfig = isSpeechBgActive
+    ? isPortrait
+      ? speechPresetPlatform!.fullscreenTextBox.portrait
+      : speechPresetPlatform!.fullscreenTextBox.landscape
+    : null;
+  const speechTextTop = useMemo(() => {
+    if (!isSpeechBgActive || previewHeight <= 0) return null;
+    return resolveSpeechTextTopOffset({
+      effectId: backgroundEdgeEffectAnim.id,
+      isPortrait,
+      viewportHeight: previewHeight,
+    });
+  }, [
+    isSpeechBgActive,
+    previewHeight,
+    backgroundEdgeEffectAnim.id,
+    isPortrait,
+  ]);
 
   const onPreviewLayout = (e: LayoutEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -288,34 +293,46 @@ export default function PreviewPanel() {
           isPortrait={isPortrait}
           mode="preview"
         />
-        {previewTextContainerSize ? (
+        {speechTextBoxConfig ? (
           <View
             style={{
-              position: "absolute",
-              width: previewTextContainerSize.width as `${number}%`,
-              height: previewTextMetrics.height,
-              alignSelf: "center",
-              top: previewTextContainerSize.yOffset ?? "14%",
+              ...StyleSheet.absoluteFillObject,
+              alignItems: "center",
+              ...(speechTextTop == null ? { justifyContent: "center" } : null),
             }}
-            onLayout={canvas.onSkiaCanvasLayout}
+            pointerEvents="none"
           >
-            <MarqueeCanvas
-              canvas={canvas}
-              isPixelEffect={isPixelEffect}
-              pixelShaderSize={pixelShaderSize}
-              showGradientBackdrop={showGradientBackdrop}
-              gradientBackgroundPreset={gradientBackgroundPreset}
-              hasBgPhoto={hasBgPhoto}
-              blinkOpacity={blinkOpacity}
-              segmentCount={marqueeSegmentCount}
-              spacer={SPACER}
-              isGlowEffect={isGlowEffect}
-              glowBlurRadius={glowBlurRadius}
-              glowLayerColor={glowLayerColor}
-              skiaStrokeWidth={skiaStrokeWidth}
-              dropShadow={dropShadow}
-              previewTextColor={previewTextColor}
-            />
+            <View
+              style={{
+                position: "absolute",
+                width: speechTextBoxConfig.width,
+                height: previewTextMetrics.height,
+                ...(speechTextTop != null
+                  ? { top: speechTextTop }
+                  : {
+                      transform: [{ translateY: speechTextBoxConfig.yOffset }],
+                    }),
+              }}
+              onLayout={canvas.onSkiaCanvasLayout}
+            >
+              <MarqueeCanvas
+                canvas={canvas}
+                isPixelEffect={isPixelEffect}
+                pixelShaderSize={pixelShaderSize}
+                showGradientBackdrop={showGradientBackdrop}
+                gradientBackgroundPreset={gradientBackgroundPreset}
+                hasBgPhoto={hasBgPhoto}
+                blinkOpacity={blinkOpacity}
+                segmentCount={marqueeSegmentCount}
+                spacer={SPACER}
+                isGlowEffect={isGlowEffect}
+                glowBlurRadius={glowBlurRadius}
+                glowLayerColor={glowLayerColor}
+                skiaStrokeWidth={skiaStrokeWidth}
+                dropShadow={dropShadow}
+                previewTextColor={previewTextColor}
+              />
+            </View>
           </View>
         ) : (
           <View

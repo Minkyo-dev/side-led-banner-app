@@ -17,6 +17,8 @@ import {
   getFontScaledLineSpacingPx,
   getFullscreenTextMetrics,
   getTextSizingPolicy,
+  resolveFullscreenMaxHeight,
+  resolveSpeechTextTopOffset,
   scaleFontSizeByHeight,
 } from "@/utils/textSizing";
 import { computeMarqueeSegmentCount } from "@/utils/marqueeSegments";
@@ -110,9 +112,8 @@ export const LedBannerFullScreen = ({
     () =>
       getTextSizingPolicy({
         effectId: backgroundEdgeEffectAnim.id,
-        isPortrait,
       }),
-    [backgroundEdgeEffectAnim.id, isPortrait],
+    [backgroundEdgeEffectAnim.id],
   );
   const speechBgId = sizingPolicy.speechBubbleId;
   const landscapeHeight = Math.max(1, Math.min(windowWidth, windowHeight));
@@ -134,7 +135,7 @@ export const LedBannerFullScreen = ({
       ? Math.max(FONT_SIZE_MIN, Math.floor(scaled * sizingPolicy.portraitFontBoost))
       : scaled;
     const atMaxSize = fontSize >= 100;
-    if (!isPortrait && atMaxSize) {
+    if (!isSpeechBgActive && !isPortrait && atMaxSize) {
       return Math.max(FONT_SIZE_MIN, Math.floor(portraitSized * 2));
     }
     return Math.max(FONT_SIZE_MIN, portraitSized);
@@ -143,6 +144,7 @@ export const LedBannerFullScreen = ({
     windowHeight,
     landscapeHeight,
     isPortrait,
+    isSpeechBgActive,
     sizingPolicy.portraitFontBoost,
   ]);
   const fullscreenTextMetrics = useMemo(() => {
@@ -151,8 +153,12 @@ export const LedBannerFullScreen = ({
       baseFontSize: heightScaledFontSize,
       lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
       lineSpacingPx: effectiveLineSpacing,
-      maxHeight: sizingPolicy.fullscreenMaxHeight ?? Math.max(1, windowHeight),
-      padding: sizingPolicy.speechTextHeightPadding,
+      maxHeight: resolveFullscreenMaxHeight({
+        effectId: backgroundEdgeEffectAnim.id,
+        isPortrait,
+        viewportHeight: windowHeight,
+      }),
+      padding: isSpeechBgActive ? 0 : sizingPolicy.speechTextHeightPadding,
       clampByMaxHeight: sizingPolicy.clampByMaxHeight,
     });
   }, [
@@ -160,6 +166,9 @@ export const LedBannerFullScreen = ({
     heightScaledFontSize,
     effectiveLineSpacing,
     sizingPolicy,
+    isSpeechBgActive,
+    backgroundEdgeEffectAnim.id,
+    isPortrait,
     windowHeight,
   ]);
   const speechPresetPlatform = isSpeechBgActive
@@ -172,11 +181,27 @@ export const LedBannerFullScreen = ({
       ? speechPresetPlatform!.fullscreenTextBox.portrait
       : speechPresetPlatform!.fullscreenTextBox.landscape
     : null;
+  const speechTextTop = useMemo(
+    () =>
+      isSpeechBgActive
+        ? resolveSpeechTextTopOffset({
+            effectId: backgroundEdgeEffectAnim.id,
+            isPortrait,
+            viewportHeight: windowHeight,
+          })
+        : null,
+    [isSpeechBgActive, backgroundEdgeEffectAnim.id, isPortrait, windowHeight],
+  );
   const speechTextContainerStyle: ViewStyle = isSpeechBgActive
     ? {
+        position: "absolute",
         width: speechTextBoxConfig!.width,
         height: fullscreenTextMetrics.height,
-        transform: [{ translateY: speechTextBoxConfig!.yOffset }],
+        ...(speechTextTop != null
+          ? { top: speechTextTop }
+          : {
+              transform: [{ translateY: speechTextBoxConfig!.yOffset }],
+            }),
       }
     : {};
 
@@ -257,8 +282,8 @@ export const LedBannerFullScreen = ({
               <View
                 style={{
                   ...StyleSheet.absoluteFillObject,
-                  justifyContent: "center",
                   alignItems: "center",
+                  ...(speechTextTop == null ? { justifyContent: "center" } : null),
                 }}
                 pointerEvents="none"
               >

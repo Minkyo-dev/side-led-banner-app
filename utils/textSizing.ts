@@ -9,32 +9,94 @@ const PREVIEW_VERTICAL_TEXT_PADDING = {
   speechBg1: 12,
   speechBg2: 24,
 } as const;
-const SPEECH_BG_MAX_TEXT_HEIGHT = {
-  speechBg1: { portrait: 400, landscape: 300 },
-  speechBg2: { portrait: 400, landscape: 300 },
+/** Speech BG 없을 때: 뷰포트 세로 대비 텍스트 영역 비율 */
+export const DEFAULT_MAX_TEXT_HEIGHT_RATIO = {
+  portrait: 0.5,
+  landscape: 1,
 } as const;
-type SpeechBubbleId = keyof typeof SPEECH_BG_MAX_TEXT_HEIGHT;
+
+/**
+ * 말풍선 원본 아트보드(px) 기준 텍스트 박스 layout.
+ * landscape 전체화면: top·height = viewportHeight × 비율
+ */
+export const SPEECH_BG_TEXT_LAYOUT = {
+  speechBg1: {
+    portrait: {
+      textHeightRatio: 264.5 / 393,
+      topOffsetRatio: null as number | null,
+    },
+    landscape: {
+      /** 393px 중 텍스트 264.5px, 위 64px / 아래 64.5px */
+      textHeightRatio: 264.5 / 393,
+      topOffsetRatio: 64 / 393,
+    },
+  },
+  speechBg2: {
+    portrait: {
+      textHeightRatio: 389 / 518,
+      topOffsetRatio: null as number | null,
+    },
+    landscape: {
+      /** 518px 중 텍스트 385px, 위 20px / 아래 ~109px(디자인상 ~90px) */
+      textHeightRatio: 385 / 518,
+      topOffsetRatio: 28 / 518,
+    },
+  },
+} as const;
+
+type SpeechBubbleId = keyof typeof SPEECH_BG_TEXT_LAYOUT;
+
+function getSpeechTextLayout(
+  speechBubbleId: SpeechBubbleId,
+  isPortrait: boolean,
+) {
+  return isPortrait
+    ? SPEECH_BG_TEXT_LAYOUT[speechBubbleId].portrait
+    : SPEECH_BG_TEXT_LAYOUT[speechBubbleId].landscape;
+}
 
 export function getSpeechBubbleId(effectId: string): SpeechBubbleId | null {
   return effectId === "speechBg1" || effectId === "speechBg2" ? effectId : null;
 }
 
-export function getTextSizingPolicy(params: {
+export function resolveFullscreenMaxHeight(params: {
   effectId: string;
   isPortrait: boolean;
-}) {
-  const { effectId, isPortrait } = params;
+  viewportHeight: number;
+}): number {
+  const { effectId, isPortrait, viewportHeight } = params;
+  const height = Math.max(1, viewportHeight);
+  const speechBubbleId = getSpeechBubbleId(effectId);
+  const ratio =
+    speechBubbleId == null
+      ? isPortrait
+        ? DEFAULT_MAX_TEXT_HEIGHT_RATIO.portrait
+        : DEFAULT_MAX_TEXT_HEIGHT_RATIO.landscape
+      : getSpeechTextLayout(speechBubbleId, isPortrait).textHeightRatio;
+  return Math.max(1, Math.floor(height * ratio));
+}
+
+/** landscape 등: 원본 top 비율. null이면 preset `yOffset`(중앙+translateY) 사용 */
+export function resolveSpeechTextTopOffset(params: {
+  effectId: string;
+  isPortrait: boolean;
+  viewportHeight: number;
+}): number | null {
+  const { effectId, isPortrait, viewportHeight } = params;
+  const speechBubbleId = getSpeechBubbleId(effectId);
+  if (speechBubbleId == null) return null;
+  const topOffsetRatio = getSpeechTextLayout(speechBubbleId, isPortrait).topOffsetRatio;
+  if (topOffsetRatio == null) return null;
+  return Math.max(0, Math.floor(Math.max(1, viewportHeight) * topOffsetRatio));
+}
+
+export function getTextSizingPolicy(params: { effectId: string }) {
+  const { effectId } = params;
   const speechBubbleId = getSpeechBubbleId(effectId);
   const previewPadding =
     speechBubbleId == null
       ? PREVIEW_VERTICAL_TEXT_PADDING.default
       : PREVIEW_VERTICAL_TEXT_PADDING[speechBubbleId];
-  const fullscreenMaxHeight =
-    speechBubbleId == null
-      ? null
-      : isPortrait
-        ? SPEECH_BG_MAX_TEXT_HEIGHT[speechBubbleId].portrait
-        : SPEECH_BG_MAX_TEXT_HEIGHT[speechBubbleId].landscape;
   return {
     speechBubbleId,
     previewLineHeightRatio: DEFAULT_LINE_HEIGHT_RATIO,
@@ -42,8 +104,7 @@ export function getTextSizingPolicy(params: {
     speechTextHeightPadding: SPEECH_TEXT_HEIGHT_PADDING,
     portraitFontBoost: PORTRAIT_FONT_BOOST,
     previewPadding,
-    fullscreenMaxHeight,
-    clampByMaxHeight: speechBubbleId != null,
+    clampByMaxHeight: true,
   };
 }
 

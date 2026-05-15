@@ -5,7 +5,7 @@ export const SPEECH_BUBBLE_PRESETS = {
     fullscreenPortraitSource: require("@/assets/images/Speech_BG_1_B.png"),
     ios: {
       previewHeightBoostPx: 20,
-      // fullscreen에서 말풍선 안 삐져나오게 landscape/portrait text box 크기
+      // fullscreen 가로 세로 위치는 textSizing SPEECH_BG_TEXT_LAYOUT, portrait만 yOffset
       fullscreenTextBox: {
         landscape: { width: "82%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 0 },
@@ -17,7 +17,7 @@ export const SPEECH_BUBBLE_PRESETS = {
     },
     android: {
       previewHeightBoostPx: 20,
-      // fullscreen에서 말풍선 안 삐져나오게 landscape/portrait text box 크기
+      // fullscreen 가로 세로 위치는 textSizing SPEECH_BG_TEXT_LAYOUT, portrait만 yOffset
       fullscreenTextBox: {
         landscape: { width: "82%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 0 },
@@ -34,9 +34,8 @@ export const SPEECH_BUBBLE_PRESETS = {
     fullscreenPortraitSource: require("@/assets/images/Speech_BG_2_B.png"),
     ios: {
       previewHeightBoostPx: 20, // preview에서 자연스럽게 조이도록 이미지높이 조절
-      // fullscreen에서 말풍선 안 삐져나오게 landscape/portrait text box 크기
       fullscreenTextBox: {
-        landscape: { width: "82%", yOffset: 10 },
+        landscape: { width: "82%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 10 },
       },
       // preview 전용 text box 크기
@@ -48,7 +47,7 @@ export const SPEECH_BUBBLE_PRESETS = {
       previewHeightBoostPx: 20, // preview에서 자연스럽게 조이도록 이미지높이 조절
       // fullscreen에서 말풍선 안 삐져나오게 landscape/portrait text box 크기
       fullscreenTextBox: {
-        landscape: { width: "82%", yOffset: -50 },
+        landscape: { width: "82%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 0 },
       },
       // preview 전용 text box 크기
