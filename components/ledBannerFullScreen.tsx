@@ -12,6 +12,7 @@ import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimati
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
+import { computeMarqueeSegmentCount } from "@/utils/marqueeSegments";
 import {
   FONT_SIZE_MIN,
   getFontScaledLineSpacingPx,
@@ -21,7 +22,6 @@ import {
   resolveSpeechTextTopOffset,
   scaleFontSizeByHeight,
 } from "@/utils/textSizing";
-import { computeMarqueeSegmentCount } from "@/utils/marqueeSegments";
 import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
