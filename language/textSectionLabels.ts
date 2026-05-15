@@ -16,7 +16,7 @@ export type TextSectionLabelKey =
   | "font"
   | "fontPlaceholder"
   | "color"
-  /** 배경 탭*/
+  /** 배경*/
   | "backgroundColor"
   | "blur"
   | "speed"
@@ -30,9 +30,19 @@ export type TextSectionLabelKey =
   | "viewModeContinuous"
   | "tabText"
   | "tabBackground"
-  | "tabEffects";
+  | "tabEffects"
+  /** 설정*/
+  | "settingsTitle"
+  | "howToUse"
+  | "sunnyGames"
+  | "instagram"
+  | "twitter"
+  | "link"
+  | "credits"
+  | "openSourceInfo"
+  | "appVersion";
 
-/** TEXT 탭*/
+/** TEXT*/
 export const TEXT_TAB_BODY_LABEL_KEYS = [
   "font",
   "speed",
@@ -45,7 +55,7 @@ export const TEXT_TAB_BODY_LABEL_KEYS = [
   "dropShadow",
 ] as const satisfies readonly TextSectionLabelKey[];
 
-/** BACKGROUND 탭  */
+/** BACKGROUND  */
 export const BACKGROUND_TAB_BODY_LABEL_KEYS = [
   "backgroundColor",
   "blur",
@@ -164,7 +174,7 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     zhTC: "樣式 B",
     zhSC: "样式 B",
   },
-  /** 상단 탭 — 시트 첫 줄·배경·효과 구역의 영어 열과 맞춥니다 (Text / Background / Effects). */
+  /** Settings Tab*/
   tabText: {
     ko: "텍스트",
     en: "Text",
@@ -185,6 +195,69 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "エフェクト",
     zhTC: "特效",
     zhSC: "特效",
+  },
+  settingsTitle: {
+    ko: "설정",
+    en: "Settings",
+    ja: "設定",
+    zhTC: "設定",
+    zhSC: "设置",
+  },
+  howToUse: {
+    ko: "사용 방법",
+    en: "How To Use",
+    ja: "使い方",
+    zhTC: "使用方法",
+    zhSC: "使用方法",
+  },
+  sunnyGames: {
+    ko: "Sunny의 게임 및 앱",
+    en: "Sunny's Games and Apps",
+    ja: "Sunny のゲームとアプリ",
+    zhTC: "Sunny 的遊戲與應用",
+    zhSC: "Sunny 的游戏与应用",
+  },
+  instagram: {
+    ko: "Instagram",
+    en: "Instagram",
+    ja: "Instagram",
+    zhTC: "Instagram",
+    zhSC: "Instagram",
+  },
+  twitter: {
+    ko: "X (Twitter)",
+    en: "X (Twitter)",
+    ja: "X (Twitter)",
+    zhTC: "X (Twitter)",
+    zhSC: "X (Twitter)",
+  },
+  link: {
+    ko: "링크",
+    en: "Link",
+    ja: "リンク",
+    zhTC: "連結",
+    zhSC: "链接",
+  },
+  credits: {
+    ko: "크레딧",
+    en: "Credits",
+    ja: "クレジット",
+    zhTC: "製作群",
+    zhSC: "制作团队",
+  },
+  openSourceInfo: {
+    ko: "오픈 소스 정보",
+    en: "Open Source Info",
+    ja: "オープンソース情報",
+    zhTC: "開源資訊",
+    zhSC: "开源信息",
+  },
+  appVersion: {
+    ko: "앱 버전",
+    en: "App Version",
+    ja: "アプリのバージョン",
+    zhTC: "應用程式版本",
+    zhSC: "应用版本",
   },
 };
 

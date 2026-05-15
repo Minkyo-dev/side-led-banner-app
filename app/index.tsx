@@ -13,6 +13,7 @@ import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
 import * as NavigationBar from "expo-navigation-bar";
+import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import React, { useEffect } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
@@ -20,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const { config, ui, updateConfig, updateUI, textSectionLabel } = useSettings();
   const { playOption } = config.content;
@@ -69,6 +71,14 @@ export default function Index() {
           onPress={handlePlay}
         >
           <PlayResumeButton isPlaying={isPlaying} />
+        </TouchableOpacity>
+        {/* settings button */}
+        <TouchableOpacity
+          style={{ flex: 0.15 }}
+          onPress={() => router.push("/settings" as Href)}
+          accessibilityLabel={textSectionLabel("settingsTitle")}
+        >
+          <MultipleLinePlayButton isActive={false} />
         </TouchableOpacity>
       </View>
       {/* tab container */}

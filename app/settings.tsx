@@ -31,7 +31,7 @@ export default function SettingsScreen() {
 
   const languageDropdownItems = useMemo(
     () => [
-      { label: "한국어어", value: "ko" as const },
+      { label: "한국어", value: "ko" as const },
       { label: "English", value: "en" as const },
       { label: "日本語", value: "ja" as const },
       { label: "繁體中文", value: "zhTC" as const },
@@ -83,9 +83,7 @@ export default function SettingsScreen() {
         <NavigationRow
           label={textSectionLabel("howToUse")}
           onPress={() => {
-            /** TODO: How To Use 화면 넣어주세요
-             * 필요 없으면 지우겠습니다.
-            */
+            /** TODO: How To Use 화면 연결 */
           }}
         />
 
@@ -133,6 +131,7 @@ export default function SettingsScreen() {
         <NavigationRow
           label={textSectionLabel("credits")}
           onPress={() => {
+            /** TODO: Credits*/
           }}
         />
 
