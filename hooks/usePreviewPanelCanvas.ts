@@ -6,6 +6,14 @@ import { useDerivedValue } from "react-native-reanimated";
 
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
 import { buildMarqueeTextBlob } from "@/utils/buildMarqueeTextBlob";
+import {
+  bubbleGlyphs,
+  bubbleLayouts,
+  bubbleRows,
+  BUBBLE_MAX_ROWS,
+  BUBBLE_SAFE,
+  type BubbleCanvasOpts,
+} from "@/utils/skiaBubbleTextLayout";
 
 type TextLayoutEvent = {
   nativeEvent: { lines: { width: number }[] };
@@ -14,7 +22,6 @@ type TextLayoutEvent = {
 type SkiaLineGlyphLayout = { x: number; text: string };
 type SkiaLineLayout = { width: number; glyphs: SkiaLineGlyphLayout[] };
 
-/** 한 줄짜리 글자 위치(가로)랑 그 줄 너비를 잡기 */
 function layoutSkiaLine(
   font: SkFont,
   text: string,
@@ -33,10 +40,8 @@ function layoutSkiaLine(
   return { width: x, glyphs };
 }
 
-/** PreviewPanel 기본 줄 간격 */
 const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
 
-/** 다중 줄일 때 줄마다 세로 위치(y)까지 붙임 */
 function lineLayoutsToGlyphs(
   font: SkFont,
   lineLayouts: SkiaLineLayout[],
@@ -68,21 +73,18 @@ export interface UsePreviewPanelCanvasParams {
   translateX: SharedValue<number>;
   onTextLayout: (e: TextLayoutEvent) => void;
   previewFontSize: number;
-  /** settings `appearance.font` (e.g. nanum_gothic) */
   appearanceFont: string;
   fontWeight: "normal" | "bold" | string;
   letterSpacing: number;
   lineSpacingPx?: number;
-  /**
-   * 글리프·그라데이션 크기 보정용
-   */
   fallbackLayout?: { width: number; height: number };
   lineHeightRatio?: number;
+  speechBubbleLayout?: BubbleCanvasOpts | null;
+  playOption?: "one" | "multi";
 }
 
-/**
- * PreviewPanel의 Skia `Canvas` 마퀴: 폰트·폭·세로 정렬·`translateX` 동기화.
- */
+export { BUBBLE_MAX_ROWS, BUBBLE_SAFE } from "@/utils/skiaBubbleTextLayout";
+
 export function usePreviewPanelCanvas({
   displayText,
   translateX,
@@ -94,6 +96,8 @@ export function usePreviewPanelCanvas({
   lineSpacingPx,
   fallbackLayout,
   lineHeightRatio = DEFAULT_LINE_HEIGHT_RATIO,
+  speechBubbleLayout = null,
+  playOption = "multi",
 }: UsePreviewPanelCanvasParams) {
   const skiaFont = useSkiaAppearanceFont(
     appearanceFont,
@@ -101,13 +105,43 @@ export function usePreviewPanelCanvas({
     previewFontSize,
   );
 
-  /** 글 넣을 때 줄마다 한 번씩만 미리 계산 */
+  const [skiaCanvasLayout, setSkiaCanvasLayout] = useState({
+    width: 0,
+    height: 0,
+  });
+
+  const hasCanvasLayout =
+    skiaCanvasLayout.width > 0 && skiaCanvasLayout.height > 0;
+  const fbW = fallbackLayout?.width ?? 0;
+  const fbH = fallbackLayout?.height ?? 0;
+  const drawW = hasCanvasLayout ? skiaCanvasLayout.width : fbW;
+  const drawH = hasCanvasLayout ? skiaCanvasLayout.height : fbH;
+
+  const useBubbleLayout =
+    speechBubbleLayout != null && hasCanvasLayout;
+
   const skiaLineLayouts = useMemo((): SkiaLineLayout[] | null => {
     if (!skiaFont) return null;
-    return displayText
-      .split("\n")
-      .map((line) => layoutSkiaLine(skiaFont, line, letterSpacing));
-  }, [displayText, skiaFont, letterSpacing]);
+
+    const rows = bubbleRows({
+      text: displayText,
+      maxRows: speechBubbleLayout?.maxRows ?? BUBBLE_MAX_ROWS,
+      playOption,
+    });
+
+    if (useBubbleLayout) {
+      return bubbleLayouts(skiaFont, rows, letterSpacing);
+    }
+
+    return rows.map((line) => layoutSkiaLine(skiaFont, line, letterSpacing));
+  }, [
+    displayText,
+    skiaFont,
+    letterSpacing,
+    useBubbleLayout,
+    speechBubbleLayout,
+    playOption,
+  ]);
 
   const skiaTextWidth = useMemo(() => {
     if (!skiaLineLayouts || skiaLineLayouts.length === 0) return 0;
@@ -118,15 +152,6 @@ export function usePreviewPanelCanvas({
     return maxW;
   }, [skiaLineLayouts]);
 
-  const [skiaCanvasLayout, setSkiaCanvasLayout] = useState({
-    width: 0,
-    height: 0,
-  });
-
-  const fbW = fallbackLayout?.width ?? 0;
-  const fbH = fallbackLayout?.height ?? 0;
-  const drawW = skiaCanvasLayout.width > 0 ? skiaCanvasLayout.width : fbW;
-  const drawH = skiaCanvasLayout.height > 0 ? skiaCanvasLayout.height : fbH;
   const resolvedLineHeightRatio =
     lineSpacingPx != null
       ? lineHeightRatio + lineSpacingPx / Math.max(1, previewFontSize)
@@ -134,27 +159,42 @@ export function usePreviewPanelCanvas({
 
   const skiaTextBlob = useMemo((): SkTextBlob | null => {
     if (!skiaFont || !skiaLineLayouts || drawH <= 0) return null;
-    const glyphPositions = lineLayoutsToGlyphs(
-      skiaFont,
-      skiaLineLayouts,
-      previewFontSize,
-      drawH,
-      resolvedLineHeightRatio,
-    );
+
+    const glyphPositions = useBubbleLayout
+      ? bubbleGlyphs({
+          font: skiaFont,
+          rows: skiaLineLayouts,
+          frameWidth: drawW,
+          frameHeight: drawH,
+          safeWRatio:
+            speechBubbleLayout!.safeWRatio ?? BUBBLE_SAFE.widthRatio,
+          lineGapPx: lineSpacingPx,
+        })
+      : lineLayoutsToGlyphs(
+          skiaFont,
+          skiaLineLayouts,
+          previewFontSize,
+          drawH,
+          resolvedLineHeightRatio,
+        );
+
     return buildMarqueeTextBlob(skiaFont, glyphPositions);
   }, [
     skiaFont,
     skiaLineLayouts,
     previewFontSize,
     drawH,
+    drawW,
     resolvedLineHeightRatio,
+    useBubbleLayout,
+    speechBubbleLayout,
+    lineSpacingPx,
   ]);
 
   const skiaMarqueeTransform = useDerivedValue(() => [
     { translateX: translateX.value },
   ]);
 
-  /** Skia만 쓸 때도 `useMarqueeAnimation`의 `textWidth`가 갱신되도록 동기화 */
   useEffect(() => {
     if (!skiaLineLayouts || skiaLineLayouts.length === 0) return;
     const lineWidths = skiaLineLayouts.map((row) => row.width);

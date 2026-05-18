@@ -1,3 +1,5 @@
+import { countRows } from "@/utils/skiaBubbleTextLayout";
+
 const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
 const FULLSCREEN_LINE_HEIGHT_RATIO = 1.16;
 export const FONT_SIZE_MIN = 20;
@@ -90,7 +92,7 @@ export function resolveSpeechTextTopOffset(params: {
   return Math.max(0, Math.floor(Math.max(1, viewportHeight) * topOffsetRatio));
 }
 
-export function getTextSizingPolicy(params: { effectId: string }) {
+export function getSizingPolicy(params: { effectId: string }) {
   const { effectId } = params;
   const speechBubbleId = getSpeechBubbleId(effectId);
   const previewPadding =
@@ -108,7 +110,7 @@ export function getTextSizingPolicy(params: { effectId: string }) {
   };
 }
 
-export function getFontScaledLineSpacingPx(params: {
+export function getRelLineSpacing(params: {
   requestedLineSpacingPx: number;
   fontSizePercent: number;
 }) {
@@ -172,7 +174,7 @@ export function getPreviewTextMetrics(params: {
   if (previewHeight === 0) {
     return { lineCount: 1, fontSize: fallbackFontSize, height: fallbackFontSize };
   }
-  const lineCount = getLineCountForMode({ text, playOption, maxLines });
+  const lineCount = countRows(text, playOption, maxLines);
   const availableHeight = Math.max(1, previewHeight - padding);
   const requestedLineSpacingPx = Math.max(0, lineSpacingPx ?? 0);
   const effectiveLineHeightRatio = lineHeightRatio;
@@ -188,10 +190,12 @@ export function getPreviewTextMetrics(params: {
     );
     const desiredFontSize = baseFontSize ?? percentBasedFontSize;
     const fontSize = Math.max(1, Math.min(desiredFontSize, maxFontSizeForBox));
-    const height = Math.max(
+    const rawH = Math.max(
       1,
       Math.ceil(fontSize * effectiveLineHeightRatio * lineCount + padding),
     );
+    const fillBox = (fontSizePercent ?? 100) >= FONT_SIZE_MAX;
+    const height = fillBox ? previewHeight : rawH;
     return { lineCount, fontSize, height };
   }
 
@@ -211,10 +215,9 @@ export function getPreviewTextMetrics(params: {
         )
       : 0;
   const totalLineGapPx = Math.max(0, lineCount - 1) * interLineGapPx;
-  const height = Math.max(
-    1,
-    Math.ceil(lineBodyPx + totalLineGapPx + padding),
-  );
+  const rawH = Math.max(1, Math.ceil(lineBodyPx + totalLineGapPx + padding));
+  const fillBox = (fontSizePercent ?? 100) >= FONT_SIZE_MAX;
+  const height = fillBox ? previewHeight : rawH;
   return { lineCount, fontSize, height };
 }
 
@@ -229,6 +232,32 @@ export function scaleFontSizeByHeight(params: {
   return Math.max(1, Math.floor(scaled));
 }
 
+export function resolvePctWidthPx(
+  width: number | string,
+  basisPx: number,
+): number {
+  if (basisPx <= 0) return 0;
+  if (typeof width === "number") return width;
+  const trimmed = width.trim();
+  if (trimmed.endsWith("%")) {
+    return basisPx * (parseFloat(trimmed) / 100);
+  }
+  const parsed = parseFloat(trimmed);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function resolveSpeechBoxPx(params: {
+  boxWidth: number | string;
+  basisWidthPx: number;
+  maxHeightPx: number;
+}) {
+  const { boxWidth, basisWidthPx, maxHeightPx } = params;
+  return {
+    widthPx: resolvePctWidthPx(boxWidth, basisWidthPx),
+    heightPx: Math.max(1, maxHeightPx),
+  };
+}
+
 export function getFullscreenTextMetrics(params: {
   displayText: string;
   baseFontSize: number;
@@ -237,6 +266,9 @@ export function getFullscreenTextMetrics(params: {
   maxHeight: number;
   padding: number;
   clampByMaxHeight: boolean;
+  speechBg?: boolean;
+  playOption?: "one" | "multi";
+  sizePct?: number;
 }) {
   const {
     displayText,
@@ -246,9 +278,12 @@ export function getFullscreenTextMetrics(params: {
     maxHeight,
     padding,
     clampByMaxHeight,
+    speechBg = false,
+    playOption = "multi",
+    sizePct = baseFontSize,
   } = params;
 
-  const lineCount = Math.max(1, displayText.split("\n").length);
+  const lineCount = countRows(displayText, playOption);
   const availableHeight = Math.max(1, maxHeight - padding);
   const requestedLineSpacingPx = Math.max(0, lineSpacingPx ?? 0);
   const effectiveLineHeightRatio = lineHeightRatio;
@@ -286,7 +321,9 @@ export function getFullscreenTextMetrics(params: {
           fontSize * effectiveLineHeightRatio * lineCount + totalLineGapPx + padding,
         ),
   );
-  const height = clampByMaxHeight ? Math.min(rawHeight, maxHeight) : rawHeight;
+  const fillBox =
+    speechBg || (clampByMaxHeight && sizePct >= FONT_SIZE_MAX);
+  const height = fillBox ? maxHeight : Math.min(rawHeight, maxHeight);
 
   return { lineCount, fontSize, height };
 }

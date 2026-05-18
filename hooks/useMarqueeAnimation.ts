@@ -13,6 +13,8 @@ export interface UseMarqueeAnimationParams {
   speed: number;
   playOption: "one" | "multi";
   oneLineJoinMode: "space3" | "concat";
+  /** 타일 끝 여유(글로우·stroke). 시각 주기와 스크롤 주기를 맞춥니다. */
+  effectBleedPx?: number;
 }
 
 type ContainerLayoutEvent = {
@@ -32,6 +34,7 @@ export function useMarqueeAnimation({
   speed,
   playOption,
   oneLineJoinMode,
+  effectBleedPx = 0,
 }: UseMarqueeAnimationParams) {
   const translateX = useSharedValue(0);
   const [textWidth, setTextWidth] = useState(0);
@@ -55,7 +58,7 @@ export function useMarqueeAnimation({
       return;
     }
 
-    const totalShift = textWidth + spacer;
+    const totalShift = textWidth + spacer + effectBleedPx;
     const duration = (totalShift / (speed * 2)) * 1000;
 
     translateX.value = 0;
@@ -67,7 +70,7 @@ export function useMarqueeAnimation({
       -1,
       false,
     );
-  }, [speed, text, playOption, oneLineJoinMode, textWidth, spacer]);
+  }, [speed, text, playOption, oneLineJoinMode, textWidth, spacer, effectBleedPx]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],

@@ -495,15 +495,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleTextChange = (text: string) => {
-    const lines = text.split("\n");
+    const normalized = text.replace(/\r\n?/g, "\n");
+    const lines = normalized.split("\n");
     if (lines.length <= PREVIEW_TEXT_MAX_LINES) {
-      updateConfig("content", { previewText: text });
+      updateConfig("content", { previewText: normalized });
       return;
     }
     const merged =
       lines.slice(0, PREVIEW_TEXT_MAX_LINES - 1).join("\n") +
       "\n" +
-      lines.slice(PREVIEW_TEXT_MAX_LINES - 1).join("");
+      lines.slice(PREVIEW_TEXT_MAX_LINES - 1).join("\n");
     updateConfig("content", { previewText: merged });
   };
 
