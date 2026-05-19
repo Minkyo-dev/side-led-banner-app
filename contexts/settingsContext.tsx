@@ -15,12 +15,18 @@ import {
   effectChipLabel as resolveEffectChipLabel,
   tEffectSectionLabel,
 } from "@/language/effectSectionLabels";
+import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
+import { tRewardAdLabel } from "@/language/rewardAdLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
 import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
+import {
+  normalizeOneLineJoinMode,
+  type OneLineJoinMode,
+} from "@/utils/viewMode";
 import { useLocales } from "expo-localization";
 import React, {
   createContext,
@@ -72,7 +78,7 @@ export interface BannerConfig {
   content: {
     previewText: string;
     playOption: "one" | "multi";
-    oneLineJoinMode: "space3" | "concat";
+    oneLineJoinMode: OneLineJoinMode;
     blurColor: string;
   };
   appearance: {
@@ -154,6 +160,7 @@ function configFromPreset(
     content: {
       ...snap.content,
       playOption,
+      oneLineJoinMode: normalizeOneLineJoinMode(snap.content.oneLineJoinMode),
     },
     appearance: dupAppearance(snap.appearance),
     background: { ...snap.background },
@@ -166,7 +173,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     previewText:
       "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
     playOption: "one",
-    oneLineJoinMode: "space3",
+    oneLineJoinMode: "space6",
     blurColor: "",
   },
   appearance: {
@@ -306,6 +313,7 @@ interface SettingsContextValue {
   textSectionLabel: (key: TextSectionLabelKey) => string;
   effectSectionLabel: (key: EffectSectionLabelKey) => string;
   effectChipLabel: (effectId: string) => string;
+  rewardAdLabel: (key: RewardAdLabelKey) => string;
   /**
    * 게시 CSV 행·셀 내용이 바뀔 때마다 바뀜.
    */
@@ -389,6 +397,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const effectChipLabel = useCallback(
     (effectId: string) =>
       resolveEffectChipLabel(effectId, resolvedAppLocale, sheetRows),
+    [resolvedAppLocale, sheetRows],
+  );
+
+  const rewardAdLabel = useCallback(
+    (key: RewardAdLabelKey) =>
+      tRewardAdLabel(key, resolvedAppLocale, sheetRows),
     [resolvedAppLocale, sheetRows],
   );
 
@@ -495,15 +509,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleTextChange = (text: string) => {
-    const lines = text.split("\n");
+    const normalized = text.replace(/\r\n?/g, "\n");
+    const lines = normalized.split("\n");
     if (lines.length <= PREVIEW_TEXT_MAX_LINES) {
-      updateConfig("content", { previewText: text });
+      updateConfig("content", { previewText: normalized });
       return;
     }
     const merged =
       lines.slice(0, PREVIEW_TEXT_MAX_LINES - 1).join("\n") +
       "\n" +
-      lines.slice(PREVIEW_TEXT_MAX_LINES - 1).join("");
+      lines.slice(PREVIEW_TEXT_MAX_LINES - 1).join("\n");
     updateConfig("content", { previewText: merged });
   };
 
@@ -601,6 +616,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       textSectionLabel,
       effectSectionLabel,
       effectChipLabel,
+      rewardAdLabel,
       sheetStringsRevision,
     }),
     [
@@ -619,6 +635,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       textSectionLabel,
       effectSectionLabel,
       effectChipLabel,
+      rewardAdLabel,
       sheetStringsRevision,
     ],
   );

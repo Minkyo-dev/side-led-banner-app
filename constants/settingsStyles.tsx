@@ -9,7 +9,6 @@ export const settingsStyles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 18,
   },
-  /** Open Source Info / Sunny Games 처럼 뒤로가기 + 타이틀이 가로로 붙는 경우 */
   headerInline: {
     flexDirection: "row",
     alignItems: "center",

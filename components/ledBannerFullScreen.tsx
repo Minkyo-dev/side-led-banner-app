@@ -1,36 +1,29 @@
 import { BackgroundEffectLayer } from "@/components/animation/BackgroundEffectLayer";
 import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
-import { glowColorToSkiaRgba } from "@/constants/colorPalette";
-import {
-  GRADIENT_BACKDROP_IDS,
-  type GradientBackdropId,
-} from "@/constants/gradientBackgroundPresets";
-import { SPEECH_BUBBLE_PRESETS } from "@/constants/speechBubblePresets";
 import { ledBannerFullScreenStyles as styles } from "@/constants/styles";
 import { BannerConfig } from "@/contexts/settingsContext";
 import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimation";
+import { useEffects } from "@/hooks/useEffects";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
+import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
-  FONT_SIZE_MIN,
-  getFontScaledLineSpacingPx,
-  getFullscreenTextMetrics,
-  getTextSizingPolicy,
-  scaleFontSizeByHeight,
-} from "@/utils/textSizing";
+  resolveSpeechCanvasFallback,
+  useSpeechBubble,
+} from "@/hooks/useSpeechBubble";
+import { getSizingPolicy } from "@/utils/textSizing";
 import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
   Modal,
-  Platform,
   Pressable,
   StatusBar,
   StyleSheet,
   useWindowDimensions,
   View,
-  type ViewStyle,
 } from "react-native";
+import { buildCanvas } from "./animation/buildCanvas";
 
 interface LedBannerFullScreenProps {
   visible: boolean;
@@ -65,133 +58,114 @@ export const LedBannerFullScreen = ({
   const { backgroundColor, backgroundImageUri, backgroundBlur } =
     config.background;
 
-  const isPixelEffect = effectSelectedItems.includes("Pixel");
-  const isGlowEffect = effectSelectedItems.includes("Glow");
-  const showGradientBackdrop =
-    effectSelectedItems.includes("Gradient") &&
-    GRADIENT_BACKDROP_IDS.includes(
-      gradientBackgroundPreset as GradientBackdropId,
-    );
-  const pixelShaderSize = isPixelEffect ? Math.max(2, configPixelSize) : 1;
-  const skiaStrokeWidth = (outLine / 100) * 24;
+  const { textMoveSpeed } = config.motion;
+  const hasBgPhoto =
+    backgroundImageUri != null && backgroundImageUri.length > 0;
 
-  const glowBlurRadius = useMemo(
-    () => Math.max(2, Math.min(18, 2 + (glowIntensity / 100) * 16)),
-    [glowIntensity],
-  );
-  const glowLayerColor = useMemo(
-    () => glowColorToSkiaRgba(glowColor, glowIntensity),
-    [glowColor, glowIntensity],
-  );
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const isPortrait = windowHeight >= windowWidth;
 
-  const { animatedStyle: blinkStyle, opacity: blinkOpacity } =
-    useBlinkOpacityStyle(effectSelectedItems.includes("Blink"), blinkSpeed);
   const backgroundEdgeEffectAnim = useBackgroundEffectAnimation(
     backgroundEffectPreset,
   );
-  const hasBgPhoto =
-    backgroundImageUri != null && backgroundImageUri.length > 0;
-  const { textMoveSpeed } = config.motion;
+  const sizingPolicy = useMemo(
+    () => getSizingPolicy({ effectId: backgroundEdgeEffectAnim.id }),
+    [backgroundEdgeEffectAnim.id],
+  );
+
+  const effects = useEffects({
+    effectSelectedItems,
+    gradientBackgroundPreset,
+    outLine,
+    glowIntensity,
+    glowColor,
+    dropShadow,
+    pixelSize: configPixelSize,
+  });
+
+  const speechBubble = useSpeechBubble({
+    speechBubbleId: sizingPolicy.speechBubbleId,
+    effectId: backgroundEdgeEffectAnim.id,
+    isPortrait,
+    basisWidthPx: windowWidth,
+    viewportHeight: windowHeight,
+  });
+
+  const marqueeViewportWidthPx =
+    speechBubble.speechBoxPx?.widthPx ?? windowWidth;
+
   const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
     {
       text: previewText,
       speed: textMoveSpeed,
       playOption,
       oneLineJoinMode,
+      viewportWidthPx: marqueeViewportWidthPx,
+      effectBleedPx: effects.effectSpacePx,
     },
   );
-  const isSpeechBgActive =
-    backgroundEdgeEffectAnim.id === "speechBg1" ||
-    backgroundEdgeEffectAnim.id === "speechBg2";
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const isPortrait = windowHeight >= windowWidth;
-  const sizingPolicy = useMemo(
-    () =>
-      getTextSizingPolicy({
-        effectId: backgroundEdgeEffectAnim.id,
-        isPortrait,
-      }),
-    [backgroundEdgeEffectAnim.id, isPortrait],
+
+  const { opacity: blinkOpacity } = useBlinkOpacityStyle(
+    effectSelectedItems.includes("Blink"),
+    blinkSpeed,
   );
-  const speechBgId = sizingPolicy.speechBubbleId;
-  const landscapeHeight = Math.max(1, Math.min(windowWidth, windowHeight));
-  const effectiveLineSpacing = useMemo(
-    () =>
-      getFontScaledLineSpacingPx({
-        requestedLineSpacingPx: lineSpacing,
-        fontSizePercent: fontSize,
-      }),
-    [lineSpacing, fontSize],
-  );
-  const heightScaledFontSize = useMemo(() => {
-    const scaled = scaleFontSizeByHeight({
-      baseFontSize: fontSize,
-      targetHeight: windowHeight,
-      referenceHeight: landscapeHeight,
-    });
-    const portraitSized = isPortrait
-      ? Math.max(FONT_SIZE_MIN, Math.floor(scaled * sizingPolicy.portraitFontBoost))
-      : scaled;
-    const atMaxSize = fontSize >= 100;
-    if (!isPortrait && atMaxSize) {
-      return Math.max(FONT_SIZE_MIN, Math.floor(portraitSized * 2));
-    }
-    return Math.max(FONT_SIZE_MIN, portraitSized);
-  }, [
-    fontSize,
-    windowHeight,
-    landscapeHeight,
-    isPortrait,
-    sizingPolicy.portraitFontBoost,
-  ]);
-  const fullscreenTextMetrics = useMemo(() => {
-    return getFullscreenTextMetrics({
-      displayText,
-      baseFontSize: heightScaledFontSize,
-      lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
-      lineSpacingPx: effectiveLineSpacing,
-      maxHeight: sizingPolicy.fullscreenMaxHeight ?? Math.max(1, windowHeight),
-      padding: sizingPolicy.speechTextHeightPadding,
-      clampByMaxHeight: sizingPolicy.clampByMaxHeight,
-    });
-  }, [
-    displayText,
-    heightScaledFontSize,
+
+  const {
     effectiveLineSpacing,
+    previewFontSize,
+    marqueeReferenceFontSize,
+    fullscreenLineHeightRatio,
+  } = useTextMetrics({
+    mode: "fullscreen",
+    text: displayText,
+    fontSize,
+    lineSpacing,
+    playOption,
     sizingPolicy,
+    isSpeechBgActive: speechBubble.isActive,
+    speechMaxHeight: speechBubble.maxTextHeight,
+    windowWidth,
     windowHeight,
-  ]);
-  const speechPresetPlatform = isSpeechBgActive
-    ? Platform.OS === "ios"
-      ? SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].ios
-      : SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id].android
-    : null;
-  const speechTextBoxConfig = isSpeechBgActive
-    ? isPortrait
-      ? speechPresetPlatform!.fullscreenTextBox.portrait
-      : speechPresetPlatform!.fullscreenTextBox.landscape
-    : null;
-  const speechTextContainerStyle: ViewStyle = isSpeechBgActive
-    ? {
-        width: speechTextBoxConfig!.width,
-        height: fullscreenTextMetrics.height,
-        transform: [{ translateY: speechTextBoxConfig!.yOffset }],
-      }
-    : {};
+    isPortrait,
+  });
+
+  const canvasFallback = useMemo(
+    () =>
+      resolveSpeechCanvasFallback(speechBubble.speechBoxPx, {
+        width: windowWidth,
+        height: windowHeight,
+      }),
+    [speechBubble.speechBoxPx, windowWidth, windowHeight],
+  );
 
   const canvas = usePreviewPanelCanvas({
     displayText,
     translateX,
     onTextLayout,
-    previewFontSize: fullscreenTextMetrics.fontSize,
+    previewFontSize,
+    marqueeReferenceFontSize,
     appearanceFont: font,
     fontWeight,
     letterSpacing,
     lineSpacingPx: effectiveLineSpacing,
-    fallbackLayout: { width: windowWidth, height: windowHeight },
-    lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
+    fallbackLayout: canvasFallback,
+    lineHeightRatio: fullscreenLineHeightRatio,
+    playOption,
+    speechBubbleLayout: speechBubble.isActive ? {} : null,
   });
-  const handleFullscreenLayout = isSpeechBgActive
+
+  const marqueeCanvasProps = buildCanvas({
+    canvas,
+    effects,
+    blinkOpacity,
+    spacer: SPACER,
+    previewTextColor: textSelectedColor,
+    gradientBackgroundPreset,
+    hasBgPhoto,
+    dropShadow,
+  });
+
+  const handleFullscreenLayout = speechBubble.isActive
     ? undefined
     : canvas.onSkiaCanvasLayout;
 
@@ -233,56 +207,26 @@ export const LedBannerFullScreen = ({
               isPortrait={isPortrait}
               mode="fullscreen"
             />
-            {isSpeechBgActive ? (
+            {speechBubble.isActive ? (
               <View
                 style={{
                   ...StyleSheet.absoluteFillObject,
-                  justifyContent: "center",
                   alignItems: "center",
+                  ...(speechBubble.speechTextTop == null
+                    ? { justifyContent: "center" }
+                    : null),
                 }}
                 pointerEvents="none"
               >
                 <View
-                  style={speechTextContainerStyle}
+                  style={speechBubble.textContainerStyle!}
                   onLayout={canvas.onSkiaCanvasLayout}
                 >
-                  <MarqueeCanvas
-                    canvas={canvas}
-                    isPixelEffect={isPixelEffect}
-                    pixelShaderSize={pixelShaderSize}
-                    showGradientBackdrop={showGradientBackdrop}
-                    gradientBackgroundPreset={gradientBackgroundPreset}
-                    hasBgPhoto={hasBgPhoto}
-                    blinkOpacity={blinkOpacity}
-                    segmentCount={10}
-                    spacer={SPACER}
-                    isGlowEffect={isGlowEffect}
-                    glowBlurRadius={glowBlurRadius}
-                    glowLayerColor={glowLayerColor}
-                    skiaStrokeWidth={skiaStrokeWidth}
-                    dropShadow={dropShadow}
-                    previewTextColor={textSelectedColor}
-                  />
+                  <MarqueeCanvas {...marqueeCanvasProps} />
                 </View>
               </View>
             ) : (
-              <MarqueeCanvas
-                canvas={canvas}
-                isPixelEffect={isPixelEffect}
-                pixelShaderSize={pixelShaderSize}
-                showGradientBackdrop={showGradientBackdrop}
-                gradientBackgroundPreset={gradientBackgroundPreset}
-                hasBgPhoto={hasBgPhoto}
-                blinkOpacity={blinkOpacity}
-                segmentCount={10}
-                spacer={SPACER}
-                isGlowEffect={isGlowEffect}
-                glowBlurRadius={glowBlurRadius}
-                glowLayerColor={glowLayerColor}
-                skiaStrokeWidth={skiaStrokeWidth}
-                dropShadow={dropShadow}
-                previewTextColor={textSelectedColor}
-              />
+              <MarqueeCanvas {...marqueeCanvasProps} />
             )}
           </View>
         </View>

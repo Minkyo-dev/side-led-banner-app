@@ -1,73 +1,80 @@
-import type { SkFont } from "@shopify/react-native-skia";
+import type { SkFont, SkTextBlob } from "@shopify/react-native-skia";
 import { useEffect, useMemo, useState } from "react";
 import { LayoutChangeEvent } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
-import { useDerivedValue } from "react-native-reanimated";
+import { useDerivedValue, useSharedValue } from "react-native-reanimated";
 
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
+import { buildMarqueeTextBlob } from "@/utils/buildMarqueeTextBlob";
+import {
+  BUBBLE_MAX_ROWS,
+  BUBBLE_SAFE,
+  bubbleGlyphs,
+  bubbleLayouts,
+  bubbleRows,
+  type BubbleCanvasOpts,
+} from "@/utils/skiaBubbleTextLayout";
 
 type TextLayoutEvent = {
   nativeEvent: { lines: { width: number }[] };
 };
 
-function measureSkiaLineWidth(
-  font: SkFont,
-  text: string,
-  letterSpacing: number,
-): number {
-  if (text.length === 0) return 0;
-  let w = 0;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i]!;
-    w += font.measureText(ch).width;
-    if (i < text.length - 1) w += letterSpacing;
-  }
-  return w;
-}
+type SkiaLineGlyphLayout = { x: number; text: string };
+type SkiaLineLayout = { width: number; glyphs: SkiaLineGlyphLayout[] };
 
-function skiaGlyphLayouts(
+function layoutSkiaLine(
   font: SkFont,
   text: string,
   letterSpacing: number,
-): { x: number; text: string }[] {
-  if (text.length === 0) return [];
+): SkiaLineLayout {
+  if (text.length === 0) return { width: 0, glyphs: [] };
   let x = 0;
-  const out: { x: number; text: string }[] = [];
+  const glyphs: SkiaLineGlyphLayout[] = [];
   for (let i = 0; i < text.length; i++) {
     const ch = text[i]!;
-    out.push({ x, text: ch });
-    x += font.measureText(ch).width + (i < text.length - 1 ? letterSpacing : 0);
+    glyphs.push({ x, text: ch });
+    const adv =
+      font.measureText(ch).width + (i < text.length - 1 ? letterSpacing : 0);
+    x += adv;
   }
-  return out;
+  return { width: x, glyphs };
 }
 
-/** PreviewPanel 기본 줄 간격 */
 const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
 
-function layoutMultilineSkiaGlyphs(
+/** 마퀴 타일은 텍스트 너비 기준(고정). 프레임 가운데 정렬 x는 별도 오프셋으로 복원합니다. */
+function normalizeGlyphsForMarquee(
+  glyphs: { x: number; y: number; text: string }[],
+): { glyphs: { x: number; y: number; text: string }[]; offsetX: number } {
+  if (glyphs.length === 0) return { glyphs, offsetX: 0 };
+  const minX = Math.min(...glyphs.map((g) => g.x));
+  if (minX === 0) return { glyphs, offsetX: 0 };
+  return {
+    offsetX: minX,
+    glyphs: glyphs.map((g) => ({ ...g, x: g.x - minX })),
+  };
+}
+
+function lineLayoutsToGlyphs(
   font: SkFont,
-  displayText: string,
-  letterSpacing: number,
+  lineLayouts: SkiaLineLayout[],
   previewFontSize: number,
   canvasHeight: number,
   lineHeightRatio: number,
 ): { x: number; y: number; text: string }[] {
-  const lines = displayText.split("\n");
   const lineHeightPx = previewFontSize * lineHeightRatio;
   const m = font.getMetrics();
   const verticalCenterOffset = (m.ascent + m.descent) / 2;
-  const n = lines.length;
+  const n = lineLayouts.length;
 
   const out: { x: number; y: number; text: string }[] = [];
   for (let lineIndex = 0; lineIndex < n; lineIndex++) {
-    const line = lines[lineIndex]!;
     const baselineY =
       canvasHeight / 2 +
       (lineIndex - (n - 1) / 2) * lineHeightPx -
       verticalCenterOffset;
 
-    const row = skiaGlyphLayouts(font, line, letterSpacing);
-    for (const g of row) {
+    for (const g of lineLayouts[lineIndex]!.glyphs) {
       out.push({ x: g.x, y: baselineY, text: g.text });
     }
   }
@@ -79,102 +86,176 @@ export interface UsePreviewPanelCanvasParams {
   translateX: SharedValue<number>;
   onTextLayout: (e: TextLayoutEvent) => void;
   previewFontSize: number;
-  /** settings `appearance.font` (e.g. nanum_gothic) */
+  marqueeReferenceFontSize: number;
   appearanceFont: string;
   fontWeight: "normal" | "bold" | string;
   letterSpacing: number;
   lineSpacingPx?: number;
-  /**
-   * 글리프·그라데이션 크기 보정용
-   */
   fallbackLayout?: { width: number; height: number };
   lineHeightRatio?: number;
+  speechBubbleLayout?: BubbleCanvasOpts | null;
+  playOption?: "one" | "multi";
 }
 
-/**
- * PreviewPanel의 Skia `Canvas` 마퀴: 폰트·폭·세로 정렬·`translateX` 동기화.
- */
+export { BUBBLE_MAX_ROWS, BUBBLE_SAFE } from "@/utils/skiaBubbleTextLayout";
+
 export function usePreviewPanelCanvas({
   displayText,
   translateX,
   onTextLayout,
   previewFontSize,
+  marqueeReferenceFontSize,
   appearanceFont,
   fontWeight,
   letterSpacing,
   lineSpacingPx,
   fallbackLayout,
   lineHeightRatio = DEFAULT_LINE_HEIGHT_RATIO,
+  speechBubbleLayout = null,
+  playOption = "multi",
 }: UsePreviewPanelCanvasParams) {
   const skiaFont = useSkiaAppearanceFont(
     appearanceFont,
     fontWeight,
     previewFontSize,
   );
-
-  const skiaTextWidth = useMemo(() => {
-    if (!skiaFont) return 0;
-    const lines = displayText.split("\n");
-    let maxW = 0;
-    for (const line of lines) {
-      maxW = Math.max(
-        maxW,
-        measureSkiaLineWidth(skiaFont, line, letterSpacing),
-      );
-    }
-    return maxW;
-  }, [displayText, skiaFont, letterSpacing]);
+  const referenceSkiaFont = useSkiaAppearanceFont(
+    appearanceFont,
+    fontWeight,
+    marqueeReferenceFontSize,
+  );
 
   const [skiaCanvasLayout, setSkiaCanvasLayout] = useState({
     width: 0,
     height: 0,
   });
 
+  const hasCanvasLayout =
+    skiaCanvasLayout.width > 0 && skiaCanvasLayout.height > 0;
   const fbW = fallbackLayout?.width ?? 0;
   const fbH = fallbackLayout?.height ?? 0;
-  const drawW = skiaCanvasLayout.width > 0 ? skiaCanvasLayout.width : fbW;
-  const drawH = skiaCanvasLayout.height > 0 ? skiaCanvasLayout.height : fbH;
+  const drawW = hasCanvasLayout ? skiaCanvasLayout.width : fbW;
+  const drawH = hasCanvasLayout ? skiaCanvasLayout.height : fbH;
+
+  const useBubbleLayout =
+    speechBubbleLayout != null && hasCanvasLayout;
+
+  const skiaLineLayouts = useMemo((): SkiaLineLayout[] | null => {
+    if (!skiaFont) return null;
+
+    const rows = bubbleRows({
+      text: displayText,
+      maxRows: speechBubbleLayout?.maxRows ?? BUBBLE_MAX_ROWS,
+      playOption,
+    });
+
+    if (useBubbleLayout) {
+      return bubbleLayouts(skiaFont, rows, letterSpacing);
+    }
+
+    return rows.map((line) => layoutSkiaLine(skiaFont, line, letterSpacing));
+  }, [
+    displayText,
+    skiaFont,
+    letterSpacing,
+    useBubbleLayout,
+    speechBubbleLayout,
+    playOption,
+  ]);
+
   const resolvedLineHeightRatio =
     lineSpacingPx != null
       ? lineHeightRatio + lineSpacingPx / Math.max(1, previewFontSize)
       : lineHeightRatio;
 
-  const skiaGlyphs = useMemo(() => {
-    if (!skiaFont || drawH <= 0) return [];
-    return layoutMultilineSkiaGlyphs(
-      skiaFont,
-      displayText,
+  const marqueePeriodPx = useMemo(() => {
+    if (!referenceSkiaFont || marqueeReferenceFontSize <= 0) return 0;
+    const rows = bubbleRows({
+      text: displayText,
+      maxRows: speechBubbleLayout?.maxRows ?? BUBBLE_MAX_ROWS,
+      playOption,
+    });
+    const refLayouts = bubbleLayouts(
+      referenceSkiaFont,
+      rows,
       letterSpacing,
-      previewFontSize,
-      drawH,
-      resolvedLineHeightRatio,
     );
+    return refLayouts.reduce((max, row) => Math.max(max, row.width), 0);
   }, [
+    referenceSkiaFont,
+    marqueeReferenceFontSize,
     displayText,
-    skiaFont,
     letterSpacing,
+    playOption,
+    speechBubbleLayout,
+  ]);
+
+  const skiaGlyphLayout = useMemo(() => {
+    if (!skiaFont || !skiaLineLayouts || drawH <= 0) {
+      return {
+        glyphPositions: [] as { x: number; y: number; text: string }[],
+        marqueeOffsetX: 0,
+      };
+    }
+
+    const frameGlyphs = useBubbleLayout
+      ? bubbleGlyphs({
+          font: skiaFont,
+          rows: skiaLineLayouts,
+          frameWidth: drawW,
+          frameHeight: drawH,
+          safeWRatio:
+            speechBubbleLayout!.safeWRatio ?? BUBBLE_SAFE.widthRatio,
+          lineGapPx: lineSpacingPx,
+        })
+      : lineLayoutsToGlyphs(
+          skiaFont,
+          skiaLineLayouts,
+          previewFontSize,
+          drawH,
+          resolvedLineHeightRatio,
+        );
+
+    const { glyphs: glyphPositions, offsetX: marqueeOffsetX } =
+      useBubbleLayout
+        ? normalizeGlyphsForMarquee(frameGlyphs)
+        : { glyphs: frameGlyphs, offsetX: 0 };
+
+    return { glyphPositions, marqueeOffsetX };
+  }, [
+    skiaFont,
+    skiaLineLayouts,
     previewFontSize,
     drawH,
+    drawW,
     resolvedLineHeightRatio,
+    useBubbleLayout,
+    speechBubbleLayout,
+    lineSpacingPx,
   ]);
+
+  const skiaTextWidth = marqueePeriodPx;
+  const marqueeOffsetX = useSharedValue(0);
+
+  useEffect(() => {
+    marqueeOffsetX.value = skiaGlyphLayout.marqueeOffsetX;
+  }, [skiaGlyphLayout.marqueeOffsetX, marqueeOffsetX]);
+
+  const skiaTextBlob = useMemo((): SkTextBlob | null => {
+    if (!skiaFont || skiaGlyphLayout.glyphPositions.length === 0) return null;
+    return buildMarqueeTextBlob(skiaFont, skiaGlyphLayout.glyphPositions);
+  }, [skiaFont, skiaGlyphLayout.glyphPositions]);
 
   const skiaMarqueeTransform = useDerivedValue(() => [
-    { translateX: translateX.value },
+    { translateX: translateX.value + marqueeOffsetX.value },
   ]);
 
-  /** RN `Text` 없이 Skia만 쓸 때도 `useMarqueeAnimation`의 `textWidth`가 갱신되도록 동기화 */
   useEffect(() => {
-    if (!skiaFont) return;
-    const lines = displayText.split("\n");
-    const lineWidths = lines.map((line) =>
-      measureSkiaLineWidth(skiaFont, line, letterSpacing),
-    );
-    const maxLineWidth = lineWidths.length > 0 ? Math.max(...lineWidths) : 0;
-    if (maxLineWidth <= 0) return;
+    if (marqueePeriodPx <= 0) return;
     onTextLayout({
-      nativeEvent: { lines: lineWidths.map((w) => ({ width: w })) },
+      nativeEvent: { lines: [{ width: marqueePeriodPx }] },
     });
-  }, [skiaFont, displayText, letterSpacing, onTextLayout]);
+  }, [marqueePeriodPx, onTextLayout]);
 
   const onSkiaCanvasLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -184,9 +265,8 @@ export function usePreviewPanelCanvas({
   return {
     skiaFont,
     skiaTextWidth,
-    skiaGlyphs,
+    skiaTextBlob,
     skiaMarqueeTransform,
-    /** 글리프·그라데이션에 쓸 실제 그리기 크기 (fallback 반영) */
     skiaCanvasLayout: { width: drawW, height: drawH },
     onSkiaCanvasLayout,
   };

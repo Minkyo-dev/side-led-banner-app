@@ -43,6 +43,8 @@ export type TranslationSourceRow = {
  * 시트에 키가 생기고 앱에서 읽기로 확정되면 여기서 제거합니다.
  */
 export const STRING_BACKLOG_FOR_TRANSLATORS: TranslationSourceRow[] = [
+  // 리워드 팝업(32~38행)은 시트·language/rewardAdLabels.ts에 반영됨.
+  // 시트 점검: 32·37·38행 E/F(번체·간체) 열이 뒤바뀐 상태, 33행 E열 오타("可 walls…") — 수정 후 앱이 자동 반영.
   // 예시 (실제로는 시트 반영 후 삭제하거나, 새 문자열 추가 시만 작성)
   // {
   //   sheetRowKey: "text.exampleNewLabel",

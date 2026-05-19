@@ -1,7 +1,9 @@
+import { countRows } from "@/utils/skiaBubbleTextLayout";
+
 const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
 const FULLSCREEN_LINE_HEIGHT_RATIO = 1.16;
 export const FONT_SIZE_MIN = 20;
-const FONT_SIZE_MAX = 100;
+export const FONT_SIZE_MAX = 100;
 const SPEECH_TEXT_HEIGHT_PADDING = 24;
 const PORTRAIT_FONT_BOOST = 0.8;
 const PREVIEW_VERTICAL_TEXT_PADDING = {
@@ -9,32 +11,94 @@ const PREVIEW_VERTICAL_TEXT_PADDING = {
   speechBg1: 12,
   speechBg2: 24,
 } as const;
-const SPEECH_BG_MAX_TEXT_HEIGHT = {
-  speechBg1: { portrait: 400, landscape: 300 },
-  speechBg2: { portrait: 400, landscape: 300 },
+/** Speech BG 없을 때: 뷰포트 세로 대비 텍스트 영역 비율 */
+export const DEFAULT_MAX_TEXT_HEIGHT_RATIO = {
+  portrait: 0.5,
+  landscape: 1,
 } as const;
-type SpeechBubbleId = keyof typeof SPEECH_BG_MAX_TEXT_HEIGHT;
+
+/**
+ * 말풍선 원본 아트보드(px) 기준 텍스트 박스 layout.
+ * landscape 전체화면: top·height = viewportHeight × 비율
+ */
+export const SPEECH_BG_TEXT_LAYOUT = {
+  speechBg1: {
+    portrait: {
+      textHeightRatio: 264.5 / 393,
+      topOffsetRatio: null as number | null,
+    },
+    landscape: {
+      /** 393px 중 텍스트 264.5px, 위 64px / 아래 64.5px */
+      textHeightRatio: 264.5 / 393,
+      topOffsetRatio: 64 / 393,
+    },
+  },
+  speechBg2: {
+    portrait: {
+      textHeightRatio: 389 / 518,
+      topOffsetRatio: null as number | null,
+    },
+    landscape: {
+      /** 518px 중 텍스트 385px, 위 20px / 아래 ~109px(디자인상 ~90px) */
+      textHeightRatio: 385 / 518,
+      topOffsetRatio: 28 / 518,
+    },
+  },
+} as const;
+
+type SpeechBubbleId = keyof typeof SPEECH_BG_TEXT_LAYOUT;
+
+function getSpeechTextLayout(
+  speechBubbleId: SpeechBubbleId,
+  isPortrait: boolean,
+) {
+  return isPortrait
+    ? SPEECH_BG_TEXT_LAYOUT[speechBubbleId].portrait
+    : SPEECH_BG_TEXT_LAYOUT[speechBubbleId].landscape;
+}
 
 export function getSpeechBubbleId(effectId: string): SpeechBubbleId | null {
   return effectId === "speechBg1" || effectId === "speechBg2" ? effectId : null;
 }
 
-export function getTextSizingPolicy(params: {
+export function resolveFullscreenMaxHeight(params: {
   effectId: string;
   isPortrait: boolean;
-}) {
-  const { effectId, isPortrait } = params;
+  viewportHeight: number;
+}): number {
+  const { effectId, isPortrait, viewportHeight } = params;
+  const height = Math.max(1, viewportHeight);
+  const speechBubbleId = getSpeechBubbleId(effectId);
+  const ratio =
+    speechBubbleId == null
+      ? isPortrait
+        ? DEFAULT_MAX_TEXT_HEIGHT_RATIO.portrait
+        : DEFAULT_MAX_TEXT_HEIGHT_RATIO.landscape
+      : getSpeechTextLayout(speechBubbleId, isPortrait).textHeightRatio;
+  return Math.max(1, Math.floor(height * ratio));
+}
+
+/** landscape 등: 원본 top 비율. null이면 preset `yOffset`(중앙+translateY) 사용 */
+export function resolveSpeechTextTopOffset(params: {
+  effectId: string;
+  isPortrait: boolean;
+  viewportHeight: number;
+}): number | null {
+  const { effectId, isPortrait, viewportHeight } = params;
+  const speechBubbleId = getSpeechBubbleId(effectId);
+  if (speechBubbleId == null) return null;
+  const topOffsetRatio = getSpeechTextLayout(speechBubbleId, isPortrait).topOffsetRatio;
+  if (topOffsetRatio == null) return null;
+  return Math.max(0, Math.floor(Math.max(1, viewportHeight) * topOffsetRatio));
+}
+
+export function getSizingPolicy(params: { effectId: string }) {
+  const { effectId } = params;
   const speechBubbleId = getSpeechBubbleId(effectId);
   const previewPadding =
     speechBubbleId == null
       ? PREVIEW_VERTICAL_TEXT_PADDING.default
       : PREVIEW_VERTICAL_TEXT_PADDING[speechBubbleId];
-  const fullscreenMaxHeight =
-    speechBubbleId == null
-      ? null
-      : isPortrait
-        ? SPEECH_BG_MAX_TEXT_HEIGHT[speechBubbleId].portrait
-        : SPEECH_BG_MAX_TEXT_HEIGHT[speechBubbleId].landscape;
   return {
     speechBubbleId,
     previewLineHeightRatio: DEFAULT_LINE_HEIGHT_RATIO,
@@ -42,12 +106,11 @@ export function getTextSizingPolicy(params: {
     speechTextHeightPadding: SPEECH_TEXT_HEIGHT_PADDING,
     portraitFontBoost: PORTRAIT_FONT_BOOST,
     previewPadding,
-    fullscreenMaxHeight,
-    clampByMaxHeight: speechBubbleId != null,
+    clampByMaxHeight: true,
   };
 }
 
-export function getFontScaledLineSpacingPx(params: {
+export function getRelLineSpacing(params: {
   requestedLineSpacingPx: number;
   fontSizePercent: number;
 }) {
@@ -111,7 +174,7 @@ export function getPreviewTextMetrics(params: {
   if (previewHeight === 0) {
     return { lineCount: 1, fontSize: fallbackFontSize, height: fallbackFontSize };
   }
-  const lineCount = getLineCountForMode({ text, playOption, maxLines });
+  const lineCount = countRows(text, playOption, maxLines);
   const availableHeight = Math.max(1, previewHeight - padding);
   const requestedLineSpacingPx = Math.max(0, lineSpacingPx ?? 0);
   const effectiveLineHeightRatio = lineHeightRatio;
@@ -127,10 +190,12 @@ export function getPreviewTextMetrics(params: {
     );
     const desiredFontSize = baseFontSize ?? percentBasedFontSize;
     const fontSize = Math.max(1, Math.min(desiredFontSize, maxFontSizeForBox));
-    const height = Math.max(
+    const rawH = Math.max(
       1,
       Math.ceil(fontSize * effectiveLineHeightRatio * lineCount + padding),
     );
+    const fillBox = (fontSizePercent ?? 100) >= FONT_SIZE_MAX;
+    const height = fillBox ? previewHeight : rawH;
     return { lineCount, fontSize, height };
   }
 
@@ -150,10 +215,9 @@ export function getPreviewTextMetrics(params: {
         )
       : 0;
   const totalLineGapPx = Math.max(0, lineCount - 1) * interLineGapPx;
-  const height = Math.max(
-    1,
-    Math.ceil(lineBodyPx + totalLineGapPx + padding),
-  );
+  const rawH = Math.max(1, Math.ceil(lineBodyPx + totalLineGapPx + padding));
+  const fillBox = (fontSizePercent ?? 100) >= FONT_SIZE_MAX;
+  const height = fillBox ? previewHeight : rawH;
   return { lineCount, fontSize, height };
 }
 
@@ -168,6 +232,32 @@ export function scaleFontSizeByHeight(params: {
   return Math.max(1, Math.floor(scaled));
 }
 
+export function resolvePctWidthPx(
+  width: number | string,
+  basisPx: number,
+): number {
+  if (basisPx <= 0) return 0;
+  if (typeof width === "number") return width;
+  const trimmed = width.trim();
+  if (trimmed.endsWith("%")) {
+    return basisPx * (parseFloat(trimmed) / 100);
+  }
+  const parsed = parseFloat(trimmed);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function resolveSpeechBoxPx(params: {
+  boxWidth: number | string;
+  basisWidthPx: number;
+  maxHeightPx: number;
+}) {
+  const { boxWidth, basisWidthPx, maxHeightPx } = params;
+  return {
+    widthPx: resolvePctWidthPx(boxWidth, basisWidthPx),
+    heightPx: Math.max(1, maxHeightPx),
+  };
+}
+
 export function getFullscreenTextMetrics(params: {
   displayText: string;
   baseFontSize: number;
@@ -176,6 +266,9 @@ export function getFullscreenTextMetrics(params: {
   maxHeight: number;
   padding: number;
   clampByMaxHeight: boolean;
+  speechBg?: boolean;
+  playOption?: "one" | "multi";
+  sizePct?: number;
 }) {
   const {
     displayText,
@@ -185,9 +278,12 @@ export function getFullscreenTextMetrics(params: {
     maxHeight,
     padding,
     clampByMaxHeight,
+    speechBg = false,
+    playOption = "multi",
+    sizePct = baseFontSize,
   } = params;
 
-  const lineCount = Math.max(1, displayText.split("\n").length);
+  const lineCount = countRows(displayText, playOption);
   const availableHeight = Math.max(1, maxHeight - padding);
   const requestedLineSpacingPx = Math.max(0, lineSpacingPx ?? 0);
   const effectiveLineHeightRatio = lineHeightRatio;
@@ -225,7 +321,9 @@ export function getFullscreenTextMetrics(params: {
           fontSize * effectiveLineHeightRatio * lineCount + totalLineGapPx + padding,
         ),
   );
-  const height = clampByMaxHeight ? Math.min(rawHeight, maxHeight) : rawHeight;
+  const fillBox =
+    speechBg || (clampByMaxHeight && sizePct >= FONT_SIZE_MAX);
+  const height = fillBox ? maxHeight : Math.min(rawHeight, maxHeight);
 
   return { lineCount, fontSize, height };
 }

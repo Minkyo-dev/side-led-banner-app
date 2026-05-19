@@ -3,9 +3,11 @@ import {
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
+import { RewardAdDebugFab } from "@/components/dev/rewardAdDebugFab";
 import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
 import PreviewPanel from "@/components/previewPanel";
+import { RewardAdModal } from "@/components/rewardAdModal";
 import { BackgroundSection } from "@/components/settings/backgroundSection";
 import { EffectSection } from "@/components/settings/effectSection";
 import { TextSection } from "@/components/settings/textSection";
@@ -13,9 +15,10 @@ import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
 import * as NavigationBar from "expo-navigation-bar";
+import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -26,6 +29,7 @@ export default function Index() {
   const { config, ui, updateConfig, updateUI, textSectionLabel } = useSettings();
   const { playOption } = config.content;
   const { isPlaying, activeTab } = ui;
+  const [rewardAdVisible, setRewardAdVisible] = useState(false);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
@@ -53,14 +57,14 @@ export default function Index() {
       <View id="playBarContainer" style={styles.playBarContainer}>
         {/* one line play button */}
         <TouchableOpacity
-          style={{ flex: 0.15 }}
+          style={btnStyles.playBarSideSlot}
           onPress={() => updateConfig("content", { playOption: "one" })}
         >
           <OneLinePlayButton isActive={playOption === "one"} />
         </TouchableOpacity>
         {/* multiple line play button */}
         <TouchableOpacity
-          style={{ flex: 0.15 }}
+          style={btnStyles.playBarSideSlot}
           onPress={() => updateConfig("content", { playOption: "multi" })}
         >
           <MultipleLinePlayButton isActive={playOption === "multi"} />
@@ -74,11 +78,15 @@ export default function Index() {
         </TouchableOpacity>
         {/* settings button */}
         <TouchableOpacity
-          style={{ flex: 0.15 }}
+          style={btnStyles.playBarSideSlot}
           onPress={() => router.push("/settings" as Href)}
           accessibilityLabel={textSectionLabel("settingsTitle")}
         >
-          <MultipleLinePlayButton isActive={false} />
+          <Image
+            source={require("@/assets/images/settings.png")}
+            style={btnStyles.playBarSettingsImage}
+            contentFit="contain"
+          />
         </TouchableOpacity>
       </View>
       {/* tab container */}
@@ -119,15 +127,23 @@ export default function Index() {
         {activeTab === "BACKGROUND" && <BackgroundSection />}
         {activeTab === "EFFECT" && <EffectSection />}
       </View>
-        <View style={{ height: 50 }}>
-        {/* Banner Ad */}
+      <View style={{ height: 50 }}>
+        {/* Banner Ad placeholder */}
       </View>
+      <RewardAdModal
+        visible={rewardAdVisible}
+        onClose={() => setRewardAdVisible(false)}
+        onWatchAd={() => {
+          // TODO: show rewarded ad, then unlock Pro for 6 hours
+        }}
+      />
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen
         visible={isPlaying}
         onClose={handleStop}
         config={config}
       />
+      <RewardAdDebugFab onOpen={() => setRewardAdVisible(true)} />
       <SheetFetchDebugPanel />
     </View>
   );

@@ -1,29 +1,20 @@
 import { DeleteAllButton } from "@/assets/svg/deleteAllButton";
-import { appFontFamilyForText, uiThemeFontStyle } from "@/constants/appFonts";
+import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
-import { glowColorToSkiaRgba } from "@/constants/colorPalette";
-import {
-  GRADIENT_BACKDROP_IDS,
-  type GradientBackdropId,
-} from "@/constants/gradientBackgroundPresets";
-import {
-  isSpeechBubblePreset,
-  SPEECH_BUBBLE_PRESETS,
-} from "@/constants/speechBubblePresets";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimation";
+import { useEffects } from "@/hooks/useEffects";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import { usePreviewPanelTextInput } from "@/hooks/usePreviewPanelTextInput";
+import { useTextMetrics } from "@/hooks/useTextMetrics";
 import {
-  getFontScaledLineSpacingPx,
-  getFullscreenTextMetrics,
-  getPreviewTextMetrics,
-  getTextSizingPolicy,
-  scaleFontSizeByHeight,
-} from "@/utils/textSizing";
+  resolveSpeechCanvasFallback,
+  useSpeechBubble,
+} from "@/hooks/useSpeechBubble";
+import { getSizingPolicy } from "@/utils/textSizing";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useMemo, useState } from "react";
@@ -37,6 +28,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { buildCanvas } from "./animation/buildCanvas";
 import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
 import { MarqueeCanvas } from "./animation/MarqueeCanvas";
 
@@ -55,7 +47,6 @@ export default function PreviewPanel() {
     updateConfig,
     ui,
     loadPreset,
-    resetPresetSlot,
   } = useSettings();
   const { activePreset } = ui;
 
@@ -84,26 +75,48 @@ export default function PreviewPanel() {
   const { textMoveSpeed } = config.motion;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
+
   const backgroundEdgeEffectAnim = useBackgroundEffectAnimation(
     backgroundEffectPreset,
   );
   const sizingPolicy = useMemo(
-    () =>
-      getTextSizingPolicy({
-        effectId: backgroundEdgeEffectAnim.id,
-        isPortrait: false,
-      }),
+    () => getSizingPolicy({ effectId: backgroundEdgeEffectAnim.id }),
     [backgroundEdgeEffectAnim.id],
   );
-  const landscapeHeight = Math.max(1, Math.min(windowWidth, windowHeight));
-  const effectiveLineSpacing = useMemo(
-    () =>
-      getFontScaledLineSpacingPx({
-        requestedLineSpacingPx: lineSpacing,
-        fontSizePercent: fontSize,
-      }),
-    [lineSpacing, fontSize],
-  );
+
+  const effects = useEffects({
+    effectSelectedItems,
+    gradientBackgroundPreset,
+    outLine,
+    glowIntensity,
+    glowColor,
+    dropShadow,
+    pixelSize: configPixelSize,
+  });
+
+  const speechBubble = useSpeechBubble({
+    speechBubbleId: sizingPolicy.speechBubbleId,
+    effectId: backgroundEdgeEffectAnim.id,
+    isPortrait,
+    basisWidthPx: previewBox.width,
+    viewportHeight: previewHeight,
+  });
+
+  const { effectiveLineSpacing, previewFontSize, marqueeReferenceFontSize } =
+    useTextMetrics({
+      mode: "preview",
+      previewHeight,
+      text: previewText,
+      fontSize,
+      lineSpacing,
+      playOption,
+      sizingPolicy,
+      isSpeechBgActive: speechBubble.isActive,
+      speechMaxHeight: speechBubble.maxTextHeight,
+    });
+
+  const marqueeViewportWidthPx =
+    speechBubble.speechBoxPx?.widthPx ?? previewBox.width;
 
   const { displayText, translateX, onContainerLayout, onTextLayout, SPACER } =
     useMarqueeAnimation({
@@ -111,75 +124,13 @@ export default function PreviewPanel() {
       speed: textMoveSpeed,
       playOption,
       oneLineJoinMode,
+      viewportWidthPx: marqueeViewportWidthPx,
+      effectBleedPx: effects.effectSpacePx,
     });
-  const fullscreenLandscapeBaseFontSize = useMemo(() => {
-    return getFullscreenTextMetrics({
-      displayText,
-      baseFontSize: fontSize,
-      lineHeightRatio: sizingPolicy.fullscreenLineHeightRatio,
-      lineSpacingPx: effectiveLineSpacing,
-      maxHeight: sizingPolicy.fullscreenMaxHeight ?? landscapeHeight,
-      padding: sizingPolicy.speechTextHeightPadding,
-      clampByMaxHeight: sizingPolicy.clampByMaxHeight,
-    }).fontSize;
-  }, [
-    displayText,
-    fontSize,
-    effectiveLineSpacing,
-    landscapeHeight,
-    sizingPolicy,
-  ]);
-  const scaledPreviewBaseFontSize = useMemo(
-    () =>
-      scaleFontSizeByHeight({
-        baseFontSize: fullscreenLandscapeBaseFontSize,
-        targetHeight: previewHeight,
-        referenceHeight: landscapeHeight,
-      }),
-    [fullscreenLandscapeBaseFontSize, previewHeight, landscapeHeight],
-  );
 
-  const previewTextMetrics = useMemo(
-    () =>
-      getPreviewTextMetrics({
-        previewHeight,
-        baseFontSize: scaledPreviewBaseFontSize,
-        playOption,
-        text: previewText,
-        padding: sizingPolicy.previewPadding,
-        lineHeightRatio: sizingPolicy.previewLineHeightRatio,
-        lineSpacingPx: effectiveLineSpacing,
-      }),
-    [
-      previewHeight,
-      scaledPreviewBaseFontSize,
-      playOption,
-      previewText,
-      effectiveLineSpacing,
-      sizingPolicy,
-    ],
-  );
-  const previewFontSize = previewTextMetrics.fontSize;
-
-  const previewTextColor = textSelectedColor;
-
-  const isPixelEffect = effectSelectedItems.includes("Pixel");
-  const isGlowEffect = effectSelectedItems.includes("Glow");
-  const showGradientBackdrop =
-    effectSelectedItems.includes("Gradient") &&
-    GRADIENT_BACKDROP_IDS.includes(
-      gradientBackgroundPreset as GradientBackdropId,
-    );
-  const pixelShaderSize = isPixelEffect ? Math.max(2, configPixelSize) : 1;
-  const skiaStrokeWidth = (outLine / 100) * 24;
-
-  const glowBlurRadius = useMemo(
-    () => Math.max(2, Math.min(18, 2 + (glowIntensity / 100) * 16)),
-    [glowIntensity],
-  );
-  const glowLayerColor = useMemo(
-    () => glowColorToSkiaRgba(glowColor, glowIntensity),
-    [glowColor, glowIntensity],
+  const canvasFallback = useMemo(
+    () => resolveSpeechCanvasFallback(speechBubble.speechBoxPx, previewBox),
+    [speechBubble.speechBoxPx, previewBox],
   );
 
   const canvas = usePreviewPanelCanvas({
@@ -187,29 +138,31 @@ export default function PreviewPanel() {
     translateX,
     onTextLayout,
     previewFontSize,
+    marqueeReferenceFontSize,
     appearanceFont: font,
     fontWeight,
     letterSpacing,
     lineSpacingPx: effectiveLineSpacing,
-    fallbackLayout: previewBox,
+    fallbackLayout: canvasFallback,
+    playOption,
+    speechBubbleLayout: speechBubble.isActive ? {} : null,
   });
 
   const { opacity: blinkOpacity } = useBlinkOpacityStyle(
     effectSelectedItems.includes("Blink"),
     blinkSpeed,
   );
-  let previewTextContainerSize: {
-    width: `${number}%`;
-    yOffset?: number | `${number}%`;
-  } | null = null;
-  if (isSpeechBubblePreset(backgroundEdgeEffectAnim.id)) {
-    const preset = SPEECH_BUBBLE_PRESETS[backgroundEdgeEffectAnim.id];
-    const previewBox =
-      Platform.OS === "ios"
-        ? preset.ios.previewTextBox
-        : preset.android.previewTextBox;
-    previewTextContainerSize = previewBox.portrait;
-  }
+
+  const marqueeCanvasProps = buildCanvas({
+    canvas,
+    effects,
+    blinkOpacity,
+    spacer: SPACER,
+    previewTextColor: textSelectedColor,
+    gradientBackgroundPreset,
+    hasBgPhoto,
+    dropShadow,
+  });
 
   const onPreviewLayout = (e: LayoutEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -269,57 +222,30 @@ export default function PreviewPanel() {
           isPortrait={isPortrait}
           mode="preview"
         />
-        {previewTextContainerSize ? (
+        {speechBubble.speechTextBoxConfig ? (
           <View
             style={{
-              position: "absolute",
-              width: previewTextContainerSize.width as `${number}%`,
-              height: previewTextMetrics.height,
-              alignSelf: "center",
-              top: previewTextContainerSize.yOffset ?? "14%",
+              ...StyleSheet.absoluteFillObject,
+              alignItems: "center",
+              ...(speechBubble.speechTextTop == null
+                ? { justifyContent: "center" }
+                : null),
             }}
-            onLayout={canvas.onSkiaCanvasLayout}
+            pointerEvents="none"
           >
-            <MarqueeCanvas
-              canvas={canvas}
-              isPixelEffect={isPixelEffect}
-              pixelShaderSize={pixelShaderSize}
-              showGradientBackdrop={showGradientBackdrop}
-              gradientBackgroundPreset={gradientBackgroundPreset}
-              hasBgPhoto={hasBgPhoto}
-              blinkOpacity={blinkOpacity}
-              segmentCount={5}
-              spacer={SPACER}
-              isGlowEffect={isGlowEffect}
-              glowBlurRadius={glowBlurRadius}
-              glowLayerColor={glowLayerColor}
-              skiaStrokeWidth={skiaStrokeWidth}
-              dropShadow={dropShadow}
-              previewTextColor={previewTextColor}
-            />
+            <View
+              style={speechBubble.textContainerStyle!}
+              onLayout={canvas.onSkiaCanvasLayout}
+            >
+              <MarqueeCanvas {...marqueeCanvasProps} />
+            </View>
           </View>
         ) : (
           <View
             style={StyleSheet.absoluteFill}
             onLayout={canvas.onSkiaCanvasLayout}
           >
-            <MarqueeCanvas
-              canvas={canvas}
-              isPixelEffect={isPixelEffect}
-              pixelShaderSize={pixelShaderSize}
-              showGradientBackdrop={showGradientBackdrop}
-              gradientBackgroundPreset={gradientBackgroundPreset}
-              hasBgPhoto={hasBgPhoto}
-              blinkOpacity={blinkOpacity}
-              segmentCount={5}
-              spacer={SPACER}
-              isGlowEffect={isGlowEffect}
-              glowBlurRadius={glowBlurRadius}
-              glowLayerColor={glowLayerColor}
-              skiaStrokeWidth={skiaStrokeWidth}
-              dropShadow={dropShadow}
-              previewTextColor={previewTextColor}
-            />
+            <MarqueeCanvas {...marqueeCanvasProps} />
           </View>
         )}
       </View>
@@ -361,25 +287,6 @@ export default function PreviewPanel() {
           </TouchableOpacity>
         ))}
       </View>
-      <TouchableOpacity
-        onPress={() => resetPresetSlot(activePreset)}
-        accessibilityRole="button"
-        accessibilityLabel="Reset current preset slot"
-        style={{
-          alignSelf: "flex-end",
-          marginTop: 2,
-          marginRight: 2,
-          marginBottom: 0,
-        }}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text
-          allowFontScaling={false}
-          style={[uiThemeFontStyle, { fontSize: 13, color: "#888" }]}
-        >
-          Reset slot
-        </Text>
-      </TouchableOpacity>
 
       {/* contents input container */}
       <View id="contentsInputContainer" style={styles.contentsInputContainer}>
