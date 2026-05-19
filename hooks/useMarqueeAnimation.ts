@@ -1,3 +1,9 @@
+import {
+  buildMarqueeDisplayText,
+  normalizeOneLineJoinMode,
+  resolveMarqueeJoinSpacerPx,
+  type OneLineJoinMode,
+} from "@/utils/viewMode";
 import { useEffect, useState } from "react";
 import {
   Easing,
@@ -12,10 +18,14 @@ export interface UseMarqueeAnimationParams {
   text: string;
   speed: number;
   playOption: "one" | "multi";
-  oneLineJoinMode: "space3" | "concat";
-  /** 타일 끝 여유(글로우·stroke). 시각 주기와 스크롤 주기를 맞춥니다. */
+  oneLineJoinMode: OneLineJoinMode | "space3" | "concat";
+  /** Style B(lineClear)*/
+  viewportWidthPx?: number;
+  /** 타일 끝 여유(글로우·stroke)*/
   effectBleedPx?: number;
 }
+
+export type { OneLineJoinMode } from "@/utils/viewMode";
 
 type ContainerLayoutEvent = {
   nativeEvent: { layout: { width: number } };
@@ -33,23 +43,23 @@ export function useMarqueeAnimation({
   text,
   speed,
   playOption,
-  oneLineJoinMode,
+  oneLineJoinMode: oneLineJoinModeRaw,
+  viewportWidthPx = 0,
   effectBleedPx = 0,
 }: UseMarqueeAnimationParams) {
   const translateX = useSharedValue(0);
   const [textWidth, setTextWidth] = useState(0);
+  const oneLineJoinMode = normalizeOneLineJoinMode(oneLineJoinModeRaw);
 
-  const baseText = playOption === "one" ? text.replace(/\n/g, "") : text;
-  const displayText =
-    oneLineJoinMode === "space3"
-      ? playOption === "one"
-        ? `${baseText}      `
-        : baseText
-            .split("\n")
-            .map((line) => `${line}      `)
-            .join("\n")
-      : baseText;
-  const spacer = 0;
+  const displayText = buildMarqueeDisplayText({
+    text,
+    playOption,
+    oneLineJoinMode,
+  });
+  const spacer = resolveMarqueeJoinSpacerPx({
+    oneLineJoinMode,
+    viewportWidthPx,
+  });
 
   useEffect(() => {
     if (speed === 0 || textWidth === 0) {
@@ -70,7 +80,15 @@ export function useMarqueeAnimation({
       -1,
       false,
     );
-  }, [speed, text, playOption, oneLineJoinMode, textWidth, spacer, effectBleedPx]);
+  }, [
+    speed,
+    text,
+    playOption,
+    oneLineJoinMode,
+    textWidth,
+    spacer,
+    effectBleedPx,
+  ]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],

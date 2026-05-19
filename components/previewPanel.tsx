@@ -1,5 +1,5 @@
 import { DeleteAllButton } from "@/assets/svg/deleteAllButton";
-import { appFontFamilyForText, uiThemeFontStyle } from "@/constants/appFonts";
+import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
@@ -47,7 +47,6 @@ export default function PreviewPanel() {
     updateConfig,
     ui,
     loadPreset,
-    resetPresetSlot,
   } = useSettings();
   const { activePreset } = ui;
 
@@ -103,17 +102,21 @@ export default function PreviewPanel() {
     viewportHeight: previewHeight,
   });
 
-  const { effectiveLineSpacing, previewFontSize } = useTextMetrics({
-    mode: "preview",
-    previewHeight,
-    text: previewText,
-    fontSize,
-    lineSpacing,
-    playOption,
-    sizingPolicy,
-    isSpeechBgActive: speechBubble.isActive,
-    speechMaxHeight: speechBubble.maxTextHeight,
-  });
+  const { effectiveLineSpacing, previewFontSize, marqueeReferenceFontSize } =
+    useTextMetrics({
+      mode: "preview",
+      previewHeight,
+      text: previewText,
+      fontSize,
+      lineSpacing,
+      playOption,
+      sizingPolicy,
+      isSpeechBgActive: speechBubble.isActive,
+      speechMaxHeight: speechBubble.maxTextHeight,
+    });
+
+  const marqueeViewportWidthPx =
+    speechBubble.speechBoxPx?.widthPx ?? previewBox.width;
 
   const { displayText, translateX, onContainerLayout, onTextLayout, SPACER } =
     useMarqueeAnimation({
@@ -121,6 +124,7 @@ export default function PreviewPanel() {
       speed: textMoveSpeed,
       playOption,
       oneLineJoinMode,
+      viewportWidthPx: marqueeViewportWidthPx,
       effectBleedPx: effects.effectSpacePx,
     });
 
@@ -134,6 +138,7 @@ export default function PreviewPanel() {
     translateX,
     onTextLayout,
     previewFontSize,
+    marqueeReferenceFontSize,
     appearanceFont: font,
     fontWeight,
     letterSpacing,
@@ -282,25 +287,6 @@ export default function PreviewPanel() {
           </TouchableOpacity>
         ))}
       </View>
-      <TouchableOpacity
-        onPress={() => resetPresetSlot(activePreset)}
-        accessibilityRole="button"
-        accessibilityLabel="Reset current preset slot"
-        style={{
-          alignSelf: "flex-end",
-          marginTop: 2,
-          marginRight: 2,
-          marginBottom: 0,
-        }}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text
-          allowFontScaling={false}
-          style={[uiThemeFontStyle, { fontSize: 13, color: "#888" }]}
-        >
-          Reset slot
-        </Text>
-      </TouchableOpacity>
 
       {/* contents input container */}
       <View id="contentsInputContainer" style={styles.contentsInputContainer}>

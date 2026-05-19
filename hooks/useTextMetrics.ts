@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 
 import {
+  FONT_SIZE_MAX,
   FONT_SIZE_MIN,
-  getRelLineSpacing,
   getFullscreenTextMetrics,
   getPreviewTextMetrics,
+  getRelLineSpacing,
   getSizingPolicy,
   scaleFontSizeByHeight,
 } from "@/utils/textSizing";
@@ -57,6 +58,58 @@ function resolveHeightScaledFontSize(params: {
   return Math.max(FONT_SIZE_MIN, portraitSized);
 }
 
+function resolveTextMetrics(
+  input: TextMetricsInput,
+  sizePct: number,
+  effectiveLineSpacing: number,
+) {
+  if (input.mode === "preview" && input.previewHeight <= 0) {
+    return { lineCount: 1, fontSize: 100, height: 100 };
+  }
+
+  const baseFontSize =
+    input.mode === "fullscreen"
+      ? resolveHeightScaledFontSize({
+          fontSize: sizePct,
+          windowWidth: input.windowWidth,
+          windowHeight: input.windowHeight,
+          isPortrait: input.isPortrait,
+          isSpeechBgActive: input.isSpeechBgActive,
+          portraitFontBoost: input.sizingPolicy.portraitFontBoost,
+        })
+      : sizePct;
+
+  const cappedMetrics = getFullscreenTextMetrics({
+    displayText: input.text,
+    baseFontSize,
+    lineHeightRatio: input.sizingPolicy.fullscreenLineHeightRatio,
+    lineSpacingPx: effectiveLineSpacing,
+    maxHeight: input.speechMaxHeight,
+    padding: input.isSpeechBgActive
+      ? 0
+      : input.sizingPolicy.speechTextHeightPadding,
+    clampByMaxHeight: input.sizingPolicy.clampByMaxHeight,
+    speechBg: input.isSpeechBgActive,
+    playOption: input.playOption,
+    sizePct,
+  });
+
+  if (input.mode === "fullscreen" || input.isSpeechBgActive) {
+    return cappedMetrics;
+  }
+
+  return getPreviewTextMetrics({
+    previewHeight: input.previewHeight,
+    baseFontSize: cappedMetrics.fontSize,
+    playOption: input.playOption,
+    text: input.text,
+    padding: input.sizingPolicy.previewPadding,
+    lineHeightRatio: input.sizingPolicy.previewLineHeightRatio,
+    lineSpacingPx: effectiveLineSpacing,
+    fontSizePercent: sizePct,
+  });
+}
+
 /** preview / fullscreen 공통: cap → (preview 일반 배경만) 박스 보정 */
 export function useTextMetrics(input: TextMetricsInput) {
   const effectiveLineSpacing = useMemo(
@@ -68,58 +121,29 @@ export function useTextMetrics(input: TextMetricsInput) {
     [input.lineSpacing, input.fontSize],
   );
 
-  const baseFontSize = useMemo(() => {
-    if (input.mode === "fullscreen") {
-      return resolveHeightScaledFontSize({
-        fontSize: input.fontSize,
-        windowWidth: input.windowWidth,
-        windowHeight: input.windowHeight,
-        isPortrait: input.isPortrait,
-        isSpeechBgActive: input.isSpeechBgActive,
-        portraitFontBoost: input.sizingPolicy.portraitFontBoost,
-      });
-    }
-    return input.fontSize;
-  }, [input]);
+  const referenceLineSpacing = useMemo(
+    () =>
+      getRelLineSpacing({
+        requestedLineSpacingPx: input.lineSpacing,
+        fontSizePercent: FONT_SIZE_MAX,
+      }),
+    [input.lineSpacing],
+  );
 
-  const metrics = useMemo(() => {
-    if (input.mode === "preview" && input.previewHeight <= 0) {
-      return { lineCount: 1, fontSize: 100, height: 100 };
-    }
+  const metrics = useMemo(
+    () => resolveTextMetrics(input, input.fontSize, effectiveLineSpacing),
+    [input, effectiveLineSpacing],
+  );
 
-    const cappedMetrics = getFullscreenTextMetrics({
-      displayText: input.text,
-      baseFontSize,
-      lineHeightRatio: input.sizingPolicy.fullscreenLineHeightRatio,
-      lineSpacingPx: effectiveLineSpacing,
-      maxHeight: input.speechMaxHeight,
-      padding: input.isSpeechBgActive
-        ? 0
-        : input.sizingPolicy.speechTextHeightPadding,
-      clampByMaxHeight: input.sizingPolicy.clampByMaxHeight,
-      speechBg: input.isSpeechBgActive,
-      playOption: input.playOption,
-      sizePct: input.fontSize,
-    });
-
-    if (input.mode === "fullscreen" || input.isSpeechBgActive) {
-      return cappedMetrics;
-    }
-
-    return getPreviewTextMetrics({
-      previewHeight: input.previewHeight,
-      baseFontSize: cappedMetrics.fontSize,
-      playOption: input.playOption,
-      text: input.text,
-      padding: input.sizingPolicy.previewPadding,
-      lineHeightRatio: input.sizingPolicy.previewLineHeightRatio,
-      lineSpacingPx: effectiveLineSpacing,
-    });
-  }, [input, baseFontSize, effectiveLineSpacing]);
+  const referenceMetrics = useMemo(
+    () => resolveTextMetrics(input, FONT_SIZE_MAX, referenceLineSpacing),
+    [input, referenceLineSpacing],
+  );
 
   return {
     effectiveLineSpacing,
     previewFontSize: metrics.fontSize,
+    marqueeReferenceFontSize: referenceMetrics.fontSize,
     fullscreenLineHeightRatio: input.sizingPolicy.fullscreenLineHeightRatio,
   };
 }

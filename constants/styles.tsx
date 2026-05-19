@@ -260,6 +260,109 @@ export const styles = StyleSheet.create({
   },
 });
 
+export const rewardAdModalStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 28,
+  },
+  dim: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 340,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    paddingTop: 28,
+    paddingBottom: 22,
+    paddingHorizontal: 22,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 22,
+    paddingRight: 24,
+  },
+  appIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    overflow: "hidden",
+    marginRight: 10,
+    backgroundColor: "#E8E8E8",
+  },
+  appIconImage: {
+    width: "100%",
+    height: "100%",
+  },
+  headerBadge: {
+    ...uiThemeFontStyle,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    lineHeight: 21,
+  },
+  benefitRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  benefitIconWrap: {
+    width: 28,
+    alignItems: "center",
+    marginRight: 12,
+  },
+  benefitText: {
+    ...uiThemeFontStyle,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "400",
+    color: "#1A1A1A",
+    lineHeight: 21,
+  },
+  description: {
+    ...uiThemeFontStyle,
+    fontSize: 13,
+    fontWeight: "400",
+    color: "#6B6B6B",
+    lineHeight: 19,
+    marginTop: 6,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  ctaButton: {
+    backgroundColor: "#000000",
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ctaText: {
+    ...uiThemeFontStyle,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+});
+
 export const backgroundPhotoSheetStyles = StyleSheet.create({
   root: {
     flex: 1,

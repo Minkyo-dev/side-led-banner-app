@@ -91,12 +91,16 @@ export const LedBannerFullScreen = ({
     viewportHeight: windowHeight,
   });
 
+  const marqueeViewportWidthPx =
+    speechBubble.speechBoxPx?.widthPx ?? windowWidth;
+
   const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
     {
       text: previewText,
       speed: textMoveSpeed,
       playOption,
       oneLineJoinMode,
+      viewportWidthPx: marqueeViewportWidthPx,
       effectBleedPx: effects.effectSpacePx,
     },
   );
@@ -109,6 +113,7 @@ export const LedBannerFullScreen = ({
   const {
     effectiveLineSpacing,
     previewFontSize,
+    marqueeReferenceFontSize,
     fullscreenLineHeightRatio,
   } = useTextMetrics({
     mode: "fullscreen",
@@ -138,6 +143,7 @@ export const LedBannerFullScreen = ({
     translateX,
     onTextLayout,
     previewFontSize,
+    marqueeReferenceFontSize,
     appearanceFont: font,
     fontWeight,
     letterSpacing,

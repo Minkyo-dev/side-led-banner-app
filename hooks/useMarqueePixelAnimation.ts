@@ -1,3 +1,9 @@
+import {
+  buildMarqueeDisplayText,
+  normalizeOneLineJoinMode,
+  resolveMarqueeJoinSpacerPx,
+  type OneLineJoinMode,
+} from "@/utils/viewMode";
 import { useEffect, useState } from "react";
 import {
   Easing,
@@ -11,7 +17,8 @@ export interface UseMarqueePixelAnimationParams {
   text: string;
   speed: number;
   playOption: "one" | "multi";
-  oneLineJoinMode: "space3" | "concat";
+  oneLineJoinMode: OneLineJoinMode | "space3" | "concat";
+  viewportWidthPx?: number;
 }
 
 type TextLayoutEvent = {
@@ -27,23 +34,23 @@ export function useMarqueePixelAnimation({
   text,
   speed,
   playOption,
-  oneLineJoinMode,
+  oneLineJoinMode: oneLineJoinModeRaw,
+  viewportWidthPx = 0,
   font,
-}: UseMarqueePixelAnimationParams & {font: SkFont | null}) {
+}: UseMarqueePixelAnimationParams & { font: SkFont | null }) {
   const translateX = useSharedValue(0);
   const [textWidth, setTextWidth] = useState(0);
+  const oneLineJoinMode = normalizeOneLineJoinMode(oneLineJoinModeRaw);
 
-  const baseText = playOption === "one" ? text.replace(/\n/g, "") : text;
-  const displayText =
-    oneLineJoinMode === "space3"
-      ? playOption === "one"
-        ? `${baseText}      `
-        : baseText
-            .split("\n")
-            .map((line) => `${line}      `)
-            .join("\n")
-      : baseText;
-  const spacer = 0;
+  const displayText = buildMarqueeDisplayText({
+    text,
+    playOption,
+    oneLineJoinMode,
+  });
+  const spacer = resolveMarqueeJoinSpacerPx({
+    oneLineJoinMode,
+    viewportWidthPx,
+  });
 
   useEffect(() => {
     if (speed === 0 || textWidth === 0) {

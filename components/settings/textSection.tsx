@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { normalizeOneLineJoinMode } from "@/utils/viewMode";
 import { useSettings } from "../../contexts/settingsContext";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
@@ -57,7 +58,8 @@ export const TextSection = ({}: TextSectionProps) => {
     fontItems,
     textSectionLabel,
   } = useSettings();
-  const { playOption, oneLineJoinMode } = config.content;
+  const { playOption, oneLineJoinMode: oneLineJoinModeRaw } = config.content;
+  const oneLineJoinMode = normalizeOneLineJoinMode(oneLineJoinModeRaw);
   const {
     font,
     fontSize,
@@ -84,7 +86,7 @@ export const TextSection = ({}: TextSectionProps) => {
     updateConfig("appearance", { outLine: value });
   const setDropShadow = (value: number) =>
     updateConfig("appearance", { dropShadow: value });
-  const setOneLineJoinMode = (value: "space3" | "concat") =>
+  const setOneLineJoinMode = (value: "space6" | "lineClear") =>
     updateConfig("content", { oneLineJoinMode: value });
 
   return (
@@ -198,16 +200,16 @@ export const TextSection = ({}: TextSectionProps) => {
           }}
         >
           <TouchableOpacity
-            onPress={() => setOneLineJoinMode("space3")}
+            onPress={() => setOneLineJoinMode("space6")}
             style={[
               btnStyles.effectItemButton,
-              oneLineJoinMode === "space3" && btnStyles.effectItemButtonActive,
+              oneLineJoinMode === "space6" && btnStyles.effectItemButtonActive,
             ]}
           >
             <Text
               style={[
                 btnStyles.effectItemButtonText,
-                oneLineJoinMode === "space3" &&
+                oneLineJoinMode === "space6" &&
                   btnStyles.effectItemButtonTextActive,
               ]}
               allowFontScaling={false}
@@ -216,16 +218,17 @@ export const TextSection = ({}: TextSectionProps) => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setOneLineJoinMode("concat")}
+            onPress={() => setOneLineJoinMode("lineClear")}
             style={[
               btnStyles.effectItemButton,
-              oneLineJoinMode === "concat" && btnStyles.effectItemButtonActive,
+              oneLineJoinMode === "lineClear" &&
+                btnStyles.effectItemButtonActive,
             ]}
           >
             <Text
               style={[
                 btnStyles.effectItemButtonText,
-                oneLineJoinMode === "concat" &&
+                oneLineJoinMode === "lineClear" &&
                   btnStyles.effectItemButtonTextActive,
               ]}
               allowFontScaling={false}

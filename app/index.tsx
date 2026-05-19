@@ -3,9 +3,11 @@ import {
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
+import { RewardAdDebugFab } from "@/components/dev/rewardAdDebugFab";
 import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
 import PreviewPanel from "@/components/previewPanel";
+import { RewardAdModal } from "@/components/rewardAdModal";
 import { BackgroundSection } from "@/components/settings/backgroundSection";
 import { EffectSection } from "@/components/settings/effectSection";
 import { TextSection } from "@/components/settings/textSection";
@@ -15,7 +17,7 @@ import { TabType, useSettings } from "@/contexts/settingsContext";
 import * as NavigationBar from "expo-navigation-bar";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -26,6 +28,7 @@ export default function Index() {
   const { config, ui, updateConfig, updateUI, textSectionLabel } = useSettings();
   const { playOption } = config.content;
   const { isPlaying, activeTab } = ui;
+  const [rewardAdVisible, setRewardAdVisible] = useState(false);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
@@ -119,15 +122,23 @@ export default function Index() {
         {activeTab === "BACKGROUND" && <BackgroundSection />}
         {activeTab === "EFFECT" && <EffectSection />}
       </View>
-        <View style={{ height: 50 }}>
-        {/* Banner Ad */}
+      <View style={{ height: 50 }}>
+        {/* Banner Ad placeholder */}
       </View>
+      <RewardAdModal
+        visible={rewardAdVisible}
+        onClose={() => setRewardAdVisible(false)}
+        onWatchAd={() => {
+          // TODO: show rewarded ad, then unlock Pro for 6 hours
+        }}
+      />
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen
         visible={isPlaying}
         onClose={handleStop}
         config={config}
       />
+      <RewardAdDebugFab onOpen={() => setRewardAdVisible(true)} />
       <SheetFetchDebugPanel />
     </View>
   );

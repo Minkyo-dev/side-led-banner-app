@@ -33,8 +33,8 @@ export function useSpeechBubble(input: SpeechBubbleInput) {
 
   const speechTextBoxConfig = isActive
     ? input.isPortrait
-      ? speechPresetPlatform!.fullscreenTextBox.portrait
-      : speechPresetPlatform!.fullscreenTextBox.landscape
+      ? speechPresetPlatform!.textBox.portrait
+      : speechPresetPlatform!.textBox.landscape
     : null;
 
   const maxTextHeight = useMemo(() => {
@@ -72,17 +72,35 @@ export function useSpeechBubble(input: SpeechBubbleInput) {
 
   const textContainerStyle: ViewStyle | null = useMemo(() => {
     if (!isActive || !speechBoxPx || !speechTextBoxConfig) return null;
-    return {
+    const left = Math.max(
+      0,
+      (input.basisWidthPx - speechBoxPx.widthPx) / 2,
+    );
+    const base: ViewStyle = {
       position: "absolute",
+      left,
       width: speechBoxPx.widthPx,
       height: speechBoxPx.heightPx,
-      ...(speechTextTop != null
-        ? { top: speechTextTop }
-        : {
-            transform: [{ translateY: speechTextBoxConfig.yOffset }],
-          }),
     };
-  }, [isActive, speechBoxPx, speechTextBoxConfig, speechTextTop]);
+    if (speechTextTop != null) {
+      return { ...base, top: speechTextTop };
+    }
+    return {
+      ...base,
+      top: Math.max(
+        0,
+        (input.viewportHeight - speechBoxPx.heightPx) / 2 +
+          speechTextBoxConfig.yOffset,
+      ),
+    };
+  }, [
+    isActive,
+    speechBoxPx,
+    speechTextBoxConfig,
+    speechTextTop,
+    input.basisWidthPx,
+    input.viewportHeight,
+  ]);
 
   return {
     isActive,

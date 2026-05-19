@@ -3,7 +3,7 @@ import { countRows } from "@/utils/skiaBubbleTextLayout";
 const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
 const FULLSCREEN_LINE_HEIGHT_RATIO = 1.16;
 export const FONT_SIZE_MIN = 20;
-const FONT_SIZE_MAX = 100;
+export const FONT_SIZE_MAX = 100;
 const SPEECH_TEXT_HEIGHT_PADDING = 24;
 const PORTRAIT_FONT_BOOST = 0.8;
 const PREVIEW_VERTICAL_TEXT_PADDING = {

@@ -5,26 +5,17 @@ export const SPEECH_BUBBLE_PRESETS = {
     fullscreenPortraitSource: require("@/assets/images/Speech_BG_1_B.png"),
     ios: {
       previewHeightBoostPx: 20,
-      // fullscreen 가로 세로 위치는 textSizing SPEECH_BG_TEXT_LAYOUT, portrait만 yOffset
-      fullscreenTextBox: {
-        landscape: { width: "82%", yOffset: 0 },
+      // 가로 세로 위치는 textSizing SPEECH_BG_TEXT_LAYOUT, portrait만 yOffset
+      textBox: {
+        landscape: { width: "100%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 0 },
-      },
-      // preview 전용 text box 크기
-      previewTextBox: {
-        portrait: { width: "70%", yOffset: "14%" },
       },
     },
     android: {
       previewHeightBoostPx: 20,
-      // fullscreen 가로 세로 위치는 textSizing SPEECH_BG_TEXT_LAYOUT, portrait만 yOffset
-      fullscreenTextBox: {
-        landscape: { width: "82%", yOffset: 0 },
+      textBox: {
+        landscape: { width: "100%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 0 },
-      },
-      // preview 전용 text box 크기
-      previewTextBox: {
-        portrait: { width: "70%", yOffset: "14%" },
       },
     },
   },
@@ -33,26 +24,17 @@ export const SPEECH_BUBBLE_PRESETS = {
     fullscreenLandscapeSource: require("@/assets/images/Speech_BG_2_A.png"),
     fullscreenPortraitSource: require("@/assets/images/Speech_BG_2_B.png"),
     ios: {
-      previewHeightBoostPx: 20, // preview에서 자연스럽게 조이도록 이미지높이 조절
-      fullscreenTextBox: {
+      previewHeightBoostPx: 20,
+      textBox: {
         landscape: { width: "82%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 10 },
       },
-      // preview 전용 text box 크기
-      previewTextBox: {
-        portrait: { width: "76%", yOffset: "14%" },
-      },
     },
     android: {
-      previewHeightBoostPx: 20, // preview에서 자연스럽게 조이도록 이미지높이 조절
-      // fullscreen에서 말풍선 안 삐져나오게 landscape/portrait text box 크기
-      fullscreenTextBox: {
-        landscape: { width: "82%", yOffset: 0 },
+      previewHeightBoostPx: 20,
+      textBox: {
+        landscape: { width: "100%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 0 },
-      },
-      // preview 전용 text box 크기
-      previewTextBox: {
-        portrait: { width: "76%", yOffset: "14%" },
       },
     },
   },
