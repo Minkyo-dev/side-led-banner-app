@@ -15,6 +15,7 @@ import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
 import * as NavigationBar from "expo-navigation-bar";
+import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import React, { useEffect, useState } from "react";
@@ -56,14 +57,14 @@ export default function Index() {
       <View id="playBarContainer" style={styles.playBarContainer}>
         {/* one line play button */}
         <TouchableOpacity
-          style={{ flex: 0.15 }}
+          style={btnStyles.playBarSideSlot}
           onPress={() => updateConfig("content", { playOption: "one" })}
         >
           <OneLinePlayButton isActive={playOption === "one"} />
         </TouchableOpacity>
         {/* multiple line play button */}
         <TouchableOpacity
-          style={{ flex: 0.15 }}
+          style={btnStyles.playBarSideSlot}
           onPress={() => updateConfig("content", { playOption: "multi" })}
         >
           <MultipleLinePlayButton isActive={playOption === "multi"} />
@@ -77,11 +78,15 @@ export default function Index() {
         </TouchableOpacity>
         {/* settings button */}
         <TouchableOpacity
-          style={{ flex: 0.15 }}
+          style={btnStyles.playBarSideSlot}
           onPress={() => router.push("/settings" as Href)}
           accessibilityLabel={textSectionLabel("settingsTitle")}
         >
-          <MultipleLinePlayButton isActive={false} />
+          <Image
+            source={require("@/assets/images/settings.png")}
+            style={btnStyles.playBarSettingsImage}
+            contentFit="contain"
+          />
         </TouchableOpacity>
       </View>
       {/* tab container */}

@@ -63,6 +63,15 @@ export const btnStyles = StyleSheet.create({
     backgroundColor: "#EBEBEB",
     borderRadius: 15,
   },
+  playBarSideSlot: {
+    flex: 0.15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  playBarSettingsImage: {
+    width: 53,
+    height: 53,
+  },
   settingsRowValueButton: {
     fontSize: 0,
     color: "black",
