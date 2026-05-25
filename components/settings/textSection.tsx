@@ -17,9 +17,7 @@ import { normalizeOneLineJoinMode } from "@/utils/viewMode";
 import { useSettings } from "../../contexts/settingsContext";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
-interface TextSectionProps {}
-
-export const TextSection = ({}: TextSectionProps) => {
+export const TextSection = () => {
   const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
   /** 하단 네비바와 겹치지 않게 최대 높이를 설정 */
@@ -184,7 +182,6 @@ export const TextSection = ({}: TextSectionProps) => {
           step={1}
         />
       ) : null}
-      
 
       <View style={styles.settingsRow}>
         <Text style={styles.settingsRowLabel} allowFontScaling={false}>

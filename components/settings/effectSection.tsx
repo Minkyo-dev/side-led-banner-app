@@ -15,19 +15,20 @@ import {
   type SettingsSliderBlockProps,
 } from "./settingsSliderBlock";
 
-interface EffectSectionProps {}
+const PRIMARY_EFFECT_CHIP_ROWS = [
+  ["Bold", "Blink", "Pixel"],
+  ["Glow", "Gradient"],
+] as const;
 
 function getSliderPropsForEffect(
   effect: string,
   values: {
     glowIntensity: number;
     blinkSpeed: number;
-    pixelSize: number;
   },
   setters: {
     setGlowIntensity: (v: number) => void;
     setBlinkSpeed: (v: number) => void;
-    setPixelSize: (v: number) => void;
   },
   tEffect: (key: EffectSectionLabelKey) => string,
 ): Omit<SettingsSliderBlockProps, "containerStyle"> | null {
@@ -51,21 +52,12 @@ function getSliderPropsForEffect(
         maximumValue: 10,
         step: 1,
       };
-    case "Pixel":
-      return {
-        label: tEffect("effectPixelBlockSize"),
-        value: values.pixelSize,
-        onChange: setters.setPixelSize,
-        minimumValue: 0,
-        maximumValue: 10,
-        step: 0.2,
-      };
     default:
       return null;
   }
 }
 
-export const EffectSection = ({}: EffectSectionProps) => {
+export const EffectSection = () => {
   const {
     config,
     updateConfig,
@@ -81,7 +73,6 @@ export const EffectSection = ({}: EffectSectionProps) => {
     backgroundEffectPreset,
     glowIntensity,
     blinkSpeed,
-    pixelSize,
   } = config.appearance;
 
   const fxVals = effectParamValues ?? {};
@@ -98,21 +89,31 @@ export const EffectSection = ({}: EffectSectionProps) => {
       effectParamValues: { ...fxVals, Blink: value },
     });
 
-  const setPixelSize = (value: number) =>
-    updateConfig("appearance", {
-      pixelSize: value,
-      effectParamValues: { ...fxVals, Pixel: value },
-    });
-
   const setFontWeight = (value: "normal" | "bold") =>
     updateConfig("appearance", { fontWeight: value });
 
-  const values = { glowIntensity, blinkSpeed, pixelSize };
+  const values = { glowIntensity, blinkSpeed };
   const setters = {
     setGlowIntensity,
     setBlinkSpeed,
-    setPixelSize,
   };
+  const pinnedEffectIds = new Set(PRIMARY_EFFECT_CHIP_ROWS.flat());
+  const effectChipRows = [
+    ...PRIMARY_EFFECT_CHIP_ROWS.map((row) =>
+      row.filter((effect) => effectItems.includes(effect)),
+    ).filter((row) => row.length > 0),
+    ...effectItems
+      .filter((effect) => !pinnedEffectIds.has(effect))
+      .reduce<string[][]>((rows, effect) => {
+        const lastRow = rows.at(-1);
+        if (lastRow == null || lastRow.length >= 3) {
+          rows.push([effect]);
+        } else {
+          lastRow.push(effect);
+        }
+        return rows;
+      }, []),
+  ];
   const stackedSliderBlocks: {
     key: string;
     props: SettingsSliderBlockProps;
@@ -144,65 +145,64 @@ export const EffectSection = ({}: EffectSectionProps) => {
         </Text>
       </View>
 
-      <View
-        style={[styles.effectChipSectionContainer, styles.effectChipWrapRow]}
-      >
-        {effectItems.map((effect, index) => (
-          <TouchableOpacity
-            key={`effect-item-${index}`}
-            style={[
-              btnStyles.effectItemButton,
-              { alignSelf: "flex-start" },
-              effectSelectedItems.includes(effect) &&
-                btnStyles.effectItemButtonActive,
-            ]}
-            onPress={() => {
-              const isOn = effectSelectedItems.includes(effect);
-              const next = isOn
-                ? effectSelectedItems.filter((e) => e !== effect)
-                : [...effectSelectedItems, effect];
-
-              if (isOn) {
-                updateConfig("appearance", { effectSelectedItems: next });
-              } else {
-                const fx = fxVals;
-                const patch: Partial<BannerConfig["appearance"]> = {
-                  effectSelectedItems: next,
-                };
-                if (effect === "Glow") {
-                  patch.glowIntensity = fx.Glow ?? glowIntensity;
-                } else if (effect === "Blink") {
-                  patch.blinkSpeed = fx.Blink ?? blinkSpeed;
-                } else if (effect === "Pixel") {
-                  patch.pixelSize = fx.Pixel ?? pixelSize;
-                } else if (effect === "Gradient") {
-                  patch.gradientBackgroundPreset =
-                    gradientBackgroundPreset ??
-                    DEFAULT_GRADIENT_BACKGROUND_PRESET_ID;
-                }
-                updateConfig("appearance", patch);
-              }
-
-              if (effect === "Bold") {
-                setFontWeight(next.includes("Bold") ? "bold" : "normal");
-              }
-
-              if (next.length === 0) {
-                updateConfig("motion", { textMoveSpeed: 0 });
-              }
-            }}
+      <View style={styles.effectChipSectionContainer}>
+        {effectChipRows.map((row, rowIndex) => (
+          <View
+            key={`effect-row-${rowIndex}`}
+            style={[styles.effectChipWrapRow, { justifyContent: "flex-start" }]}
           >
-            <Text
-              style={[
-                btnStyles.effectItemButtonText,
-                effectSelectedItems.includes(effect) &&
-                  btnStyles.effectItemButtonTextActive,
-              ]}
-              allowFontScaling={false}
-            >
-              {effectChipLabel(effect)}
-            </Text>
-          </TouchableOpacity>
+            {row.map((effect) => (
+              <TouchableOpacity
+                key={effect}
+                style={[
+                  btnStyles.effectItemButton,
+                  { alignSelf: "flex-start" },
+                  effectSelectedItems.includes(effect) &&
+                    btnStyles.effectItemButtonActive,
+                ]}
+                onPress={() => {
+                  const isOn = effectSelectedItems.includes(effect);
+                  const next = isOn
+                    ? effectSelectedItems.filter((e) => e !== effect)
+                    : [...effectSelectedItems, effect];
+
+                  if (isOn) {
+                    updateConfig("appearance", { effectSelectedItems: next });
+                  } else {
+                    const fx = fxVals;
+                    const patch: Partial<BannerConfig["appearance"]> = {
+                      effectSelectedItems: next,
+                    };
+                    if (effect === "Glow") {
+                      patch.glowIntensity = fx.Glow ?? glowIntensity;
+                    } else if (effect === "Blink") {
+                      patch.blinkSpeed = fx.Blink ?? blinkSpeed;
+                    } else if (effect === "Gradient") {
+                      patch.gradientBackgroundPreset =
+                        gradientBackgroundPreset ??
+                        DEFAULT_GRADIENT_BACKGROUND_PRESET_ID;
+                    }
+                    updateConfig("appearance", patch);
+                  }
+
+                  if (effect === "Bold") {
+                    setFontWeight(next.includes("Bold") ? "bold" : "normal");
+                  }
+                }}
+              >
+                <Text
+                  style={[
+                    btnStyles.effectItemButtonText,
+                    effectSelectedItems.includes(effect) &&
+                      btnStyles.effectItemButtonTextActive,
+                  ]}
+                  allowFontScaling={false}
+                >
+                  {effectChipLabel(effect)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         ))}
       </View>
 

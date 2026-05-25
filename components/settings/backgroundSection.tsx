@@ -16,8 +16,6 @@ import { useSettings } from "../../contexts/settingsContext";
 import { BackgroundPhotoSheet } from "./backgroundPhotoSheet";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
-interface BackgroundSectionProps {}
-
 const COLS = 9;
 const ROW1_SWATCHES = COLS - 1;
 
@@ -60,7 +58,7 @@ const chip = StyleSheet.create({
   },
 });
 
-export const BackgroundSection = ({}: BackgroundSectionProps) => {
+export const BackgroundSection = () => {
   const [photoSheet, setPhotoSheet] = useState(false);
   const { config, updateConfig, textSectionLabel } = useSettings();
   const { backgroundColor, backgroundBlur, backgroundImageUri } =

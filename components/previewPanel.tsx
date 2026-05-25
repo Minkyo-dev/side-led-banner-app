@@ -3,33 +3,34 @@ import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
-import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimation";
-import { useEffects } from "@/hooks/useEffects";
+import { useBackgroundAnimation } from "@/hooks/useBackgroundAnimation";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
+import { useEffects } from "@/hooks/useEffects";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
-import { usePreviewPanelTextInput } from "@/hooks/usePreviewPanelTextInput";
-import { useTextMetrics } from "@/hooks/useTextMetrics";
+import { useTextInput } from "@/hooks/useTextInput";
 import {
-  resolveSpeechCanvasFallback,
-  useSpeechBubble,
+    resolveSpeechCanvasFallback,
+    useSpeechBubble,
 } from "@/hooks/useSpeechBubble";
+import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { getSizingPolicy } from "@/utils/textSizing";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useMemo, useState } from "react";
 import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
+    Keyboard,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
 } from "react-native";
-import { buildCanvas } from "./animation/buildCanvas";
 import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
+import { buildCanvas } from "./animation/buildCanvas";
 import { MarqueeCanvas } from "./animation/MarqueeCanvas";
 
 type LayoutEvent = {
@@ -40,6 +41,7 @@ export default function PreviewPanel() {
   const [previewHeight, setPreviewHeight] = useState(0);
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const {
     config,
@@ -64,7 +66,6 @@ export default function PreviewPanel() {
     gradientBackgroundPreset,
     backgroundEffectPreset,
     blinkSpeed,
-    pixelSize: configPixelSize,
     glowIntensity,
     glowColor,
   } = config.appearance;
@@ -76,7 +77,7 @@ export default function PreviewPanel() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
 
-  const backgroundEdgeEffectAnim = useBackgroundEffectAnimation(
+  const backgroundEdgeEffectAnim = useBackgroundAnimation(
     backgroundEffectPreset,
   );
   const sizingPolicy = useMemo(
@@ -84,22 +85,20 @@ export default function PreviewPanel() {
     [backgroundEdgeEffectAnim.id],
   );
 
-  const effects = useEffects({
-    effectSelectedItems,
-    gradientBackgroundPreset,
-    outLine,
-    glowIntensity,
-    glowColor,
-    dropShadow,
-    pixelSize: configPixelSize,
-  });
-
   const speechBubble = useSpeechBubble({
     speechBubbleId: sizingPolicy.speechBubbleId,
     effectId: backgroundEdgeEffectAnim.id,
     isPortrait,
     basisWidthPx: previewBox.width,
     viewportHeight: previewHeight,
+  });
+
+  const fullscreenSpeechBubble = useSpeechBubble({
+    speechBubbleId: sizingPolicy.speechBubbleId,
+    effectId: backgroundEdgeEffectAnim.id,
+    isPortrait,
+    basisWidthPx: windowWidth,
+    viewportHeight: windowHeight,
   });
 
   const { effectiveLineSpacing, previewFontSize, marqueeReferenceFontSize } =
@@ -115,18 +114,51 @@ export default function PreviewPanel() {
       speechMaxHeight: speechBubble.maxTextHeight,
     });
 
+  const { previewFontSize: fullscreenFontSize } = useTextMetrics({
+    mode: "fullscreen",
+    text: previewText,
+    fontSize,
+    lineSpacing,
+    playOption,
+    sizingPolicy,
+    isSpeechBgActive: fullscreenSpeechBubble.isActive,
+    speechMaxHeight: fullscreenSpeechBubble.maxTextHeight,
+    windowWidth,
+    windowHeight,
+    isPortrait,
+  });
+
+  const pixelViewportScale = useMemo(() => {
+    if (!effectSelectedItems.includes("Pixel") || fullscreenFontSize <= 0) {
+      return 1;
+    }
+    return Math.min(1, Math.max(0.15, previewFontSize / fullscreenFontSize));
+  }, [effectSelectedItems, previewFontSize, fullscreenFontSize]);
+
+  const effects = useEffects({
+    effectSelectedItems,
+    gradientBackgroundPreset,
+    outLine,
+    glowIntensity,
+    glowColor,
+    dropShadow,
+    playOption,
+    pixelViewportScale,
+  });
+
   const marqueeViewportWidthPx =
     speechBubble.speechBoxPx?.widthPx ?? previewBox.width;
 
-  const { displayText, translateX, onContainerLayout, onTextLayout, SPACER } =
-    useMarqueeAnimation({
+  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
+    {
       text: previewText,
       speed: textMoveSpeed,
       playOption,
       oneLineJoinMode,
       viewportWidthPx: marqueeViewportWidthPx,
       effectBleedPx: effects.effectSpacePx,
-    });
+    },
+  );
 
   const canvasFallback = useMemo(
     () => resolveSpeechCanvasFallback(speechBubble.speechBoxPx, previewBox),
@@ -159,16 +191,15 @@ export default function PreviewPanel() {
     blinkOpacity,
     spacer: SPACER,
     previewTextColor: textSelectedColor,
-    gradientBackgroundPreset,
     hasBgPhoto,
     dropShadow,
+    backgroundColor,
   });
 
   const onPreviewLayout = (e: LayoutEvent) => {
     const { width, height } = e.nativeEvent.layout;
     setPreviewBox({ width, height });
     setPreviewHeight(height);
-    onContainerLayout(e);
   };
 
   const {
@@ -181,7 +212,7 @@ export default function PreviewPanel() {
     handleInputContentSizeChange,
     measureOffscreenStyle,
     onSelectionChange,
-  } = usePreviewPanelTextInput({
+  } = useTextInput({
     previewText,
     activePreset,
     inputScrollViewportW,
@@ -192,6 +223,10 @@ export default function PreviewPanel() {
 
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
+  const dismissKeyboard = () => {
+    setIsInputFocused(false);
+    Keyboard.dismiss();
+  };
 
   return (
     <View style={styles.previewContainer}>
@@ -237,7 +272,10 @@ export default function PreviewPanel() {
               style={speechBubble.textContainerStyle!}
               onLayout={canvas.onSkiaCanvasLayout}
             >
-              <MarqueeCanvas {...marqueeCanvasProps} />
+              <MarqueeCanvas
+                {...marqueeCanvasProps}
+                gradientBackgroundPreset={gradientBackgroundPreset}
+              />
             </View>
           </View>
         ) : (
@@ -245,7 +283,10 @@ export default function PreviewPanel() {
             style={StyleSheet.absoluteFill}
             onLayout={canvas.onSkiaCanvasLayout}
           >
-            <MarqueeCanvas {...marqueeCanvasProps} />
+            <MarqueeCanvas
+              {...marqueeCanvasProps}
+              gradientBackgroundPreset={gradientBackgroundPreset}
+            />
           </View>
         )}
       </View>
@@ -352,6 +393,13 @@ export default function PreviewPanel() {
             onChangeText={handleTextChange}
             onContentSizeChange={handleInputContentSizeChange}
             onSelectionChange={onSelectionChange}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setIsInputFocused(false)}
+            returnKeyType={playOption === "multi" ? "default" : "done"}
+            submitBehavior={
+              playOption === "multi" ? "newline" : "blurAndSubmit"
+            }
+            onSubmitEditing={dismissKeyboard}
             textAlignVertical="top"
           />
         </ScrollView>
@@ -359,6 +407,19 @@ export default function PreviewPanel() {
           id="contentsInputResetButtonContainer"
           style={styles.contentsInputResetButtonContainer}
         >
+          {isInputFocused ? (
+            <TouchableOpacity
+              onPress={dismissKeyboard}
+              style={btnStyles.contentsInputCloseButton}
+            >
+              <Text
+                allowFontScaling={false}
+                style={btnStyles.contentsInputCloseButtonText}
+              >
+                닫기
+              </Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity
             onPress={() => setPreviewText("")}
             style={btnStyles.contentsInputResetButton}

@@ -9,7 +9,6 @@ export type EffectSectionLabelKey =
   | "noEffect"
   | "effectGlowIntensity"
   | "effectBlinkFrequency"
-  | "effectPixelBlockSize"
   | "effectBold"
   | "effectBlink"
   | "effectPixel"
@@ -58,13 +57,6 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "点滅",
     zhTC: "閃爍頻率",
     zhSC: "闪烁频率",
-  },
-  effectPixelBlockSize: {
-    ko: "픽셀 블록 크기",
-    en: "Pixel block size",
-    ja: "ピクセルブロックサイズ",
-    zhTC: "像素區塊大小",
-    zhSC: "像素块大小",
   },
   effectBold: {
     ko: "굵게",

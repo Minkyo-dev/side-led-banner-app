@@ -133,19 +133,6 @@ export function getLineCountForMode(params: {
   return Math.min((text.match(/\n/g) || []).length + 1, maxLines);
 }
 
-export function getPreviewFontSize(params: {
-  previewHeight: number;
-  fontSizePercent: number;
-  playOption: "one" | "multi";
-  text: string;
-  padding?: number;
-  lineHeightRatio?: number;
-  maxLines?: number;
-  fallbackFontSize?: number;
-}) {
-  return getPreviewTextMetrics(params).fontSize;
-}
-
 export function getPreviewTextMetrics(params: {
   previewHeight: number;
   fontSizePercent?: number;

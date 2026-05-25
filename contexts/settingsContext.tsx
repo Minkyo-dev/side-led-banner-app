@@ -96,7 +96,6 @@ export interface BannerConfig {
     glowIntensity: number;
     glowColor: string;
     blinkSpeed: number;
-    pixelSize: number;
     fontWeight: "normal" | "bold";
     /** Effect에서 Gradient 켰을 때 배경 물결 등 (wave만 구현) */
     gradientBackgroundPreset: string;
@@ -188,7 +187,6 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     effectParamValues: {
       Glow: 50,
       Blink: 5,
-      Pixel: 6,
       Blur: 0,
     },
     blurIntensity: 0,
@@ -196,7 +194,6 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     fontWeight: "bold",
     glowColor: "#FFD700",
     blinkSpeed: 5,
-    pixelSize: 6,
     gradientBackgroundPreset: "wave",
     backgroundEffectPreset: "none",
   },
@@ -300,10 +297,8 @@ interface SettingsContextValue {
   handleTextChange: (text: string) => void;
   fontItems: { label: string; value: string }[];
   effectItems: string[];
-  savePreset: (index: number) => void;
   /** playOption은 유지된 채로 이전 슬롯을 자동 저장합니다*/
   loadPreset: (index: number) => void;
-  resetPresetSlot: (index: number) => void;
   /** 파싱 전체(디버그용). */
   sheetParseResult: GoogleSheetParseResult | null;
   sheetStringsLoading: boolean;
@@ -522,21 +517,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     updateConfig("content", { previewText: merged });
   };
 
-  const savePreset = useCallback((index: number) => {
-    if (index < 0 || index >= PRESET_SLOT_COUNT) return;
-    setPresetSlots((prev) => {
-      const next = [...prev];
-      next[index] = presetFromConfig(configRef.current);
-      if (presetsStorageReadyRef.current) {
-        void persistPresetSlotsSnapshot(next).catch((err) => {
-          if (__DEV__) console.warn("[presets] savePreset persist failed", err);
-        });
-      }
-      return next;
-    });
-    setUI((prev) => ({ ...prev, activePreset: index }));
-  }, []);
-
   const loadPreset = useCallback((slot: number) => {
     if (slot < 0 || slot >= PRESET_SLOT_COUNT) return;
 
@@ -559,25 +539,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setPresetSlots(slots);
     setConfig(configFromPreset(chosen, cfg.content.playOption));
     setUI((u) => ({ ...u, activePreset: slot }));
-  }, []);
-
-  const resetPresetSlot = useCallback((index: number) => {
-    if (index < 0 || index >= PRESET_SLOT_COUNT) return;
-    const blank = presetFromConfig(DEFAULT_BANNER_CONFIG);
-    setPresetSlots((prev) => {
-      const next = [...prev];
-      next[index] = blank;
-      if (presetsStorageReadyRef.current) {
-        void persistPresetSlotsSnapshot(next).catch((err) => {
-          if (__DEV__)
-            console.warn("[presets] resetPresetSlot persist failed", err);
-        });
-      }
-      return next;
-    });
-    if (index === activePresetRef.current) {
-      setConfig(configFromPreset(blank, configRef.current.content.playOption));
-    }
   }, []);
 
   // font select state
@@ -606,9 +567,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       handleTextChange,
       fontItems,
       effectItems,
-      savePreset,
       loadPreset,
-      resetPresetSlot,
       sheetParseResult,
       sheetStringsLoading,
       sheetStringsError,
@@ -625,9 +584,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       resolvedAppLocale,
       fontItems,
       effectItems,
-      savePreset,
       loadPreset,
-      resetPresetSlot,
       sheetParseResult,
       sheetStringsLoading,
       sheetStringsError,

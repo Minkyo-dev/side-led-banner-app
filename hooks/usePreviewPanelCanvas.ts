@@ -97,8 +97,6 @@ export interface UsePreviewPanelCanvasParams {
   playOption?: "one" | "multi";
 }
 
-export { BUBBLE_MAX_ROWS, BUBBLE_SAFE } from "@/utils/skiaBubbleTextLayout";
-
 export function usePreviewPanelCanvas({
   displayText,
   translateX,
@@ -266,6 +264,7 @@ export function usePreviewPanelCanvas({
     skiaFont,
     skiaTextWidth,
     skiaTextBlob,
+    skiaGlyphPositions: skiaGlyphLayout.glyphPositions,
     skiaMarqueeTransform,
     skiaCanvasLayout: { width: drawW, height: drawH },
     onSkiaCanvasLayout,

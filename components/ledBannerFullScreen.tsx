@@ -2,26 +2,26 @@ import { BackgroundEffectLayer } from "@/components/animation/BackgroundEffectLa
 import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
 import { ledBannerFullScreenStyles as styles } from "@/constants/styles";
 import { BannerConfig } from "@/contexts/settingsContext";
-import { useBackgroundEffectAnimation } from "@/hooks/useBackgroundEffectAnimation";
-import { useEffects } from "@/hooks/useEffects";
+import { useBackgroundAnimation } from "@/hooks/useBackgroundAnimation";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
-import { useTextMetrics } from "@/hooks/useTextMetrics";
+import { useEffects } from "@/hooks/useEffects";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
-  resolveSpeechCanvasFallback,
-  useSpeechBubble,
+    resolveSpeechCanvasFallback,
+    useSpeechBubble,
 } from "@/hooks/useSpeechBubble";
+import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { getSizingPolicy } from "@/utils/textSizing";
 import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
-  Modal,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  useWindowDimensions,
-  View,
+    Modal,
+    Pressable,
+    StatusBar,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { buildCanvas } from "./animation/buildCanvas";
 
@@ -52,7 +52,6 @@ export const LedBannerFullScreen = ({
     backgroundEffectPreset,
     blinkSpeed,
     outLine,
-    pixelSize: configPixelSize,
   } = config.appearance;
 
   const { backgroundColor, backgroundImageUri, backgroundBlur } =
@@ -65,23 +64,13 @@ export const LedBannerFullScreen = ({
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
 
-  const backgroundEdgeEffectAnim = useBackgroundEffectAnimation(
+  const backgroundEdgeEffectAnim = useBackgroundAnimation(
     backgroundEffectPreset,
   );
   const sizingPolicy = useMemo(
     () => getSizingPolicy({ effectId: backgroundEdgeEffectAnim.id }),
     [backgroundEdgeEffectAnim.id],
   );
-
-  const effects = useEffects({
-    effectSelectedItems,
-    gradientBackgroundPreset,
-    outLine,
-    glowIntensity,
-    glowColor,
-    dropShadow,
-    pixelSize: configPixelSize,
-  });
 
   const speechBubble = useSpeechBubble({
     speechBubbleId: sizingPolicy.speechBubbleId,
@@ -93,6 +82,35 @@ export const LedBannerFullScreen = ({
 
   const marqueeViewportWidthPx =
     speechBubble.speechBoxPx?.widthPx ?? windowWidth;
+
+  const {
+    effectiveLineSpacing,
+    previewFontSize,
+    marqueeReferenceFontSize,
+    fullscreenLineHeightRatio,
+  } = useTextMetrics({
+    mode: "fullscreen",
+    text: previewText,
+    fontSize,
+    lineSpacing,
+    playOption,
+    sizingPolicy,
+    isSpeechBgActive: speechBubble.isActive,
+    speechMaxHeight: speechBubble.maxTextHeight,
+    windowWidth,
+    windowHeight,
+    isPortrait,
+  });
+
+  const effects = useEffects({
+    effectSelectedItems,
+    gradientBackgroundPreset,
+    outLine,
+    glowIntensity,
+    glowColor,
+    dropShadow,
+    playOption,
+  });
 
   const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
     {
@@ -109,25 +127,6 @@ export const LedBannerFullScreen = ({
     effectSelectedItems.includes("Blink"),
     blinkSpeed,
   );
-
-  const {
-    effectiveLineSpacing,
-    previewFontSize,
-    marqueeReferenceFontSize,
-    fullscreenLineHeightRatio,
-  } = useTextMetrics({
-    mode: "fullscreen",
-    text: displayText,
-    fontSize,
-    lineSpacing,
-    playOption,
-    sizingPolicy,
-    isSpeechBgActive: speechBubble.isActive,
-    speechMaxHeight: speechBubble.maxTextHeight,
-    windowWidth,
-    windowHeight,
-    isPortrait,
-  });
 
   const canvasFallback = useMemo(
     () =>
@@ -160,9 +159,9 @@ export const LedBannerFullScreen = ({
     blinkOpacity,
     spacer: SPACER,
     previewTextColor: textSelectedColor,
-    gradientBackgroundPreset,
     hasBgPhoto,
     dropShadow,
+    backgroundColor,
   });
 
   const handleFullscreenLayout = speechBubble.isActive
@@ -222,11 +221,17 @@ export const LedBannerFullScreen = ({
                   style={speechBubble.textContainerStyle!}
                   onLayout={canvas.onSkiaCanvasLayout}
                 >
-                  <MarqueeCanvas {...marqueeCanvasProps} />
+                  <MarqueeCanvas
+                    {...marqueeCanvasProps}
+                    gradientBackgroundPreset={gradientBackgroundPreset}
+                  />
                 </View>
               </View>
             ) : (
-              <MarqueeCanvas {...marqueeCanvasProps} />
+              <MarqueeCanvas
+                {...marqueeCanvasProps}
+                gradientBackgroundPreset={gradientBackgroundPreset}
+              />
             )}
           </View>
         </View>
