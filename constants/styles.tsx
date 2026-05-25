@@ -35,10 +35,6 @@ export const styles = StyleSheet.create({
     backgroundColor: "#D9D9D9",
     overflow: "hidden",
   },
-  previewText: {
-    textAlign: "left",
-    textAlignVertical: "center",
-  },
 
   // ===
   presetButtonsContainer: {
@@ -194,12 +190,6 @@ export const styles = StyleSheet.create({
   },
 
   // ===
-  slider: {
-    flex: 1,
-    height: 40,
-  },
-
-  // ===
   effectContainer: {
     flex: 1,
     gap: 10,
@@ -232,14 +222,6 @@ export const styles = StyleSheet.create({
     marginRight: 10,
     gap: 4,
     borderRadius: 8,
-  },
-  backgroundEffectRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 6,
-    flex: 0,
-    minHeight: 188,
-    alignItems: "flex-start",
   },
   backgroundEffectCard: {
     borderRadius: 10,
@@ -492,12 +474,6 @@ export const sliderComponentStyles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-  },
-  sliderButtonText: {
-    fontSize: 40,
-    color: "#B4B4B4",
-    fontWeight: "300",
-    fontFamily: "Nunito",
   },
 });
 

@@ -1,12 +1,10 @@
-import { TouchableOpacity } from "react-native";
-
 import {
   SliderMinusButton,
-  SliderPlusButton
+  SliderPlusButton,
 } from "@/assets/svg/sliderButtons";
 import { sliderComponentStyles as styles } from "@/constants/styles";
 import { Slider } from "@miblanchard/react-native-slider";
-import { View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 
 export const SliderComponent = ({
   value,
@@ -40,7 +38,13 @@ export const SliderComponent = ({
         maximumValue={maximumValue}
         minimumValue={minimumValue}
         value={value}
-        onValueChange={(value) => onChange(Math.round(value))}
+        onValueChange={(nextValue) =>
+          onChange(
+            Math.round(
+              Array.isArray(nextValue) ? (nextValue[0] ?? value) : nextValue,
+            ),
+          )
+        }
         minimumTrackTintColor="#FF6E00"
         // renderThumbComponent={() => <SliderThumb />}
       />

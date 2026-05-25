@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import {
   Easing,
   cancelAnimation,
-  useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -27,17 +26,12 @@ export interface UseMarqueeAnimationParams {
 
 export type { OneLineJoinMode } from "@/utils/viewMode";
 
-type ContainerLayoutEvent = {
-  nativeEvent: { layout: { width: number } };
-};
-
 type TextLayoutEvent = {
   nativeEvent: { lines: { width: number }[] };
 };
 
 /**
- * RN `Animated.View` 마퀴용 `translateX` + `animatedStyle`.(Animated.View 재사용할 시)
- * Skia 전용 오프셋은 `useMarqueePixelAnimation` 등에서 `translateX`만 공유하는 게 좋을 거 같습니다.
+ * 애니메이션에서 재사용할 `translateX` shared value와 표시 텍스트를 제공할 겁니다.
  */
 export function useMarqueeAnimation({
   text,
@@ -90,14 +84,6 @@ export function useMarqueeAnimation({
     effectBleedPx,
   ]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  const onContainerLayout = (_e: ContainerLayoutEvent) => {
-    /*containerWidth관련 logic */
-  };
-
   const onTextLayout = (e: TextLayoutEvent) => {
     const widths = e.nativeEvent.lines.map((l) => l.width);
     const maxLineWidth = widths.length > 0 ? Math.max(...widths) : 0;
@@ -109,8 +95,6 @@ export function useMarqueeAnimation({
   return {
     displayText,
     translateX,
-    animatedStyle,
-    onContainerLayout,
     onTextLayout,
     SPACER: spacer,
   };

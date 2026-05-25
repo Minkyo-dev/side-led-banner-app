@@ -1,8 +1,5 @@
 import { appFontFamilyForText } from "@/constants/appFonts";
-import {
-  CONTENTS_INPUT_FONT_SIZE,
-  CONTENTS_INPUT_LINE_HEIGHT,
-} from "@/constants/styles";
+import { CONTENTS_INPUT_FONT_SIZE } from "@/constants/styles";
 import { PRESET_SLOT_COUNT } from "@/contexts/settingsContext";
 import type { ComponentProps } from "react";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -17,13 +14,7 @@ const TEXT_MEASURE_OFFSCREEN_LEFT = -100_000;
 const INPUT_WIDTH_CURSOR_PAD = 28;
 const INPUT_LINE_WIDTH_PER_CHAR_FACTOR = 0.72;
 const INPUT_HEIGHT_FALLBACK = 84;
-/** 폰트마다 사이즈가 달라질 수 있어 추가한 여유분분 여유 */
-const INPUT_HEIGHT_SLACK = Math.max(
-  8,
-  Math.ceil(CONTENTS_INPUT_LINE_HEIGHT * 0.45),
-);
 const INPUT_HEIGHT_BUFFER = 0;
-// (Platform.OS === "android" ? 32 : 26) + INPUT_HEIGHT_SLACK;
 
 function stripLegacyInputMarkers(text: string): string {
   return text.replace(/\u21B5/g, "");
@@ -39,7 +30,7 @@ function clampSelection(
   };
 }
 
-export function usePreviewPanelTextInput(params: {
+export function useTextInput(params: {
   previewText: string;
   activePreset: number;
   inputScrollViewportW: number;
@@ -74,9 +65,7 @@ export function usePreviewPanelTextInput(params: {
   >({});
   const presetSwitchEpochRef = useRef<number | undefined>(undefined);
 
-  const displayInputText = previewText
-    ? stripLegacyInputMarkers(previewText)
-    : "";
+  const displayInputText = previewText ? stripLegacyInputMarkers(previewText) : "";
 
   /**
    * `measuredTextMaxW`은 갱신 전 프레임에도 최장 줄이 minWidth에 갇히지 않도록 하고고

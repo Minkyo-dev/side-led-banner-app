@@ -43,44 +43,91 @@ npm start
 ```
 side-led-banner-app/
 ├── app/
-│ ├── layout.tsx # 루트 레이아웃 (테마, 네비게이션)
-│ └── index.tsx # 메인 화면 (배너 편집기)
+│   ├── _layout.tsx              # 루트 레이아웃 (테마, 네비게이션)
+│   ├── index.tsx                # 메인 화면 (배너 편집기)
+│   ├── settings.tsx             # 앱 설정 화면
+│   ├── sunnyList.tsx            # Sunny 앱/게임 목록 화면
+│   └── openSourceInfo.tsx       # 오픈소스 정보 화면
 ├── components/
 │   ├── settings/
-│   │   ├── backgroundSection.tsx   # 배경 설정 UI
-│   │   ├── effectSection.tsx       # 이펙트 설정 UI
-│   │   ├── textSection.tsx         # 텍스트 설정 UI
-│   │   └── settingsSliderBlock.tsx # 설정용 슬라이더 블록
-│   ├── PixelatedBackdrop.tsx    # 픽셀/배경 연출용 백드롭
-│   ├── previewPanel.tsx         # 미리보기 패널
-│   ├── ledBannerFullScreen.tsx  # 전체화면 LED 배너 모달
-│   ├── colorPicker.tsx          # 색상 선택 컴포넌트
-│   └── slider.tsx               # 슬라이더 컴포넌트
+│   │   ├── backgroundSection.tsx     # 배경 설정 UI
+│   │   ├── backgroundPhotoSheet.tsx  # 배경 사진 설정 시트
+│   │   ├── effectSection.tsx         # 이펙트 설정 UI
+│   │   ├── PixelColorMixButton.tsx   # Pixel 색상 혼합 버튼
+│   │   ├── textSection.tsx           # 텍스트 설정 UI
+│   │   └── settingsSliderBlock.tsx   # 설정용 슬라이더 블록
+│   ├── animation/
+│   │   ├── BackgroundEffectLayer.tsx # 배경 이펙트 레이어
+│   │   ├── HeartBackgroundTicker.tsx # 하트 배경 티커
+│   │   ├── MarqueeCanvas.tsx         # Skia 마퀴 캔버스
+│   │   └── buildCanvas.ts            # 캔버스 props 조합 유틸
+│   ├── dev/
+│   │   ├── rewardAdDebugFab.tsx      # 리워드 광고 디버그 버튼
+│   │   └── sheetFetchDebugPanel.tsx  # 시트 fetch 디버그 패널
+│   ├── skia/
+│   │   └── GradientBackdrop.tsx      # 그라데이션 배경
+│   ├── previewPanel.tsx              # 미리보기 패널
+│   ├── ledBannerFullScreen.tsx       # 전체화면 LED 배너 모달
+│   ├── rewardAdModal.tsx             # 리워드 광고 모달
+│   ├── colorPicker.tsx               # 색상 선택 컴포넌트
+│   └── slider.tsx                    # 슬라이더 컴포넌트
 ├── hooks/
-│   ├── useMarqueeAnimation.ts   # 마키 스크롤 애니메이션 로직
-│   ├── useBlinkOpacityStyle.ts  # 깜빡임(불투명도) 스타일 훅
-│   ├── use-color-scheme.ts      # 다크/라이트 모드 감지
-│   ├── use-color-scheme.web.ts  # 웹용 컬러 스킴
-│   └── use-theme-color.ts       # 테마 색상 유틸
+│   ├── useMarqueeAnimation.ts      # 마키 스크롤 애니메이션 로직
+│   ├── useBlinkOpacityStyle.ts     # 깜빡임(불투명도) 스타일 훅
+│   ├── useBackgroundAnimation.ts   # 배경 이펙트 애니메이션 훅
+│   ├── useGoogleSheets.ts          # Google Sheet 로드 훅
+│   ├── usePreviewPanelCanvas.ts    # 미리보기 캔버스 훅
+│   ├── useSkiaAppearanceFont.ts    # Skia 폰트 훅
+│   ├── useSpeechBubble.ts          # 말풍선 레이아웃 훅
+│   ├── useTextInput.ts             # 입력창 상태 훅
+│   ├── useTextMetrics.ts           # 텍스트 크기 계산 훅
+│   ├── useTilePicture.ts           # 타일 picture 생성 훅
+│   ├── use-color-scheme.ts         # 다크/라이트 모드 감지
+│   └── use-color-scheme.web.ts     # 웹용 컬러 스킴
 ├── constants/
-│   ├── styles.tsx               # 공통 스타일
-│   ├── btnStyles.tsx            # 버튼 스타일
-│   ├── colorPalette.tsx         # 텍스트/배경 색상 팔레트
-│   └── theme.ts                 # 테마 정의
+│   ├── styles.tsx                   # 공통 스타일
+│   ├── btnStyles.tsx                # 버튼 스타일
+│   ├── colorPalette.tsx             # 텍스트/배경 색상 팔레트
+│   ├── appFonts.ts                  # 앱 폰트 정의
+│   ├── gradientBackgroundPresets.ts # 그라데이션 배경 프리셋
+│   ├── language.ts                  # 앱 언어 타입
+│   ├── settingsStyles.tsx           # 설정 화면 스타일
+│   ├── speechBubblePresets.ts       # 말풍선 프리셋
+│   └── sunnyApps.ts                 # Sunny 앱 목록
 ├── contexts/
-│   └── settingsContext.tsx      # 설정 값 컨텍스트
+│   └── settingsContext.tsx          # 설정 값 컨텍스트
+├── language/
+│   ├── deviceLocale.ts              # 기기 로케일 변환
+│   ├── effectSectionLabels.ts       # 효과 섹션 다국어 라벨
+│   ├── matchSheetRows.ts            # 시트 라벨 매칭 유틸
+│   ├── rewardAdLabels.ts            # 리워드 광고 라벨
+│   ├── textSectionLabels.ts         # 텍스트 섹션 다국어 라벨
+│   └── translatorHandoff.ts         # 번역 핸드오프 메모
+├── utils/
+│   ├── buildMarqueeTextBlob.ts      # Skia 텍스트 blob 생성
+│   ├── glyphLedPanels.ts            # Pixel LED 패널 계산
+│   ├── pixelColorMix.ts             # Pixel 색상 혼합 유틸
+│   ├── presetStorage.ts             # 프리셋 저장 유틸
+│   ├── recordTile.ts                # 마퀴 타일 기록 유틸
+│   ├── skiaBubbleTextLayout.ts      # 말풍선 텍스트 레이아웃
+│   ├── textSizing.ts                # 텍스트 크기 계산 유틸
+│   └── viewMode.ts                  # 보기 모드 유틸
 ├── assets/
+│   ├── fonts/
+│   ├── images/
 │   └── svg/
-│       ├── playOptionButton.tsx # 한줄/여러줄 재생 버튼 SVG
-│       ├── playResumeButton.tsx # 재생/정지 버튼 SVG
-│       └── sliderThumbButton.tsx # 슬라이더 썸 SVG
+│       ├── deleteAllButton.tsx    # 입력 초기화 버튼 SVG
+│       ├── playOptionButton.tsx   # 한줄/여러줄 재생 버튼 SVG
+│       ├── playResumeButton.tsx   # 재생/정지 버튼 SVG
+│       └── sliderButtons.tsx      # 슬라이더 버튼 SVG
 ├── scripts/
-│   └── reset-project.js         # 프로젝트 초기화 스크립트
-├── app.json                     # Expo 앱 설정
-├── eas.json                     # EAS 빌드/배포 설정
+│   └── reset-project.js           # 프로젝트 초기화 스크립트
+├── app.json                       # Expo 앱 설정
+├── eas.json                       # EAS 빌드/배포 설정
+├── package-lock.json
 ├── package.json
-├── tsconfig.json
-└── eslint.config.js
+├── tsconfig.json                  # TypeScript 설정
+└── eslint.config.js               # ESLint 설정
 ```
 
 ## 주요 라이브러리

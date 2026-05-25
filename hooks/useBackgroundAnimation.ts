@@ -1,17 +1,17 @@
 /**
  * 사용 방법 (새로 background effect 추가할 때)
  * 1. BackgroundEffectPreset 타입에 새로운 키 추가
- * 2) 정적인 이미지의 경우에는 heartBgA 참조해서 넣어주세요 (isEnabled는 응원봉 반짝이는 효과 여부입니다)
+ * 2) 정적인 이미지의 경우에는 heartBgA 참조해서 넣어주세요
  * 3) 애니메이션 (effect1)의 경우에는 sources 로 Effect1Soruces참고해주세요
  * 4) id는 effect 식별자입니다.
  */
 import {
-    isSpeechBubblePreset,
-    type SpeechBubblePresetId,
+  isSpeechBubblePreset,
+  type SpeechBubblePresetId,
 } from "@/constants/speechBubblePresets";
 import { useEffect, useMemo, useState } from "react";
 
-type BackgroundEffectPreset =
+export type BackgroundEffectPreset =
   | "none"
   | "effect1"
   | "heartBgA"
@@ -45,31 +45,29 @@ const HEART_BG_A_SOURCE = require("@/assets/images/Heart_BG_A.png");
 export type BackgroundEffectAnimationResult =
   | {
       id: "none";
-      isEnabled: false;
       imageSource: null;
       sources: null;
     }
   | {
       id: "effect1";
-      isEnabled: true;
       imageSource: null;
       sources: Effect1Sources;
     }
   | {
       id: "heartBgA";
-      isEnabled: false;
       imageSource: number;
       sources: null;
     }
   | {
       id: SpeechBubblePresetId;
-      isEnabled: false;
       imageSource: null;
       sources: null;
     };
 
+export type BackgroundEffectId = BackgroundEffectAnimationResult["id"];
+
 //각 배경 이펙트마다 렌더링 가능한 상태로 바꿈
-export function useBackgroundEffectAnimation(preset: BackgroundEffectPreset) {
+export function useBackgroundAnimation(preset: BackgroundEffectPreset) {
   const [frameIndex, setFrameIndex] = useState(0);
   const isEnabled = preset === "effect1";
   const isHeartEnabled = preset === "heartBgA";
@@ -90,7 +88,6 @@ export function useBackgroundEffectAnimation(preset: BackgroundEffectPreset) {
     if (isHeartEnabled) {
       return {
         id: "heartBgA",
-        isEnabled: false,
         imageSource: HEART_BG_A_SOURCE,
         sources: null,
       } as const;
@@ -98,7 +95,6 @@ export function useBackgroundEffectAnimation(preset: BackgroundEffectPreset) {
     if (isSpeechBubble) {
       return {
         id: preset,
-        isEnabled: false,
         imageSource: null,
         sources: null,
       } as const;
@@ -107,7 +103,6 @@ export function useBackgroundEffectAnimation(preset: BackgroundEffectPreset) {
     if (!isEnabled) {
       return {
         id: "none",
-        isEnabled: false,
         imageSource: null,
         sources: null,
       } as const;
@@ -115,7 +110,6 @@ export function useBackgroundEffectAnimation(preset: BackgroundEffectPreset) {
     const frame = FRAME_SEQUENCE[frameIndex];
     return {
       id: "effect1",
-      isEnabled: true,
       imageSource: null,
       sources: EFFECT_1_SOURCES[frame],
     } as const;

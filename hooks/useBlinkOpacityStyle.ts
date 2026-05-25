@@ -1,11 +1,10 @@
 import { useEffect } from "react";
 import {
-    cancelAnimation,
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withTiming,
+  cancelAnimation,
+  Easing,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from "react-native-reanimated";
 
 /** blinkSpeed 1 - 10 */
@@ -37,7 +36,5 @@ export function useBlinkOpacityStyle(active: boolean, blinkSpeed: number) {
     );
   }, [active, blinkSpeed]);
 
-  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-
-  return { animatedStyle, opacity };
+  return { opacity };
 }
