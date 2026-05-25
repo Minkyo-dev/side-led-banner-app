@@ -52,6 +52,7 @@ export const LedBannerFullScreen = ({
     backgroundEffectPreset,
     blinkSpeed,
     outLine,
+    pixelColorMix,
   } = config.appearance;
 
   const { backgroundColor, backgroundImageUri, backgroundBlur } =
@@ -109,6 +110,7 @@ export const LedBannerFullScreen = ({
     glowIntensity,
     glowColor,
     dropShadow,
+    pixelColorMix,
     playOption,
   });
 

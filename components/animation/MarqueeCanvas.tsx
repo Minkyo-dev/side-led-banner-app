@@ -1,7 +1,7 @@
 import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
 import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
-import { useTilePicture } from "@/hooks/useTilePicture";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
+import { useTilePicture } from "@/hooks/useTilePicture";
 import {
   Canvas,
   Group,
@@ -16,6 +16,7 @@ import type { SharedValue } from "react-native-reanimated";
 export interface MarqueeCanvasProps {
   canvas: ReturnType<typeof usePreviewPanelCanvas>;
   isPixelEffect: boolean;
+  isPixelColorMix: boolean;
   pixelShaderSize: number;
   showGradientBackdrop: boolean;
   gradientBackgroundPreset: string;
@@ -32,7 +33,7 @@ export interface MarqueeCanvasProps {
   backgroundColor: string;
 }
 
-// LED: 셀당 1도트. 타일에 글자별 패널(저알파) + 글자(고알파) 기록
+// LED: 셀당 1도트
 const DOT_MATRIX_SOURCE = Skia.RuntimeEffect.Make(`
   uniform shader content;
   uniform float dotSize;
@@ -153,6 +154,7 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
 export function MarqueeCanvas({
   canvas,
   isPixelEffect,
+  isPixelColorMix,
   pixelShaderSize,
   showGradientBackdrop,
   gradientBackgroundPreset,
@@ -185,6 +187,7 @@ export function MarqueeCanvas({
     glowLayerColor,
     isGlowEffect,
     isPixelEffect,
+    isPixelColorMix,
     pixelShaderSize,
     glowBlurRadius,
     strokeWidthPx,
@@ -192,6 +195,7 @@ export function MarqueeCanvas({
     dropShadowBlur,
     glyphPositions: canvas.skiaGlyphPositions,
     font: canvas.skiaFont,
+    backgroundColor,
   });
 
   const canDrawStrip = useMemo(
@@ -231,8 +235,8 @@ export function MarqueeCanvas({
             source={DOT_MATRIX_SOURCE}
             uniforms={{
               dotSize: pixelShaderSize,
-              dotRadius: pixelShaderSize * 0.44,
-              textThreshold: 0.55,
+              dotRadius: pixelShaderSize * 0.46,
+              textThreshold: 0.45,
               panelAlphaThreshold: 0.08,
               ...offLedUniforms,
             }}
@@ -250,8 +254,8 @@ export function MarqueeCanvas({
             source={OUTLINE_RING_DOT_SOURCE}
             uniforms={{
               dotSize: pixelShaderSize,
-              dotRadius: pixelShaderSize * 0.44,
-              textThreshold: 0.55,
+              dotRadius: pixelShaderSize * 0.46,
+              textThreshold: 0.45,
               outlineRings: pixelOutlineRings,
             }}
           />

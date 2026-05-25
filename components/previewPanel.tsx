@@ -68,6 +68,7 @@ export default function PreviewPanel() {
     blinkSpeed,
     glowIntensity,
     glowColor,
+    pixelColorMix,
   } = config.appearance;
   const { backgroundColor, backgroundImageUri, backgroundBlur } =
     config.background;
@@ -142,6 +143,7 @@ export default function PreviewPanel() {
     glowIntensity,
     glowColor,
     dropShadow,
+    pixelColorMix,
     playOption,
     pixelViewportScale,
   });

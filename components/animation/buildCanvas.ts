@@ -19,6 +19,7 @@ export function buildCanvas(params: {
   return {
     canvas: params.canvas,
     isPixelEffect: params.effects.isPixelEffect,
+    isPixelColorMix: params.effects.isPixelColorMix,
     pixelShaderSize: params.effects.pixelShaderSize,
     showGradientBackdrop: params.effects.showGradientBackdrop,
     hasBgPhoto: params.hasBgPhoto,

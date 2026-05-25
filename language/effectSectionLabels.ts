@@ -9,6 +9,9 @@ export type EffectSectionLabelKey =
   | "noEffect"
   | "effectGlowIntensity"
   | "effectBlinkFrequency"
+  | "effectPixelationHeading"
+  | "effectMix"
+  | "effectPixelColorMix"
   | "effectBold"
   | "effectBlink"
   | "effectPixel"
@@ -57,6 +60,27 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "点滅",
     zhTC: "閃爍頻率",
     zhSC: "闪烁频率",
+  },
+  effectPixelationHeading: {
+    ko: "Pixelation",
+    en: "Pixelation",
+    ja: "Pixelation",
+    zhTC: "Pixelation",
+    zhSC: "Pixelation",
+  },
+  effectMix: {
+    ko: "mix",
+    en: "mix",
+    ja: "mix",
+    zhTC: "mix",
+    zhSC: "mix",
+  },
+  effectPixelColorMix: {
+    ko: "픽셀 색상 혼합",
+    en: "Pixel Color Mix",
+    ja: "ピクセル色ミックス",
+    zhTC: "像素色彩混合",
+    zhSC: "像素颜色混合",
   },
   effectBold: {
     ko: "굵게",

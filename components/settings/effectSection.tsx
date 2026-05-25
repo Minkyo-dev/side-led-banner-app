@@ -6,6 +6,7 @@ import {
 } from "@/constants/gradientBackgroundPresets";
 import { styles } from "@/constants/styles";
 import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
@@ -73,6 +74,7 @@ export const EffectSection = () => {
     backgroundEffectPreset,
     glowIntensity,
     blinkSpeed,
+    pixelColorMix,
   } = config.appearance;
 
   const fxVals = effectParamValues ?? {};
@@ -97,7 +99,7 @@ export const EffectSection = () => {
     setGlowIntensity,
     setBlinkSpeed,
   };
-  const pinnedEffectIds = new Set(PRIMARY_EFFECT_CHIP_ROWS.flat());
+  const pinnedEffectIds = new Set<string>(PRIMARY_EFFECT_CHIP_ROWS.flat());
   const effectChipRows = [
     ...PRIMARY_EFFECT_CHIP_ROWS.map((row) =>
       row.filter((effect) => effectItems.includes(effect)),
@@ -216,6 +218,67 @@ export const EffectSection = () => {
               containerStyle={{ marginTop: i === 0 ? 0 : 10 }}
             />
           ))}
+        </View>
+      ) : null}
+
+      {effectSelectedItems.includes("Pixel") ? (
+        <View style={{ marginTop: 12, marginHorizontal: 15 }}>
+          <Text
+            allowFontScaling={false}
+            style={[styles.settingsRowLabel, { marginBottom: 8 }]}
+          >
+            {effectSectionLabel("effectPixelationHeading")}
+          </Text>
+          <TouchableOpacity
+            style={[
+              {
+                alignSelf: "flex-start",
+                borderRadius: 20,
+                padding: 2,
+                borderWidth: pixelColorMix ? 2 : 1,
+                borderColor: pixelColorMix ? "#FFFFFF" : "#DDDDDD",
+                opacity: pixelColorMix ? 1 : 0.7,
+              },
+            ]}
+            onPress={() =>
+              updateConfig("appearance", { pixelColorMix: !pixelColorMix })
+            }
+          >
+            <LinearGradient
+              colors={[
+                "#FF3B30",
+                "#FF9500",
+                "#FFD60A",
+                "#34C759",
+                "#0A84FF",
+                "#BF5AF2",
+              ]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={{
+                minWidth: 96,
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 18,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={[
+                  btnStyles.effectItemButtonText,
+                  {
+                    color: "#FFFFFF",
+                    fontWeight: "700",
+                    textTransform: "lowercase",
+                  },
+                ]}
+                allowFontScaling={false}
+              >
+                {effectSectionLabel("effectMix")}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
       ) : null}
 

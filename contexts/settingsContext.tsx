@@ -96,6 +96,7 @@ export interface BannerConfig {
     glowIntensity: number;
     glowColor: string;
     blinkSpeed: number;
+    pixelColorMix: boolean;
     fontWeight: "normal" | "bold";
     /** Effect에서 Gradient 켰을 때 배경 물결 등 (wave만 구현) */
     gradientBackgroundPreset: string;
@@ -194,6 +195,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     fontWeight: "bold",
     glowColor: "#FFD700",
     blinkSpeed: 5,
+    pixelColorMix: false,
     gradientBackgroundPreset: "wave",
     backgroundEffectPreset: "none",
   },

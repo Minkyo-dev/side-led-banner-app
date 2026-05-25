@@ -3,12 +3,18 @@ import {
   PaintStyle,
   Skia,
   TileMode,
+  type SkFont,
   type SkImageFilter,
   type SkPaint,
   type SkPicture,
   type SkTextBlob,
 } from "@shopify/react-native-skia";
+import {
+  buildMarqueeTextBlob,
+  type MarqueeGlyphPos,
+} from "@/utils/buildMarqueeTextBlob";
 import type { GlyphLedPanelRect } from "@/utils/glyphLedPanels";
+import { assignGlyphMixColors } from "@/utils/pixelColorMix";
 
 /** Pixel: 글자 패널 배경(셰이더에서 꺼진 LED 영역) */
 const GLYPH_PANEL_MASK_ALPHA = 0.22;
@@ -35,6 +41,11 @@ export type RecordMarqueeTileParams = {
   pixelCrispMask?: boolean;
   /** Pixel: 글자 1자당 LED 패널 사각형 */
   glyphLedPanels?: GlyphLedPanelRect[];
+  /** Pixel: 글자별 색 혼합 */
+  pixelColorMix?: boolean;
+  glyphPositions?: MarqueeGlyphPos[];
+  font?: SkFont | null;
+  backgroundColor?: string;
 };
 
 function composeFilters(
@@ -115,6 +126,41 @@ function drawBlobLayer(
   canvas.drawTextBlob(blob, 0, 0, fill);
 }
 
+function drawGlyphColorMixLayer(
+  canvas: ReturnType<ReturnType<typeof Skia.PictureRecorder>["beginRecording"]>,
+  params: {
+    font: SkFont;
+    glyphPositions: MarqueeGlyphPos[];
+    backgroundColor: string;
+    pixelCrispMask?: boolean;
+    dilate: number;
+    fallbackColor: string;
+  },
+) {
+  const fill = Skia.Paint();
+  fill.setAntiAlias(!params.pixelCrispMask);
+  if (params.dilate > 0) {
+    fill.setImageFilter(
+      Skia.ImageFilter.MakeDilate(params.dilate, params.dilate, null),
+    );
+  }
+
+  const colors = assignGlyphMixColors(params.glyphPositions, {
+    backgroundColor: params.backgroundColor,
+  });
+
+  for (let i = 0; i < params.glyphPositions.length; i++) {
+    const glyph = params.glyphPositions[i];
+    if (!glyph || !glyph.text || /^\s$/u.test(glyph.text)) continue;
+
+    const glyphBlob = buildMarqueeTextBlob(params.font, [glyph]);
+    if (!glyphBlob) continue;
+
+    fill.setColor(Skia.Color(colors[i] ?? params.fallbackColor));
+    canvas.drawTextBlob(glyphBlob, 0, 0, fill);
+  }
+}
+
 /** 텍스트 1벌 + 간격의 타일을 SkPicture로 기록합니다. */
 export function recordTile(
   p: RecordMarqueeTileParams,
@@ -161,10 +207,27 @@ export function recordTile(
       const fill = Skia.Paint();
       fill.setAntiAlias(!p.pixelCrispMask);
       fill.setColor(Skia.Color(p.previewTextColor));
-      if (dilate > 0) {
-        fill.setImageFilter(Skia.ImageFilter.MakeDilate(dilate, dilate, null));
+      const shouldColorMix =
+        p.pixelColorMix &&
+        p.font != null &&
+        (p.glyphPositions?.length ?? 0) > 0;
+      if (shouldColorMix) {
+        drawGlyphColorMixLayer(canvas, {
+          font: p.font!,
+          glyphPositions: p.glyphPositions ?? [],
+          backgroundColor: p.backgroundColor ?? "#000000",
+          pixelCrispMask: p.pixelCrispMask,
+          dilate,
+          fallbackColor: p.previewTextColor,
+        });
+      } else {
+        if (dilate > 0) {
+          fill.setImageFilter(
+            Skia.ImageFilter.MakeDilate(dilate, dilate, null),
+          );
+        }
+        canvas.drawTextBlob(p.blob, 0, 0, fill);
       }
-      canvas.drawTextBlob(p.blob, 0, 0, fill);
     } else {
       drawBlobLayer(canvas, p.blob, {
         fillColor: p.previewTextColor,

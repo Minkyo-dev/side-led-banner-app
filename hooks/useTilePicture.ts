@@ -20,6 +20,7 @@ export type UseTilePictureParams = {
   glowLayerColor: string;
   isGlowEffect: boolean;
   isPixelEffect: boolean;
+  isPixelColorMix: boolean;
   pixelShaderSize: number;
   glowBlurRadius: number;
   strokeWidthPx: number;
@@ -27,6 +28,7 @@ export type UseTilePictureParams = {
   dropShadowBlur: number;
   glyphPositions: MarqueeGlyphPos[];
   font: SkFont | null;
+  backgroundColor: string;
 };
 
 type TilePictureHookResult = {
@@ -77,9 +79,13 @@ export function useTilePicture(
       strokeWidthPx: p.strokeWidthPx,
       dropShadow: p.dropShadow,
       dropShadowBlur: p.dropShadowBlur,
-      maskDilateRadius: 0,
+      maskDilateRadius: p.isPixelEffect ? 1 : 0,
       pixelCrispMask: p.isPixelEffect,
+      pixelColorMix: p.isPixelColorMix,
       glyphLedPanels,
+      glyphPositions: p.glyphPositions,
+      font: p.font,
+      backgroundColor: p.backgroundColor,
     };
   }, [
     p.blob,
@@ -89,12 +95,14 @@ export function useTilePicture(
     p.glowLayerColor,
     p.isGlowEffect,
     p.isPixelEffect,
+    p.isPixelColorMix,
     p.glyphPositions,
     p.font,
     p.glowBlurRadius,
     p.strokeWidthPx,
     p.dropShadow,
     p.dropShadowBlur,
+    p.backgroundColor,
     glyphLedPanels,
   ]);
 

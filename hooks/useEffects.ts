@@ -17,6 +17,7 @@ export type EffectsInput = {
   glowIntensity: number;
   glowColor: string;
   dropShadow: number;
+  pixelColorMix: boolean;
   playOption: "one" | "multi";
   /**
    * Pixel dot px 배율. fullscreen = 1.
@@ -52,6 +53,7 @@ export function useEffects(input: EffectsInput) {
     isPixelEffect && input.outLine > 0
       ? Math.max(1, Math.min(4, Math.ceil((input.outLine / 100) * 3)))
       : 0;
+  const isPixelColorMix = isPixelEffect && input.pixelColorMix;
 
   const glowBlurRadius = useMemo(
     () => Math.max(2, Math.min(18, 2 + (input.glowIntensity / 100) * 16)),
@@ -79,6 +81,7 @@ export function useEffects(input: EffectsInput) {
     pixelShaderSize,
     skiaStrokeWidthPx,
     pixelOutlineRings,
+    isPixelColorMix,
     glowBlurRadius,
     glowLayerColor,
     effectSpacePx,
