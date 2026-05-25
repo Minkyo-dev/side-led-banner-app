@@ -131,6 +131,15 @@ export const PRESET_SLOT_COUNT = 5;
 export const PREVIEW_TEXT_MAX_LINES = 3;
 const PRESET_AUTOSAVE_DEBOUNCE_MS = 500;
 
+export function normalizePreviewTextMaxLines(text: string): string | null {
+  const normalized = text.replace(/\r\n?/g, "\n");
+  const lines = normalized.split("\n");
+  if (lines.length <= PREVIEW_TEXT_MAX_LINES) {
+    return normalized;
+  }
+  return null;
+}
+
 /** appearance만 deep copy용 (배열·맵 참조 끊기) */
 function dupAppearance(
   appearance: BannerConfig["appearance"],
@@ -506,17 +515,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleTextChange = (text: string) => {
-    const normalized = text.replace(/\r\n?/g, "\n");
-    const lines = normalized.split("\n");
-    if (lines.length <= PREVIEW_TEXT_MAX_LINES) {
-      updateConfig("content", { previewText: normalized });
-      return;
-    }
-    const merged =
-      lines.slice(0, PREVIEW_TEXT_MAX_LINES - 1).join("\n") +
-      "\n" +
-      lines.slice(PREVIEW_TEXT_MAX_LINES - 1).join("\n");
-    updateConfig("content", { previewText: merged });
+    const next = normalizePreviewTextMaxLines(text);
+    if (next == null) return;
+    updateConfig("content", { previewText: next });
   };
 
   const loadPreset = useCallback((slot: number) => {

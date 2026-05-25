@@ -2,7 +2,10 @@ import { DeleteAllButton } from "@/assets/svg/deleteAllButton";
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
-import { useSettings } from "@/contexts/settingsContext";
+import {
+  PREVIEW_TEXT_MAX_LINES,
+  useSettings,
+} from "@/contexts/settingsContext";
 import { useBackgroundAnimation } from "@/hooks/useBackgroundAnimation";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useEffects } from "@/hooks/useEffects";
@@ -41,7 +44,6 @@ export default function PreviewPanel() {
   const [previewHeight, setPreviewHeight] = useState(0);
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
-  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const {
     config,
@@ -225,9 +227,15 @@ export default function PreviewPanel() {
 
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
-  const dismissKeyboard = () => {
-    setIsInputFocused(false);
-    Keyboard.dismiss();
+  const dismissKeyboard = () => Keyboard.dismiss();
+  const handleInputKeyPress = (e: { nativeEvent: { key: string } }) => {
+    if (playOption !== "multi") return;
+    if (e.nativeEvent.key !== "Enter") return;
+
+    const lineCount = previewText.replace(/\r\n?/g, "\n").split("\n").length;
+    if (lineCount >= PREVIEW_TEXT_MAX_LINES) {
+      dismissKeyboard();
+    }
   };
 
   return (
@@ -394,14 +402,8 @@ export default function PreviewPanel() {
             selection={pendingSelection}
             onChangeText={handleTextChange}
             onContentSizeChange={handleInputContentSizeChange}
+            onKeyPress={handleInputKeyPress}
             onSelectionChange={onSelectionChange}
-            onFocus={() => setIsInputFocused(true)}
-            onBlur={() => setIsInputFocused(false)}
-            returnKeyType={playOption === "multi" ? "default" : "done"}
-            submitBehavior={
-              playOption === "multi" ? "newline" : "blurAndSubmit"
-            }
-            onSubmitEditing={dismissKeyboard}
             textAlignVertical="top"
           />
         </ScrollView>
@@ -409,19 +411,6 @@ export default function PreviewPanel() {
           id="contentsInputResetButtonContainer"
           style={styles.contentsInputResetButtonContainer}
         >
-          {isInputFocused ? (
-            <TouchableOpacity
-              onPress={dismissKeyboard}
-              style={btnStyles.contentsInputCloseButton}
-            >
-              <Text
-                allowFontScaling={false}
-                style={btnStyles.contentsInputCloseButtonText}
-              >
-                닫기
-              </Text>
-            </TouchableOpacity>
-          ) : null}
           <TouchableOpacity
             onPress={() => setPreviewText("")}
             style={btnStyles.contentsInputResetButton}
