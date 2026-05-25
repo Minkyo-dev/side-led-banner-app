@@ -389,7 +389,7 @@ export default function PreviewPanel() {
                 width: inputHorizontalCanvasWidth,
                 height: inputFixedHeight,
                 maxHeight: inputFixedHeight,
-                paddingTop: 0,
+                paddingTop: 4,
                 paddingBottom: 0,
                 fontFamily: appFontFamilyForText(
                   font,

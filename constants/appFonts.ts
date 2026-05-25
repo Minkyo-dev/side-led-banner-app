@@ -8,7 +8,9 @@ export type AppearanceFontId =
   | "rubik_one"
   | "bebas_neue"
   | "black_han_sans"
+  | "do_hyeon"
   | "jua"
+  | "nanum_square_neo"
   | "noto_sans_kr"
   | "m_plus_1"
   | "dela_gothic_one"
@@ -16,11 +18,16 @@ export type AppearanceFontId =
   | "noto_sans_jp"
   | "noto_sans_tc"
   | "zcool_qingke_huangyou"
+  | "m_plus_rounded_1c"
+  | "chen_yu_luo_yan"
   | "chango"
   | "zcool_kuaile"
   | "m_plus_1p"
+  | "zcool_pixels"
   | "zcool_xiaowei"
   | "noto_sans_sc"
+  | "long_cang"
+  | "noto_serif_sc"
   | "ma_shan_zheng";
 
 export interface FontFaceSet {
@@ -54,7 +61,13 @@ const bebasNeue = singleFace(
 const blackHanSans = singleFace(
   require("@/assets/fonts/Black_Han_Sans/BlackHanSans-Regular.ttf"),
 );
+const doHyeon = singleFace(
+  require("@expo-google-fonts/do-hyeon/400Regular/DoHyeon_400Regular.ttf"),
+);
 const jua = singleFace(require("@/assets/fonts/Jua/Jua-Regular.ttf"));
+const nanumSquareNeo = singleFace(
+  require("typeface-nanum-square-neo/ttf/NanumSquareNeo-eHv.ttf"),
+);
 const notoSansKr = singleFace(
   require("@/assets/fonts/Noto_Sans_KR/static/NotoSansKR-Black.ttf"),
 );
@@ -76,6 +89,12 @@ const notoSansTc = singleFace(
 const zcoolQingKeHuangYou = singleFace(
   require("@/assets/fonts/ZCOOL_QingKe_HuangYou/ZCOOLQingKeHuangYou-Regular.ttf"),
 );
+const mPlusRounded1c = singleFace(
+  require("@/assets/fonts/M_PLUS_Rounded_1c/MPLUSRounded1c-Black.ttf"),
+);
+const chenYuLuoYan = singleFace(
+  require("@/assets/fonts/Chen_Yu_Luo_Yan/ChenYuluoyan-2.0-Thin.ttf"),
+);
 const chango = singleFace(require("@/assets/fonts/Chango/Chango-Regular.ttf"));
 const zcoolKuaiLe = singleFace(
   require("@/assets/fonts/ZCOOL_KuaiLe/ZCOOLKuaiLe-Regular.ttf"),
@@ -83,11 +102,18 @@ const zcoolKuaiLe = singleFace(
 const mPlus1p = singleFace(
   require("@/assets/fonts/M_PLUS_1p/MPLUS1p-Black.ttf"),
 );
+const zcoolPixels = singleFace(require("@/assets/fonts/Zpix/zpix.ttf"));
 const zcoolXiaoWei = singleFace(
   require("@/assets/fonts/ZCOOL_XiaoWei/ZCOOLXiaoWei-Regular.ttf"),
 );
 const notoSansSc = singleFace(
   require("@/assets/fonts/Noto_Sans_SC/static/NotoSansSC-Black.ttf"),
+);
+const longCang = singleFace(
+  require("@/assets/fonts/Long_Cang/LongCang-Regular.ttf"),
+);
+const notoSerifSc = singleFace(
+  require("@expo-google-fonts/noto-serif-sc/900Black/NotoSerifSC_900Black.ttf"),
 );
 const maShanZheng = singleFace(
   require("@/assets/fonts/Ma_Shan_Zheng/MaShanZheng-Regular.ttf"),
@@ -101,7 +127,9 @@ export const APP_FONT_FACE_SETS: Record<AppearanceFontId, FontFaceSet> = {
   rubik_one: rubikOne,
   bebas_neue: bebasNeue,
   black_han_sans: blackHanSans,
+  do_hyeon: doHyeon,
   jua,
+  nanum_square_neo: nanumSquareNeo,
   noto_sans_kr: notoSansKr,
   m_plus_1: mPlus1,
   dela_gothic_one: delaGothicOne,
@@ -109,11 +137,16 @@ export const APP_FONT_FACE_SETS: Record<AppearanceFontId, FontFaceSet> = {
   noto_sans_jp: notoSansJp,
   noto_sans_tc: notoSansTc,
   zcool_qingke_huangyou: zcoolQingKeHuangYou,
+  m_plus_rounded_1c: mPlusRounded1c,
+  chen_yu_luo_yan: chenYuLuoYan,
   chango,
   zcool_kuaile: zcoolKuaiLe,
   m_plus_1p: mPlus1p,
+  zcool_pixels: zcoolPixels,
   zcool_xiaowei: zcoolXiaoWei,
   noto_sans_sc: notoSansSc,
+  long_cang: longCang,
+  noto_serif_sc: notoSerifSc,
   ma_shan_zheng: maShanZheng,
 };
 
@@ -128,7 +161,9 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
     ],
     ko: [
       { label: "Black Han Sans", value: "black_han_sans" },
+      { label: "Do Hyeon", value: "do_hyeon" },
       { label: "Jua", value: "jua" },
+      { label: "Nanum Square Neo", value: "nanum_square_neo" },
       { label: "Noto Sans KR", value: "noto_sans_kr" },
     ],
     ja: [
@@ -140,16 +175,16 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
     zhTC: [
       { label: "Noto Sans TC", value: "noto_sans_tc" },
       { label: "ZCOOL QingKe HuangYou", value: "zcool_qingke_huangyou" },
-      { label: "Chango", value: "chango" },
-      { label: "ZCOOL KuaiLe", value: "zcool_kuaile" },
+      { label: "M PLUS Rounded 1c", value: "m_plus_rounded_1c" },
+      { label: "Chen Yu Luo Yan", value: "chen_yu_luo_yan" },
       { label: "M PLUS 1p", value: "m_plus_1p" },
     ],
     zhSC: [
-      { label: "ZCOOL XiaoWei", value: "zcool_xiaowei" },
-      { label: "ZCOOL KuaiLe", value: "zcool_kuaile" },
-      { label: "Noto Sans SC", value: "noto_sans_sc" },
+      { label: "M PLUS Rounded 1c", value: "m_plus_rounded_1c" },
       { label: "ZCOOL QingKe HuangYou", value: "zcool_qingke_huangyou" },
-      { label: "Ma Shan Zheng", value: "ma_shan_zheng" },
+      { label: "Noto Sans SC", value: "noto_sans_sc" },
+      { label: "Long Cang", value: "long_cang" },
+      { label: "Noto Serif SC", value: "noto_serif_sc" },
     ],
   };
 
