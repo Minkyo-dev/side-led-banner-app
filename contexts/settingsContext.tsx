@@ -1,4 +1,8 @@
 import {
+  getDefaultAppearanceFontForLocale,
+  getFontItemsForLocale,
+} from "@/constants/appFonts";
+import {
   APP_LOCALE_KEYS,
   type AppLanguagePreference,
   type AppLocaleKey,
@@ -186,7 +190,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     blurColor: "",
   },
   appearance: {
-    font: "nanum_gothic",
+    font: "black_han_sans",
     fontSize: 50,
     lineSpacing: 10,
     letterSpacing: 10,
@@ -544,16 +548,25 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setUI((u) => ({ ...u, activePreset: slot }));
   }, []);
 
+  useEffect(() => {
+    const localeFonts = getFontItemsForLocale(resolvedAppLocale);
+    if (localeFonts.some((item) => item.value === config.appearance.font)) {
+      return;
+    }
+
+    setConfig((prev) => ({
+      ...prev,
+      appearance: {
+        ...prev.appearance,
+        font: getDefaultAppearanceFontForLocale(resolvedAppLocale),
+      },
+    }));
+  }, [config.appearance.font, resolvedAppLocale]);
+
   // font select state
   const fontItems = useMemo(
-    () => [
-      { label: "Nanum Gothic", value: "nanum_gothic" },
-      { label: "Noto Sans KR", value: "noto_sans_kr" },
-      { label: "Roboto", value: "roboto" },
-      { label: "Montserrat", value: "montserrat" },
-      { label: "Open Sans", value: "open_sans" },
-    ],
-    [],
+    () => getFontItemsForLocale(resolvedAppLocale),
+    [resolvedAppLocale],
   );
   // effect items list
   const effectItems = useMemo(

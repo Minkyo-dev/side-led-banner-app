@@ -2,7 +2,7 @@ import { uiThemeFontStyle } from "@/constants/appFonts";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
 /** 미리보기 하단 `TextInput`·측정용 `Text`와 동일 */
-export const CONTENTS_INPUT_FONT_SIZE = 18;
+export const CONTENTS_INPUT_FONT_SIZE = 24;
 export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
   CONTENTS_INPUT_FONT_SIZE * 1.00,
 );
@@ -46,7 +46,7 @@ export const styles = StyleSheet.create({
 
   // ===
   contentsInputContainer: {
-    minHeight: 60,
+    minHeight: 80,
     flexDirection: "row",
     alignItems: "stretch",
     paddingHorizontal: 5,
@@ -161,8 +161,8 @@ export const styles = StyleSheet.create({
   dropdownContainer: {
     // 드롭다운 컨테이너 스타일
     width: "55%",
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
     borderRadius: 24,
     backgroundColor: "#E7E7E7",
   },
@@ -172,7 +172,7 @@ export const styles = StyleSheet.create({
   dropdownSelectedTextStyle: {
     ...uiThemeFontStyle,
     // 선택된 텍스트 스타일
-    fontSize: 16,
+    fontSize: 17,
   },
   dropdownIconStyle: {
     width: 30,
@@ -183,10 +183,14 @@ export const styles = StyleSheet.create({
     // 아이템 컨테이너 스타일
     borderRadius: 0,
   },
+  dropdownItemContent: {
+    width: "100%",
+  },
   dropdownItemTextStyle: {
     ...uiThemeFontStyle,
     // 아이템 텍스트 스타일
-    fontSize: 16,
+    fontSize: 17,
+    flexShrink: 1,
   },
 
   // ===
