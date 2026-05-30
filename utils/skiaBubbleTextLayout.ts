@@ -24,7 +24,37 @@ export type BubbleLayoutOpts = {
   lineGapPx?: number;
 };
 
-export type BubbleCanvasOpts = Omit<BubbleLayoutOpts, "frameWidth" | "frameHeight">;
+export type BubbleCanvasOpts = Omit<BubbleLayoutOpts, "frameWidth" | "frameHeight"> & {
+  /** Pixel dilate + glyph panel pad (px per side) */
+  edgeInsetPx?: number;
+};
+
+/** 말풍선 + Pixel 시 텍스트 박스 안쪽 여백 (dilate 1 + panel pad 1) */
+export function resolveBubbleCanvasOpts(params: {
+  isSpeechActive: boolean;
+  isPixelEffect: boolean;
+  pixelShaderSize: number;
+  speechBubbleId?: "speechBg1" | "speechBg2" | null;
+}): BubbleCanvasOpts | null {
+  if (!params.isSpeechActive) return null;
+  const opts: BubbleCanvasOpts = {};
+  if (params.isPixelEffect) {
+    opts.edgeInsetPx = 2 * params.pixelShaderSize;
+    if (params.speechBubbleId === "speechBg1") {
+      opts.safeWRatio = 0.82;
+    }
+  }
+  return Object.keys(opts).length > 0 ? opts : {};
+}
+
+/** Pixel edgeInset 반영 — 폰트 상한을 bubbleGlyphs innerH와 맞춤 */
+export function speechMaxHeightForMetrics(
+  maxTextHeight: number,
+  canvasOpts: BubbleCanvasOpts | null,
+): number {
+  const inset = canvasOpts?.edgeInsetPx ?? 0;
+  return Math.max(1, maxTextHeight - inset * 2);
+}
 
 export function splitEnterRows(text: string): string[] {
   return text.replace(/\r\n?/g, "\n").split("\n");
@@ -88,6 +118,7 @@ export function bubbleGlyphs(params: {
   safeWRatio?: number;
   safeHRatio?: number;
   lineGapPx?: number;
+  edgeInsetPx?: number;
 }): BubbleGlyph[] {
   const {
     font,
@@ -96,21 +127,26 @@ export function bubbleGlyphs(params: {
     frameHeight,
     safeWRatio = BUBBLE_SAFE.widthRatio,
     lineGapPx = 0,
+    edgeInsetPx = 0,
   } = params;
 
   const n = rows.length;
   if (n === 0 || frameWidth <= 0 || frameHeight <= 0) return [];
+
+  const inset = Math.max(0, edgeInsetPx);
+  const innerW = Math.max(1, frameWidth - inset * 2);
+  const innerH = Math.max(1, frameHeight - inset * 2);
 
   const metrics = font.getMetrics();
   const rowH = metrics.descent - metrics.ascent;
   const gap = Math.max(0, lineGapPx);
   const blockH = rowH * n + gap * Math.max(0, n - 1);
 
-  const safeW = frameWidth * safeWRatio;
-  const safeLeft = (frameWidth - safeW) / 2;
+  const safeW = innerW * safeWRatio;
+  const safeLeft = inset + (innerW - safeW) / 2;
   const blockTop = Math.max(
-    0,
-    Math.min((frameHeight - blockH) / 2, frameHeight - blockH),
+    inset,
+    Math.min(inset + (innerH - blockH) / 2, frameHeight - blockH - inset),
   );
   const baseY = blockTop - metrics.ascent;
   const rowStep = rowH + gap;

@@ -1,6 +1,8 @@
 import {
+  appearanceFontSupportsBold,
   getDefaultAppearanceFontForLocale,
   getFontItemsForLocale,
+  normalizeAppearanceFontId,
 } from "@/constants/appFonts";
 import {
   APP_LOCALE_KEYS,
@@ -23,6 +25,10 @@ import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { tRewardAdLabel } from "@/language/rewardAdLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
+import {
+  readAppLanguage,
+  writeAppLanguage,
+} from "@/utils/appLanguageStorage";
 import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
@@ -132,9 +138,11 @@ export type PresetSnapshot = {
 
 export const PRESET_SLOT_COUNT = 5;
 
+/** 입력·미리보기 공통 최대 줄 수 */
 export const PREVIEW_TEXT_MAX_LINES = 3;
 const PRESET_AUTOSAVE_DEBOUNCE_MS = 500;
 
+/** 3줄 초과 시 변경 거부 (`null`) — 줄을 자르거나 합치지 않음 */
 export function normalizePreviewTextMaxLines(text: string): string | null {
   const normalized = text.replace(/\r\n?/g, "\n");
   const lines = normalized.split("\n");
@@ -449,14 +457,28 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [config, ui.activePreset]);
 
   useEffect(() => {
+    if (!presetsStorageReadyRef.current) return;
+    void writeAppLanguage(ui.appLanguage).catch((err) => {
+      if (__DEV__) console.warn("[settings] appLanguage persist failed", err);
+    });
+  }, [ui.appLanguage]);
+
+  useEffect(() => {
     let cancelled = false;
     const blankSlots = Array.from({ length: PRESET_SLOT_COUNT }, () =>
       presetFromConfig(DEFAULT_BANNER_CONFIG),
     );
     (async () => {
       try {
-        const raw = await readPresetSlotsJson();
+        const [raw, storedAppLanguage] = await Promise.all([
+          readPresetSlotsJson(),
+          readAppLanguage(),
+        ]);
         if (cancelled) return;
+
+        if (storedAppLanguage) {
+          setUI((prev) => ({ ...prev, appLanguage: storedAppLanguage }));
+        }
         let slots = blankSlots;
         if (raw) {
           const parsed = JSON.parse(raw) as unknown;
@@ -520,7 +542,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const handleTextChange = (text: string) => {
     const next = normalizePreviewTextMaxLines(text);
-    if (next == null) return;
+    if (next === null) return;
     updateConfig("content", { previewText: next });
   };
 
@@ -550,7 +572,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const localeFonts = getFontItemsForLocale(resolvedAppLocale);
-    if (localeFonts.some((item) => item.value === config.appearance.font)) {
+    const normalizedFont = normalizeAppearanceFontId(config.appearance.font);
+    if (
+      normalizedFont &&
+      localeFonts.some((item) => item.value === normalizedFont)
+    ) {
+      if (config.appearance.font !== normalizedFont) {
+        setConfig((prev) => ({
+          ...prev,
+          appearance: { ...prev.appearance, font: normalizedFont },
+        }));
+      }
       return;
     }
 
@@ -563,16 +595,42 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [config.appearance.font, resolvedAppLocale]);
 
+  useEffect(() => {
+    if (appearanceFontSupportsBold(config.appearance.font)) return;
+
+    setConfig((prev) => {
+      const needsFontWeight = prev.appearance.fontWeight === "bold";
+      const needsEffectItems = prev.appearance.effectSelectedItems.includes(
+        "Bold",
+      );
+      if (!needsFontWeight && !needsEffectItems) return prev;
+
+      return {
+        ...prev,
+        appearance: {
+          ...prev.appearance,
+          fontWeight: "normal",
+          effectSelectedItems: prev.appearance.effectSelectedItems.filter(
+            (e) => e !== "Bold",
+          ),
+        },
+      };
+    });
+  }, [config.appearance.font]);
+
   // font select state
   const fontItems = useMemo(
     () => getFontItemsForLocale(resolvedAppLocale),
     [resolvedAppLocale],
   );
   // effect items list
-  const effectItems = useMemo(
-    () => ["Bold", "Blink", "Pixel", "Glow", "Gradient"],
-    [],
-  );
+  const effectItems = useMemo(() => {
+    const items = ["Bold", "Blink", "Pixel", "Glow", "Gradient"];
+    if (!appearanceFontSupportsBold(config.appearance.font)) {
+      return items.filter((e) => e !== "Bold");
+    }
+    return items;
+  }, [config.appearance.font]);
   const value = useMemo(
     () => ({
       config,

@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 
+import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
+import { skiaRowHeightPx } from "@/utils/skiaTextBlockMetrics";
 import {
   FONT_SIZE_MAX,
   FONT_SIZE_MIN,
@@ -8,6 +10,7 @@ import {
   getRelLineSpacing,
   getSizingPolicy,
   scaleFontSizeByHeight,
+  type SkiaFontProbe,
 } from "@/utils/textSizing";
 
 type SizingPolicy = ReturnType<typeof getSizingPolicy>;
@@ -20,6 +23,8 @@ type TextMetricsBase = {
   sizingPolicy: SizingPolicy;
   isSpeechBgActive: boolean;
   speechMaxHeight: number;
+  appearanceFont: string;
+  fontWeight: "normal" | "bold";
 };
 
 export type TextMetricsInput =
@@ -62,6 +67,7 @@ function resolveTextMetrics(
   input: TextMetricsInput,
   sizePct: number,
   effectiveLineSpacing: number,
+  skiaFontProbe: SkiaFontProbe | undefined,
 ) {
   if (input.mode === "preview" && input.previewHeight <= 0) {
     return { lineCount: 1, fontSize: 100, height: 100 };
@@ -79,39 +85,54 @@ function resolveTextMetrics(
         })
       : sizePct;
 
-  const cappedMetrics = getFullscreenTextMetrics({
-    displayText: input.text,
-    baseFontSize,
-    lineHeightRatio: input.sizingPolicy.fullscreenLineHeightRatio,
-    lineSpacingPx: effectiveLineSpacing,
-    maxHeight: input.speechMaxHeight,
-    padding: input.isSpeechBgActive
-      ? 0
-      : input.sizingPolicy.speechTextHeightPadding,
-    clampByMaxHeight: input.sizingPolicy.clampByMaxHeight,
-    speechBg: input.isSpeechBgActive,
-    playOption: input.playOption,
-    sizePct,
-  });
-
   if (input.mode === "fullscreen" || input.isSpeechBgActive) {
-    return cappedMetrics;
+    return getFullscreenTextMetrics({
+      displayText: input.text,
+      baseFontSize,
+      lineHeightRatio: input.sizingPolicy.fullscreenLineHeightRatio,
+      lineSpacingPx: effectiveLineSpacing,
+      maxHeight: input.speechMaxHeight,
+      padding: input.isSpeechBgActive
+        ? 0
+        : input.sizingPolicy.speechTextHeightPadding,
+      clampByMaxHeight: input.sizingPolicy.clampByMaxHeight,
+      speechBg: input.isSpeechBgActive,
+      playOption: input.playOption,
+      sizePct,
+      skiaFontProbe,
+    });
   }
 
   return getPreviewTextMetrics({
     previewHeight: input.previewHeight,
-    baseFontSize: cappedMetrics.fontSize,
     playOption: input.playOption,
     text: input.text,
     padding: input.sizingPolicy.previewPadding,
     lineHeightRatio: input.sizingPolicy.previewLineHeightRatio,
     lineSpacingPx: effectiveLineSpacing,
     fontSizePercent: sizePct,
+    skiaFontProbe,
   });
 }
 
+const SKIA_PROBE_FONT_SIZE = FONT_SIZE_MAX;
+
 /** preview / fullscreen 공통: cap → (preview 일반 배경만) 박스 보정 */
 export function useTextMetrics(input: TextMetricsInput) {
+  const probeFont = useSkiaAppearanceFont(
+    input.appearanceFont,
+    input.fontWeight,
+    SKIA_PROBE_FONT_SIZE,
+  );
+
+  const skiaFontProbe = useMemo((): SkiaFontProbe | undefined => {
+    if (!probeFont) return undefined;
+    return {
+      rowHeightPxAtProbe: skiaRowHeightPx(probeFont),
+      probeFontSize: SKIA_PROBE_FONT_SIZE,
+    };
+  }, [probeFont]);
+
   const effectiveLineSpacing = useMemo(
     () =>
       getRelLineSpacing({
@@ -131,13 +152,25 @@ export function useTextMetrics(input: TextMetricsInput) {
   );
 
   const metrics = useMemo(
-    () => resolveTextMetrics(input, input.fontSize, effectiveLineSpacing),
-    [input, effectiveLineSpacing],
+    () =>
+      resolveTextMetrics(
+        input,
+        input.fontSize,
+        effectiveLineSpacing,
+        skiaFontProbe,
+      ),
+    [input, effectiveLineSpacing, skiaFontProbe],
   );
 
   const referenceMetrics = useMemo(
-    () => resolveTextMetrics(input, FONT_SIZE_MAX, referenceLineSpacing),
-    [input, referenceLineSpacing],
+    () =>
+      resolveTextMetrics(
+        input,
+        FONT_SIZE_MAX,
+        referenceLineSpacing,
+        skiaFontProbe,
+      ),
+    [input, referenceLineSpacing, skiaFontProbe],
   );
 
   return {
