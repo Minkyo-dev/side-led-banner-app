@@ -1,4 +1,16 @@
 import { countRows } from "@/utils/skiaBubbleTextLayout";
+import {
+  maxFontSizeForAvailableHeight,
+  skiaTextBlockHeightPx,
+} from "@/utils/skiaTextBlockMetrics";
+
+/** 폰트 메트릭 오차·효과 여유 */
+export const SKIA_BLOCK_HEIGHT_SAFETY_PX = 2;
+
+export type SkiaFontProbe = {
+  rowHeightPxAtProbe: number;
+  probeFontSize: number;
+};
 
 const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
 const FULLSCREEN_LINE_HEIGHT_RATIO = 1.16;
@@ -24,8 +36,9 @@ export const DEFAULT_MAX_TEXT_HEIGHT_RATIO = {
 export const SPEECH_BG_TEXT_LAYOUT = {
   speechBg1: {
     portrait: {
+      /** 393px 아트보드 — landscape와 동일 상단 64px 이후 텍스트 영역 */
       textHeightRatio: 264.5 / 393,
-      topOffsetRatio: null as number | null,
+      topOffsetRatio: 64 / 393,
     },
     landscape: {
       /** 393px 중 텍스트 264.5px, 위 64px / 아래 64.5px */
@@ -133,10 +146,75 @@ export function getLineCountForMode(params: {
   return Math.min((text.match(/\n/g) || []).length + 1, maxLines);
 }
 
+function resolveMaxFontSizeForBox(params: {
+  availableHeight: number;
+  lineCount: number;
+  lineHeightRatio: number;
+  lineSpacingPx: number | undefined;
+  skiaFontProbe?: SkiaFontProbe;
+  interLineGapPx?: number;
+}): number {
+  const {
+    availableHeight,
+    lineCount,
+    lineHeightRatio,
+    lineSpacingPx,
+    skiaFontProbe,
+    interLineGapPx = 0,
+  } = params;
+
+  const safeHeight = Math.max(
+    1,
+    availableHeight - SKIA_BLOCK_HEIGHT_SAFETY_PX,
+  );
+
+  const ratioMax = Math.max(
+    1,
+    lineSpacingPx == null
+      ? Math.floor(safeHeight / (lineHeightRatio * lineCount))
+      : Math.floor(
+          (safeHeight - interLineGapPx * Math.max(0, lineCount - 1)) /
+            (lineHeightRatio * lineCount),
+        ),
+  );
+
+  if (!skiaFontProbe) {
+    return ratioMax;
+  }
+
+  const skiaMax = maxFontSizeForAvailableHeight({
+    rowHeightPxAtProbe: skiaFontProbe.rowHeightPxAtProbe,
+    probeFontSize: skiaFontProbe.probeFontSize,
+    lineCount,
+    lineGapPx: interLineGapPx,
+    availableHeightPx: safeHeight,
+  });
+
+  return Math.min(ratioMax, skiaMax);
+}
+
+/** 슬라이더 100 = `maxFontSizeForBox`(박스 상한), 20 = 상한의 20% */
+export function fontSizeFromSliderPercent(params: {
+  maxFontSizeForBox: number;
+  sizePct: number;
+}): number {
+  const { maxFontSizeForBox, sizePct } = params;
+  const clampedPct = Math.max(
+    FONT_SIZE_MIN,
+    Math.min(FONT_SIZE_MAX, sizePct),
+  );
+  return Math.max(
+    1,
+    Math.min(
+      maxFontSizeForBox,
+      Math.floor(maxFontSizeForBox * (clampedPct / FONT_SIZE_MAX)),
+    ),
+  );
+}
+
 export function getPreviewTextMetrics(params: {
   previewHeight: number;
   fontSizePercent?: number;
-  baseFontSize?: number;
   playOption: "one" | "multi";
   text: string;
   padding?: number;
@@ -144,11 +222,11 @@ export function getPreviewTextMetrics(params: {
   lineSpacingPx?: number;
   maxLines?: number;
   fallbackFontSize?: number;
+  skiaFontProbe?: SkiaFontProbe;
 }) {
   const {
     previewHeight,
     fontSizePercent,
-    baseFontSize,
     playOption,
     text,
     padding = 0,
@@ -156,6 +234,7 @@ export function getPreviewTextMetrics(params: {
     lineSpacingPx,
     maxLines = 3,
     fallbackFontSize = 100,
+    skiaFontProbe,
   } = params;
 
   if (previewHeight === 0) {
@@ -166,46 +245,129 @@ export function getPreviewTextMetrics(params: {
   const requestedLineSpacingPx = Math.max(0, lineSpacingPx ?? 0);
   const effectiveLineHeightRatio = lineHeightRatio;
 
-  const maxFontSizeForBox = Math.max(
-    1,
-    Math.floor(availableHeight / (lineCount * effectiveLineHeightRatio)),
-  );
+  const sliderPct = fontSizePercent ?? FONT_SIZE_MAX;
 
   if (lineSpacingPx == null) {
-    const percentBasedFontSize = Math.floor(
-      maxFontSizeForBox * ((fontSizePercent ?? 100) / 100),
-    );
-    const desiredFontSize = baseFontSize ?? percentBasedFontSize;
-    const fontSize = Math.max(1, Math.min(desiredFontSize, maxFontSizeForBox));
-    const rawH = Math.max(
-      1,
-      Math.ceil(fontSize * effectiveLineHeightRatio * lineCount + padding),
-    );
-    const fillBox = (fontSizePercent ?? 100) >= FONT_SIZE_MAX;
+    const maxFontSizeForBox = resolveMaxFontSizeForBox({
+      availableHeight,
+      lineCount,
+      lineHeightRatio: effectiveLineHeightRatio,
+      lineSpacingPx: undefined,
+      skiaFontProbe,
+    });
+    const fontSize = fontSizeFromSliderPercent({
+      maxFontSizeForBox,
+      sizePct: sliderPct,
+    });
+    const rawH = computeRawTextBlockHeight({
+      fontSize,
+      lineCount,
+      lineHeightRatio: effectiveLineHeightRatio,
+      interLineGapPx: 0,
+      padding,
+      skiaFontProbe,
+    });
+    const fillBox = sliderPct >= FONT_SIZE_MAX;
     const height = fillBox ? previewHeight : rawH;
     return { lineCount, fontSize, height };
   }
 
-  const percentBasedFontSize = Math.floor(
-    maxFontSizeForBox * ((fontSizePercent ?? 100) / 100),
-  );
-  const desiredFontSize = baseFontSize ?? percentBasedFontSize;
-  const fontSize = Math.max(1, Math.min(desiredFontSize, maxFontSizeForBox));
+  const maxFontSizeForBoxInitial = resolveMaxFontSizeForBox({
+    availableHeight,
+    lineCount,
+    lineHeightRatio: effectiveLineHeightRatio,
+    lineSpacingPx,
+    skiaFontProbe,
+    interLineGapPx: 0,
+  });
+  let fontSize = fontSizeFromSliderPercent({
+    maxFontSizeForBox: maxFontSizeForBoxInitial,
+    sizePct: sliderPct,
+  });
 
-  const lineBodyPx = fontSize * effectiveLineHeightRatio * lineCount;
-  const gapBudgetPx = Math.max(0, availableHeight - lineBodyPx);
-  const interLineGapPx =
+  let lineBodyPx = fontSize * effectiveLineHeightRatio * lineCount;
+  let gapBudgetPx = Math.max(0, availableHeight - lineBodyPx);
+  let interLineGapPx =
     lineCount > 1
       ? Math.min(
           requestedLineSpacingPx,
           Math.floor(gapBudgetPx / (lineCount - 1)),
         )
       : 0;
-  const totalLineGapPx = Math.max(0, lineCount - 1) * interLineGapPx;
-  const rawH = Math.max(1, Math.ceil(lineBodyPx + totalLineGapPx + padding));
-  const fillBox = (fontSizePercent ?? 100) >= FONT_SIZE_MAX;
+
+  const maxFontSizeForBox = resolveMaxFontSizeForBox({
+    availableHeight,
+    lineCount,
+    lineHeightRatio: effectiveLineHeightRatio,
+    lineSpacingPx,
+    skiaFontProbe,
+    interLineGapPx,
+  });
+  fontSize = fontSizeFromSliderPercent({
+    maxFontSizeForBox,
+    sizePct: sliderPct,
+  });
+
+  lineBodyPx = fontSize * effectiveLineHeightRatio * lineCount;
+  gapBudgetPx = Math.max(0, availableHeight - lineBodyPx);
+  interLineGapPx =
+    lineCount > 1
+      ? Math.min(
+          requestedLineSpacingPx,
+          Math.floor(gapBudgetPx / (lineCount - 1)),
+        )
+      : 0;
+
+  const rawH = computeRawTextBlockHeight({
+    fontSize,
+    lineCount,
+    lineHeightRatio: effectiveLineHeightRatio,
+    interLineGapPx,
+    padding,
+    skiaFontProbe,
+  });
+  const fillBox = sliderPct >= FONT_SIZE_MAX;
   const height = fillBox ? previewHeight : rawH;
   return { lineCount, fontSize, height };
+}
+
+function computeRawTextBlockHeight(params: {
+  fontSize: number;
+  lineCount: number;
+  lineHeightRatio: number;
+  interLineGapPx: number;
+  padding: number;
+  skiaFontProbe?: SkiaFontProbe;
+}): number {
+  const {
+    fontSize,
+    lineCount,
+    lineHeightRatio,
+    interLineGapPx,
+    padding,
+    skiaFontProbe,
+  } = params;
+
+  if (skiaFontProbe) {
+    const rowH =
+      (skiaFontProbe.rowHeightPxAtProbe / skiaFontProbe.probeFontSize) *
+      fontSize;
+    return Math.max(
+      1,
+      Math.ceil(
+        skiaTextBlockHeightPx(rowH, lineCount, interLineGapPx) + padding,
+      ),
+    );
+  }
+
+  return Math.max(
+    1,
+    Math.ceil(
+      fontSize * lineHeightRatio * lineCount +
+        interLineGapPx * Math.max(0, lineCount - 1) +
+        padding,
+    ),
+  );
 }
 
 export function scaleFontSizeByHeight(params: {
@@ -256,6 +418,7 @@ export function getFullscreenTextMetrics(params: {
   speechBg?: boolean;
   playOption?: "one" | "multi";
   sizePct?: number;
+  skiaFontProbe?: SkiaFontProbe;
 }) {
   const {
     displayText,
@@ -268,6 +431,7 @@ export function getFullscreenTextMetrics(params: {
     speechBg = false,
     playOption = "multi",
     sizePct = baseFontSize,
+    skiaFontProbe,
   } = params;
 
   const lineCount = countRows(displayText, playOption);
@@ -286,28 +450,29 @@ export function getFullscreenTextMetrics(params: {
         )
       : requestedLineSpacingPx;
   const interLineGapPx = Math.min(requestedLineSpacingPx, maxLineSpacingPx);
-  const totalLineGapPx = Math.max(0, lineCount - 1) * interLineGapPx;
-  const maxFontSizeByHeight = Math.max(
-    1,
-    lineSpacingPx == null
-      ? Math.floor(availableHeight / (lineHeightRatio * lineCount))
-      : Math.floor(
-          (availableHeight - totalLineGapPx) /
-            (effectiveLineHeightRatio * lineCount),
-        ),
-  );
+  const maxFontSizeByHeight = resolveMaxFontSizeForBox({
+    availableHeight,
+    lineCount,
+    lineHeightRatio: effectiveLineHeightRatio,
+    lineSpacingPx,
+    skiaFontProbe,
+    interLineGapPx,
+  });
   const fontSize = clampByMaxHeight
-    ? Math.max(1, Math.min(baseFontSize, maxFontSizeByHeight))
+    ? fontSizeFromSliderPercent({
+        maxFontSizeForBox: maxFontSizeByHeight,
+        sizePct,
+      })
     : baseFontSize;
 
-  const rawHeight = Math.max(
-    1,
-    lineSpacingPx == null
-      ? Math.ceil(fontSize * lineHeightRatio * lineCount + padding)
-      : Math.ceil(
-          fontSize * effectiveLineHeightRatio * lineCount + totalLineGapPx + padding,
-        ),
-  );
+  const rawHeight = computeRawTextBlockHeight({
+    fontSize,
+    lineCount,
+    lineHeightRatio: effectiveLineHeightRatio,
+    interLineGapPx,
+    padding,
+    skiaFontProbe,
+  });
   const fillBox =
     speechBg || (clampByMaxHeight && sizePct >= FONT_SIZE_MAX);
   const height = fillBox ? maxHeight : Math.min(rawHeight, maxHeight);

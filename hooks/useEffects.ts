@@ -3,6 +3,12 @@ import {
   GRADIENT_BACKDROP_IDS,
   type GradientBackdropId,
 } from "@/constants/gradientBackgroundPresets";
+import {
+  pixelDotLocaleScale,
+  pixelGlyphPanelPadCells,
+  resolvePixelTextShaderUniforms,
+} from "@/constants/language";
+import { useSettings } from "@/contexts/settingsContext";
 import { computeEffectSpace } from "@/utils/recordTile";
 import { useMemo } from "react";
 
@@ -28,6 +34,7 @@ export type EffectsInput = {
 
 /** Skia 마퀴: Pixel/Glow/Gradient·stroke·effect space */
 export function useEffects(input: EffectsInput) {
+  const { resolvedAppLocale } = useSettings();
   const isPixelEffect = input.effectSelectedItems.includes("Pixel");
   const isGlowEffect = input.effectSelectedItems.includes("Glow");
   const showGradientBackdrop =
@@ -43,9 +50,18 @@ export function useEffects(input: EffectsInput) {
     1,
     Math.max(0.15, input.pixelViewportScale ?? 1),
   );
+  const localeDotScale = pixelDotLocaleScale(resolvedAppLocale);
   const pixelShaderSize = isPixelEffect
-    ? Math.max(1, basePixelDotPx * pixelScale)
+    ? Math.max(1, basePixelDotPx * pixelScale * localeDotScale)
     : 1;
+  const pixelTextShaderUniforms = resolvePixelTextShaderUniforms(
+    resolvedAppLocale,
+    pixelShaderSize,
+  );
+  const pixelGlyphPadCells = pixelGlyphPanelPadCells(
+    resolvedAppLocale,
+    pixelShaderSize,
+  );
   const strokeWidthScale = (input.outLine / 100) * 24;
   const skiaStrokeWidthPx = Math.round((strokeWidthScale / 100) * 30);
   /** Pixel 모드: dotted 글자 바깥 흰 도트 링 개수 (Text → Outline 슬라이더) */
@@ -79,6 +95,8 @@ export function useEffects(input: EffectsInput) {
     isGlowEffect,
     showGradientBackdrop,
     pixelShaderSize,
+    pixelTextShaderUniforms,
+    pixelGlyphPadCells,
     skiaStrokeWidthPx,
     pixelOutlineRings,
     isPixelColorMix,

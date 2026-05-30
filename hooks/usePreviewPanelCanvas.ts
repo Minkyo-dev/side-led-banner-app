@@ -7,12 +7,12 @@ import { useDerivedValue, useSharedValue } from "react-native-reanimated";
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
 import { buildMarqueeTextBlob } from "@/utils/buildMarqueeTextBlob";
 import {
-  BUBBLE_MAX_ROWS,
-  BUBBLE_SAFE,
-  bubbleGlyphs,
-  bubbleLayouts,
-  bubbleRows,
-  type BubbleCanvasOpts,
+    BUBBLE_MAX_ROWS,
+    BUBBLE_SAFE,
+    bubbleGlyphs,
+    bubbleLayouts,
+    bubbleRows,
+    type BubbleCanvasOpts,
 } from "@/utils/skiaBubbleTextLayout";
 
 type TextLayoutEvent = {
@@ -128,6 +128,11 @@ export function usePreviewPanelCanvas({
     height: 0,
   });
 
+  // 말풍선 ON/OFF 시 onLayout이 다른 View로 옮겨져 재측정이 안 될 수 있음 → stale 높이로 위쪽 붙음
+  useEffect(() => {
+    setSkiaCanvasLayout({ width: 0, height: 0 });
+  }, [speechBubbleLayout != null]);
+
   const hasCanvasLayout =
     skiaCanvasLayout.width > 0 && skiaCanvasLayout.height > 0;
   const fbW = fallbackLayout?.width ?? 0;
@@ -205,6 +210,7 @@ export function usePreviewPanelCanvas({
           safeWRatio:
             speechBubbleLayout!.safeWRatio ?? BUBBLE_SAFE.widthRatio,
           lineGapPx: lineSpacingPx,
+          edgeInsetPx: speechBubbleLayout!.edgeInsetPx,
         })
       : lineLayoutsToGlyphs(
           skiaFont,

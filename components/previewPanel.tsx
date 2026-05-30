@@ -1,8 +1,13 @@
 import { DeleteAllButton } from "@/assets/svg/deleteAllButton";
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
-import { styles } from "@/constants/styles";
 import {
+  CONTENTS_INPUT_FONT_SIZE,
+  CONTENTS_INPUT_LINE_HEIGHT,
+  styles,
+} from "@/constants/styles";
+import {
+  normalizePreviewTextMaxLines,
   PREVIEW_TEXT_MAX_LINES,
   useSettings,
 } from "@/contexts/settingsContext";
@@ -13,28 +18,31 @@ import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import { useTextInput } from "@/hooks/useTextInput";
 import {
-    resolveSpeechCanvasFallback,
-    useSpeechBubble,
+  resolveSpeechCanvasFallback,
+  useSpeechBubble,
 } from "@/hooks/useSpeechBubble";
 import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { getSizingPolicy } from "@/utils/textSizing";
+import { resolveBubbleCanvasOpts } from "@/utils/skiaBubbleTextLayout";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
-import React, { useMemo, useState } from "react";
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-    Keyboard,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  Keyboard,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
 import { buildCanvas } from "./animation/buildCanvas";
+import { buildPixelBackground } from "./animation/buildPixelBackground";
 import { MarqueeCanvas } from "./animation/MarqueeCanvas";
+import { PixelBackgroundCanvas } from "./animation/PixelBackgroundCanvas";
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
@@ -115,6 +123,8 @@ export default function PreviewPanel() {
       sizingPolicy,
       isSpeechBgActive: speechBubble.isActive,
       speechMaxHeight: speechBubble.maxTextHeight,
+      appearanceFont: font,
+      fontWeight,
     });
 
   const { previewFontSize: fullscreenFontSize } = useTextMetrics({
@@ -129,6 +139,8 @@ export default function PreviewPanel() {
     windowWidth,
     windowHeight,
     isPortrait,
+    appearanceFont: font,
+    fontWeight,
   });
 
   const pixelViewportScale = useMemo(() => {
@@ -181,7 +193,12 @@ export default function PreviewPanel() {
     lineSpacingPx: effectiveLineSpacing,
     fallbackLayout: canvasFallback,
     playOption,
-    speechBubbleLayout: speechBubble.isActive ? {} : null,
+    speechBubbleLayout: resolveBubbleCanvasOpts({
+      isSpeechActive: speechBubble.isActive,
+      isPixelEffect: effects.isPixelEffect,
+      pixelShaderSize: effects.pixelShaderSize,
+      speechBubbleId: sizingPolicy.speechBubbleId,
+    }),
   });
 
   const { opacity: blinkOpacity } = useBlinkOpacityStyle(
@@ -200,6 +217,35 @@ export default function PreviewPanel() {
     backgroundColor,
   });
 
+  const pixelBackgroundProps = useMemo(
+    () =>
+      buildPixelBackground({
+        width: previewBox.width,
+        height: previewBox.height,
+        effects,
+        hasBgPhoto,
+        backgroundColor,
+        backgroundImageUri: backgroundImageUri ?? null,
+        gradientBackgroundPreset,
+        backgroundEffect: backgroundEdgeEffectAnim,
+        translateX,
+        isPortrait,
+        mode: "preview",
+      }),
+    [
+      previewBox.width,
+      previewBox.height,
+      effects,
+      hasBgPhoto,
+      backgroundColor,
+      backgroundImageUri,
+      gradientBackgroundPreset,
+      backgroundEdgeEffectAnim,
+      translateX,
+      isPortrait,
+    ],
+  );
+
   const onPreviewLayout = (e: LayoutEvent) => {
     const { width, height } = e.nativeEvent.layout;
     setPreviewBox({ width, height });
@@ -209,13 +255,17 @@ export default function PreviewPanel() {
   const {
     displayInputText,
     inputHorizontalCanvasWidth,
-    inputFixedHeight,
     pendingSelection,
+    inputScrollRef,
     handleInputMeasureLayout,
+    handleFontLinesProbeLayout,
     handleWrappedHeightMeasureLayout,
     handleInputContentSizeChange,
     measureOffscreenStyle,
+    fontLineProbeText,
     onSelectionChange,
+    onInputScroll,
+    inputViewportHeightPx,
   } = useTextInput({
     previewText,
     activePreset,
@@ -228,6 +278,26 @@ export default function PreviewPanel() {
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
   const dismissKeyboard = () => Keyboard.dismiss();
+  const inputSelectionRef = useRef({ start: 0, end: 0 });
+  const [rejectedEnterSelection, setRejectedEnterSelection] = useState<
+    { start: number; end: number } | undefined
+  >(undefined);
+
+  const onPreviewTextChange = (text: string) => {
+    const next = normalizePreviewTextMaxLines(text);
+    if (next === null) {
+      setRejectedEnterSelection({ ...inputSelectionRef.current });
+      return;
+    }
+    handleTextChange(text);
+  };
+
+  useLayoutEffect(() => {
+    if (rejectedEnterSelection === undefined) return;
+    const id = requestAnimationFrame(() => setRejectedEnterSelection(undefined));
+    return () => cancelAnimationFrame(id);
+  }, [rejectedEnterSelection]);
+
   const handleInputKeyPress = (e: { nativeEvent: { key: string } }) => {
     if (playOption !== "multi") return;
     if (e.nativeEvent.key !== "Enter") return;
@@ -248,12 +318,13 @@ export default function PreviewPanel() {
           {
             justifyContent: "center",
             overflow: "hidden",
-            backgroundColor: hasBgPhoto ? undefined : backgroundColor,
+            backgroundColor:
+              hasBgPhoto || effects.isPixelEffect ? undefined : backgroundColor,
           },
         ]}
         onLayout={onPreviewLayout}
       >
-        {hasBgPhoto ? (
+        {hasBgPhoto && !effects.isPixelEffect ? (
           <Image
             source={{ uri: backgroundImageUri }}
             style={StyleSheet.absoluteFill}
@@ -261,11 +332,15 @@ export default function PreviewPanel() {
             blurRadius={backgroundBlur / 8}
           />
         ) : null}
+        {effects.isPixelEffect && previewBox.width > 0 && previewBox.height > 0 ? (
+          <PixelBackgroundCanvas {...pixelBackgroundProps} />
+        ) : null}
         <BackgroundEffectLayer
           effect={backgroundEdgeEffectAnim}
           translateX={translateX}
           isPortrait={isPortrait}
           mode="preview"
+          suppressPixelManagedBackgrounds={effects.isPixelEffect}
         />
         {speechBubble.speechTextBoxConfig ? (
           <View
@@ -319,10 +394,10 @@ export default function PreviewPanel() {
                 index === activePreset
                   ? ["white", "#CCCCCC"]
                   : ["white", "#727272"]
-              } // 시작색, 끝색
-              start={{ x: 0, y: 0 }} //왼쪽 위
-              end={{ x: 0.1, y: 0.2 }} //오른쪽 아래
-              style={btnStyles.presetButtonGradient} //기존 스타일 적용
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0.1, y: 0.2 }}
+              style={btnStyles.presetButtonGradient}
             >
               <Text
                 allowFontScaling={false}
@@ -340,7 +415,21 @@ export default function PreviewPanel() {
       </View>
 
       {/* contents input container */}
-      <View id="contentsInputContainer" style={styles.contentsInputContainer}>
+      <View
+        id="contentsInputContainer"
+        style={[
+          styles.contentsInputContainer,
+          { minHeight: inputViewportHeightPx },
+        ]}
+      >
+        <Text
+          allowFontScaling={false}
+          style={[styles.contentsInput, measureOffscreenStyle]}
+          onTextLayout={handleFontLinesProbeLayout}
+          pointerEvents="none"
+        >
+          {fontLineProbeText}
+        </Text>
         <Text
           allowFontScaling={false}
           style={[styles.contentsInput, measureOffscreenStyle]}
@@ -362,11 +451,14 @@ export default function PreviewPanel() {
           {displayInputText || " "}
         </Text>
         <ScrollView
+          ref={inputScrollRef}
           horizontal
           nestedScrollEnabled
           keyboardShouldPersistTaps="handled"
           showsHorizontalScrollIndicator
-          style={{ flex: 0.9 }}
+          scrollEventThrottle={16}
+          onScroll={onInputScroll}
+          style={{ flex: 0.9, height: inputViewportHeightPx }}
           contentContainerStyle={{ flexGrow: 1 }}
           onLayout={(e) => setInputScrollViewportW(e.nativeEvent.layout.width)}
           {...(Platform.OS === "ios"
@@ -381,16 +473,18 @@ export default function PreviewPanel() {
             editable
             allowFontScaling={false}
             multiline={playOption === "multi"}
-            scrollEnabled={false}
+            scrollEnabled={playOption === "multi"}
             style={[
               styles.contentsInput,
               {
                 flex: 0,
                 width: inputHorizontalCanvasWidth,
-                height: inputFixedHeight,
-                maxHeight: inputFixedHeight,
-                paddingTop: 4,
+                height: inputViewportHeightPx,
+                maxHeight: inputViewportHeightPx,
+                paddingTop: 0,
                 paddingBottom: 0,
+                fontSize: CONTENTS_INPUT_FONT_SIZE,
+                lineHeight: CONTENTS_INPUT_LINE_HEIGHT,
                 fontFamily: appFontFamilyForText(
                   font,
                   fontWeight === "bold" ? "bold" : "normal",
@@ -399,11 +493,15 @@ export default function PreviewPanel() {
             ]}
             placeholder="Enter your text here"
             value={displayInputText}
-            selection={pendingSelection}
-            onChangeText={handleTextChange}
+            selection={rejectedEnterSelection ?? pendingSelection}
+            onChangeText={onPreviewTextChange}
             onContentSizeChange={handleInputContentSizeChange}
             onKeyPress={handleInputKeyPress}
-            onSelectionChange={onSelectionChange}
+            onSelectionChange={(e) => {
+              const { start, end } = e.nativeEvent.selection;
+              inputSelectionRef.current = { start, end };
+              onSelectionChange(e);
+            }}
             textAlignVertical="top"
           />
         </ScrollView>

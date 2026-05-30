@@ -1,11 +1,15 @@
-﻿import { uiThemeFontStyle } from "@/constants/appFonts";
+import { uiThemeFontStyle } from "@/constants/appFonts";
+import { PREVIEW_TEXT_MAX_LINES } from "@/contexts/settingsContext";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
-/** 誘몃━蹂닿린 ?섎떒 `TextInput`쨌痢≪젙??`Text`? ?숈씪 */
+/** 미리보기 하단 `TextInput`·측정용 `Text`와 동일 */
 export const CONTENTS_INPUT_FONT_SIZE = 24;
 export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
   CONTENTS_INPUT_FONT_SIZE * 1.00,
 );
+/** one / multi 공통 입력 높이 */
+export const CONTENTS_INPUT_VIEWPORT_HEIGHT =
+  PREVIEW_TEXT_MAX_LINES * CONTENTS_INPUT_LINE_HEIGHT;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
@@ -46,7 +50,7 @@ export const styles = StyleSheet.create({
 
   // ===
   contentsInputContainer: {
-    minHeight: 80,
+    minHeight: CONTENTS_INPUT_VIEWPORT_HEIGHT,
     flexDirection: "row",
     alignItems: "stretch",
     paddingHorizontal: 5,
@@ -159,7 +163,8 @@ export const styles = StyleSheet.create({
 
   // ===
   dropdownContainer: {
-    // ?쒕∼?ㅼ슫 而⑦뀒?대꼫 ?ㅽ???    width: "55%",
+    // 드롭다운 컨테이너 스타일
+    width: "55%",
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 24,
@@ -170,7 +175,8 @@ export const styles = StyleSheet.create({
   dropdownPlaceholderStyle: { ...uiThemeFontStyle },
   dropdownSelectedTextStyle: {
     ...uiThemeFontStyle,
-    // ?좏깮???띿뒪???ㅽ???    fontSize: 17,
+    // 선택된 텍스트 스타일
+    fontSize: 17,
   },
   dropdownIconStyle: {
     width: 30,
@@ -178,14 +184,16 @@ export const styles = StyleSheet.create({
 
   // ===
   dropdownItemContainerStyle: {
-    // ?꾩씠??而⑦뀒?대꼫 ?ㅽ???    borderRadius: 0,
+    // 아이템 컨테이너 스타일
+    borderRadius: 0,
   },
   dropdownItemContent: {
     width: "100%",
   },
   dropdownItemTextStyle: {
     ...uiThemeFontStyle,
-    // ?꾩씠???띿뒪???ㅽ???    fontSize: 17,
+    // 아이템 텍스트 스타일
+    fontSize: 17,
     flexShrink: 1,
   },
 
@@ -345,7 +353,135 @@ export const rewardAdModalStyles = StyleSheet.create({
   },
 });
 
-
+export const proModeStatusModalStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 28,
+  },
+  dim: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 320,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    paddingTop: 28,
+    paddingBottom: 22,
+    paddingHorizontal: 22,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
+  title: {
+    ...uiThemeFontStyle,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    textAlign: "center",
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  statusBadge: {
+    alignSelf: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    marginBottom: 16,
+  },
+  statusBadgeOn: {
+    backgroundColor: "#E8F5E9",
+  },
+  statusBadgeOff: {
+    backgroundColor: "#F0F0F0",
+  },
+  statusBadgeText: {
+    ...uiThemeFontStyle,
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  statusBadgeTextOn: {
+    color: "#2E7D32",
+  },
+  statusBadgeTextOff: {
+    color: "#757575",
+  },
+  detailBlock: {
+    marginBottom: 20,
+    gap: 8,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  },
+  detailLabel: {
+    ...uiThemeFontStyle,
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#8A8A8A",
+    flexShrink: 0,
+  },
+  detailValue: {
+    ...uiThemeFontStyle,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    flex: 1,
+    textAlign: "right",
+  },
+  hint: {
+    ...uiThemeFontStyle,
+    fontSize: 13,
+    fontWeight: "400",
+    color: "#6B6B6B",
+    lineHeight: 19,
+    textAlign: "center",
+  },
+  devActions: {
+    marginTop: 16,
+    gap: 10,
+  },
+  devButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  devButtonOn: {
+    backgroundColor: "#F5F5F5",
+  },
+  devButtonOff: {
+    backgroundColor: "#1A1A1A",
+    borderColor: "#1A1A1A",
+  },
+  devButtonText: {
+    ...uiThemeFontStyle,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1A1A1A",
+  },
+  devButtonTextLight: {
+    color: "#FFFFFF",
+  },
+});
 
 export const backgroundPhotoSheetStyles = StyleSheet.create({
   root: {
@@ -430,7 +566,7 @@ export const colorPickerStyles = StyleSheet.create({
   },
 });
 
-const SLIDER_WIDTH = SCREEN_WIDTH - 100; // ?щ씪?대뜑??珥??덈퉬 (踰꾪듉 怨듦컙 ?쒖쇅)
+const SLIDER_WIDTH = SCREEN_WIDTH - 100; // 슬라이더의 총 너비 (버튼 공간 제외)
 export const sliderComponentStyles = StyleSheet.create({
   sliderContainer: {
     height: 40,
