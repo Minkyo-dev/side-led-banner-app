@@ -1,7 +1,7 @@
-import { uiThemeFontStyle } from "@/constants/appFonts";
+﻿import { uiThemeFontStyle } from "@/constants/appFonts";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
-/** 미리보기 하단 `TextInput`·측정용 `Text`와 동일 */
+/** 誘몃━蹂닿린 ?섎떒 `TextInput`쨌痢≪젙??`Text`? ?숈씪 */
 export const CONTENTS_INPUT_FONT_SIZE = 24;
 export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
   CONTENTS_INPUT_FONT_SIZE * 1.00,
@@ -159,8 +159,7 @@ export const styles = StyleSheet.create({
 
   // ===
   dropdownContainer: {
-    // 드롭다운 컨테이너 스타일
-    width: "55%",
+    // ?쒕∼?ㅼ슫 而⑦뀒?대꼫 ?ㅽ???    width: "55%",
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 24,
@@ -171,8 +170,7 @@ export const styles = StyleSheet.create({
   dropdownPlaceholderStyle: { ...uiThemeFontStyle },
   dropdownSelectedTextStyle: {
     ...uiThemeFontStyle,
-    // 선택된 텍스트 스타일
-    fontSize: 17,
+    // ?좏깮???띿뒪???ㅽ???    fontSize: 17,
   },
   dropdownIconStyle: {
     width: 30,
@@ -180,16 +178,14 @@ export const styles = StyleSheet.create({
 
   // ===
   dropdownItemContainerStyle: {
-    // 아이템 컨테이너 스타일
-    borderRadius: 0,
+    // ?꾩씠??而⑦뀒?대꼫 ?ㅽ???    borderRadius: 0,
   },
   dropdownItemContent: {
     width: "100%",
   },
   dropdownItemTextStyle: {
     ...uiThemeFontStyle,
-    // 아이템 텍스트 스타일
-    fontSize: 17,
+    // ?꾩씠???띿뒪???ㅽ???    fontSize: 17,
     flexShrink: 1,
   },
 
@@ -349,6 +345,8 @@ export const rewardAdModalStyles = StyleSheet.create({
   },
 });
 
+
+
 export const backgroundPhotoSheetStyles = StyleSheet.create({
   root: {
     flex: 1,
@@ -432,7 +430,7 @@ export const colorPickerStyles = StyleSheet.create({
   },
 });
 
-const SLIDER_WIDTH = SCREEN_WIDTH - 100; // 슬라이더의 총 너비 (버튼 공간 제외)
+const SLIDER_WIDTH = SCREEN_WIDTH - 100; // ?щ씪?대뜑??珥??덈퉬 (踰꾪듉 怨듦컙 ?쒖쇅)
 export const sliderComponentStyles = StyleSheet.create({
   sliderContainer: {
     height: 40,

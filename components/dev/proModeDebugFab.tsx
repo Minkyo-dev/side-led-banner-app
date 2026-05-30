@@ -7,18 +7,19 @@ type Props = {
   onOpen: () => void;
 };
 
-export function RewardAdDebugFab({ onOpen }: Props) {
+export function ProModeDebugFab({ onOpen }: Props) {
   if (!__DEV__) {
     return null;
   }
+
   return (
     <Pressable
       style={styles.fab}
       onPress={onOpen}
-      accessibilityLabel="리워드 광고 팝업 (디버그용)"
+      accessibilityLabel="Pro mode status (debug)"
     >
       <Text style={styles.fabText} allowFontScaling={false}>
-        Ads
+        Pro
       </Text>
     </Pressable>
   );
@@ -28,7 +29,7 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 10,
-    bottom: DEBUG_FAB_BOTTOM.ads,
+    bottom: DEBUG_FAB_BOTTOM.pro,
     zIndex: 9999,
     paddingHorizontal: 10,
     paddingVertical: 8,

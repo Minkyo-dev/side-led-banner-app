@@ -3,10 +3,13 @@ import {
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
+import AdmobBannerAd from "@/components/adMobs";
+import { ProModeDebugFab } from "@/components/dev/proModeDebugFab";
 import { RewardAdDebugFab } from "@/components/dev/rewardAdDebugFab";
 import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
 import PreviewPanel from "@/components/previewPanel";
+import { ProModeStatusModal } from "@/components/proModeStatusModal";
 import { RewardAdModal } from "@/components/rewardAdModal";
 import { BackgroundSection } from "@/components/settings/backgroundSection";
 import { EffectSection } from "@/components/settings/effectSection";
@@ -18,7 +21,8 @@ import * as NavigationBar from "expo-navigation-bar";
 import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useEffect, useState } from "react";
+import { useRewardedAdShow } from "@/hooks/useRewardedAdShow";
+import React, { useCallback, useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -26,15 +30,31 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { config, ui, updateConfig, updateUI, textSectionLabel } = useSettings();
+  const {
+    config,
+    ui,
+    updateConfig,
+    updateUI,
+    textSectionLabel,
+    activateProFromReward,
+  } = useSettings();
   const { playOption } = config.content;
   const { isPlaying, activeTab } = ui;
   const [rewardAdVisible, setRewardAdVisible] = useState(false);
+  const [proStatusVisible, setProStatusVisible] = useState(false);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
     void NavigationBar.setVisibilityAsync("hidden");
   }, []);
+
+  const handleRewardEarned = useCallback(() => {
+    activateProFromReward();
+  }, [activateProFromReward]);
+
+  const { showRewardedAd } = useRewardedAdShow({
+    onEarnedReward: handleRewardEarned,
+  });
 
   const handlePlay = async () => {
     await ScreenOrientation.unlockAsync();
@@ -127,15 +147,15 @@ export default function Index() {
         {activeTab === "BACKGROUND" && <BackgroundSection />}
         {activeTab === "EFFECT" && <EffectSection />}
       </View>
-      <View style={{ height: 50 }}>
-        {/* Banner Ad placeholder */}
-      </View>
+      <AdmobBannerAd />
       <RewardAdModal
         visible={rewardAdVisible}
         onClose={() => setRewardAdVisible(false)}
-        onWatchAd={() => {
-          // TODO: show rewarded ad, then unlock Pro for 6 hours
-        }}
+        onWatchAd={showRewardedAd}
+      />
+      <ProModeStatusModal
+        visible={proStatusVisible}
+        onClose={() => setProStatusVisible(false)}
       />
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen
@@ -144,6 +164,7 @@ export default function Index() {
         config={config}
       />
       <RewardAdDebugFab onOpen={() => setRewardAdVisible(true)} />
+      <ProModeDebugFab onOpen={() => setProStatusVisible(true)} />
       <SheetFetchDebugPanel />
     </View>
   );

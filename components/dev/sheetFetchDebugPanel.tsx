@@ -1,3 +1,4 @@
+import { DEBUG_FAB_BOTTOM } from "@/constants/debugFabLayout";
 import { uiThemeFontStyle } from "@/constants/appFonts";
 import { useSettings } from "@/contexts/settingsContext";
 import React, { useEffect, useMemo, useState } from "react";
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 10,
-    bottom: 120,
+    bottom: DEBUG_FAB_BOTTOM.csv,
     zIndex: 9999,
     paddingHorizontal: 10,
     paddingVertical: 8,

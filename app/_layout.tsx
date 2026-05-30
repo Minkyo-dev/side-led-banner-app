@@ -1,4 +1,5 @@
 import { APP_FONT_ASSETS, APP_THEME_FONT_ASSETS } from "@/constants/appFonts";
+import { FullscreenSystemChrome } from "@/components/FullscreenSystemChrome";
 import { SettingsProvider } from "@/contexts/settingsContext";
 import {
   DarkTheme,
@@ -8,8 +9,8 @@ import {
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
+import mobileAds from "react-native-google-mobile-ads";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -22,6 +23,10 @@ export default function RootLayout() {
     ...APP_FONT_ASSETS,
     ...APP_THEME_FONT_ASSETS,
   });
+
+  useEffect(() => {
+    void mobileAds().initialize();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -46,7 +51,7 @@ export default function RootLayout() {
             />
           </Stack>
         ) : null}
-        <StatusBar style="auto" />
+        <FullscreenSystemChrome />
       </SettingsProvider>
     </ThemeProvider>
   );

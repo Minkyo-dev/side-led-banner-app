@@ -1,4 +1,4 @@
-import {
+﻿import {
   getDefaultAppearanceFontForLocale,
   getFontItemsForLocale,
 } from "@/constants/appFonts";
@@ -7,6 +7,7 @@ import {
   type AppLanguagePreference,
   type AppLocaleKey,
 } from "@/constants/language";
+import { PRO_REWARD_DURATION_MS } from "@/constants/proMode";
 import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import {
   type GoogleSheetLocaleRow,
@@ -23,6 +24,11 @@ import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { tRewardAdLabel } from "@/language/rewardAdLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
+import {
+  isProActive,
+  readProExpiresAt,
+  writeProExpiresAt,
+} from "@/utils/proModeStorage";
 import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
@@ -42,7 +48,7 @@ import React, {
   useState,
 } from "react";
 
-/** 시트 B~F 셀 내용이 바뀌면 같이 바뀌는 정수*/
+/** ?쒗듃 B~F ? ?댁슜??諛붾뚮㈃ 媛숈씠 諛붾뚮뒗 ?뺤닔*/
 function sheetRowsLayoutRevision(rows: GoogleSheetLocaleRow[]): number {
   let h = 0;
   for (const r of rows) {
@@ -58,26 +64,23 @@ function sheetRowsLayoutRevision(rows: GoogleSheetLocaleRow[]): number {
 }
 
 /**
- * SettingsContext 사용 매뉴얼
- * 값 가져오기 (Getter)
+ * SettingsContext ?ъ슜 留ㅻ돱?? * 媛?媛?몄삤湲?(Getter)
  * const { config, ui } = useSettings();
- * const { fontSize, font } = config.appearance; // 특정 그룹에서 추출
- * const { isPlaying } = ui; // UI 상태 추출
- * [Context 업데이트 함수 사용법 가이드]
+ * const { fontSize, font } = config.appearance; // ?뱀젙 洹몃９?먯꽌 異붿텧
+ * const { isPlaying } = ui; // UI ?곹깭 異붿텧
+ * [Context ?낅뜲?댄듃 ?⑥닔 ?ъ슜踰?媛?대뱶]
  *
- * 값 수정하기 (Setter)
- * * 1. 직접 업데이트 (Direct Update)
- * - 특정 그룹의 여러 값을 동시에 변경할 때
- * 예) updateConfig("appearance", { fontSize: 30, textSelectedColor: "#FF0000" })
- * 예) updateUI({ activeTab: "BACKGROUND", isPlaying: true })
+ * 媛??섏젙?섍린 (Setter)
+ * * 1. 吏곸젒 ?낅뜲?댄듃 (Direct Update)
+ * - ?뱀젙 洹몃９???щ윭 媛믪쓣 ?숈떆??蹂寃쏀븷 ?? * ?? updateConfig("appearance", { fontSize: 30, textSelectedColor: "#FF0000" })
+ * ?? updateUI({ activeTab: "BACKGROUND", isPlaying: true })
  *
- * * 2. 개별 세터 함수 정의 (Setter Pattern)
- * - 기존 useState의 set함수처럼 특정 필드 업데이트를 위한 함수를 미리 정의해두고 사용할 때
- * const setFontSize = (value: number) => updateConfig("appearance", { fontSize: value });
+ * * 2. 媛쒕퀎 ?명꽣 ?⑥닔 ?뺤쓽 (Setter Pattern)
+ * - 湲곗〈 useState??set?⑥닔泥섎읆 ?뱀젙 ?꾨뱶 ?낅뜲?댄듃瑜??꾪븳 ?⑥닔瑜?誘몃━ ?뺤쓽?대몢怨??ъ슜???? * const setFontSize = (value: number) => updateConfig("appearance", { fontSize: value });
  * // <Slider onChange={setFontSize} />
  *
  */
-//Banner content, appearance, background, motion 설정을 담는 context
+//Banner content, appearance, background, motion ?ㅼ젙???대뒗 context
 export interface BannerConfig {
   content: {
     previewText: string;
@@ -94,7 +97,7 @@ export interface BannerConfig {
     outLine: number;
     dropShadow: number;
     effectSelectedItems: string[];
-    /** 효과 슬라이더 백업용 */
+    /** ?④낵 ?щ씪?대뜑 諛깆뾽??*/
     effectParamValues: Partial<Record<string, number>>;
     blurIntensity: number;
     glowIntensity: number;
@@ -102,9 +105,9 @@ export interface BannerConfig {
     blinkSpeed: number;
     pixelColorMix: boolean;
     fontWeight: "normal" | "bold";
-    /** Effect에서 Gradient 켰을 때 배경 물결 등 (wave만 구현) */
+    /** Effect?먯꽌 Gradient 耳곗쓣 ??諛곌꼍 臾쇨껐 ??(wave留?援ы쁽) */
     gradientBackgroundPreset: string;
-    /** 배경 가장자리 이미지 이펙트 프리셋 */
+    /** 諛곌꼍 媛?μ옄由??대?吏 ?댄럺???꾨━??*/
     backgroundEffectPreset:
       | "none"
       | "effect1"
@@ -113,7 +116,7 @@ export interface BannerConfig {
   };
   background: {
     backgroundColor: string;
-    /** 사진 배경 uri · 없으면 단색만 */
+    /** ?ъ쭊 諛곌꼍 uri 쨌 ?놁쑝硫??⑥깋留?*/
     backgroundImageUri: string | null;
     backgroundBlur: number;
   };
@@ -122,7 +125,7 @@ export interface BannerConfig {
   };
 }
 
-/** 프리셋에 저장할 목록록(playOption 제외) */
+/** ?꾨━?뗭뿉 ??ν븷 紐⑸줉濡?playOption ?쒖쇅) */
 export type PresetSnapshot = {
   content: Omit<BannerConfig["content"], "playOption">;
   appearance: BannerConfig["appearance"];
@@ -144,7 +147,7 @@ export function normalizePreviewTextMaxLines(text: string): string | null {
   return null;
 }
 
-/** appearance만 deep copy용 (배열·맵 참조 끊기) */
+/** appearance留?deep copy??(諛곗뿴쨌留?李몄“ ?딄린) */
 function dupAppearance(
   appearance: BannerConfig["appearance"],
 ): BannerConfig["appearance"] {
@@ -222,7 +225,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
   },
 };
 
-/** 저장된 JSON과 기본값을 합쳐 필드 추가·누락에도 안전하게 복원 */
+/** ??λ맂 JSON怨?湲곕낯媛믪쓣 ?⑹퀜 ?꾨뱶 異붽?쨌?꾨씫?먮룄 ?덉쟾?섍쾶 蹂듭썝 */
 function normalizePresetSlot(raw: unknown): PresetSnapshot {
   const base = DEFAULT_BANNER_CONFIG;
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -291,18 +294,18 @@ export type TabType = "TEXT" | "BACKGROUND" | "EFFECT";
 export interface UIState {
   isPlaying: boolean;
   activeTab: TabType;
-  /** 선택된 프리셋 버튼 (0~4) */
+  /** ?좏깮???꾨━??踰꾪듉 (0~4) */
   activePreset: number;
   /**
-   * 설정 화면에서 언어 전환 UI를 붙일 때 `updateUI({ appLanguage: "ko" })` 등으로 갱신해주세요.
+   * ?ㅼ젙 ?붾㈃?먯꽌 ?몄뼱 ?꾪솚 UI瑜?遺숈씪 ??`updateUI({ appLanguage: "ko" })` ?깆쑝濡?媛깆떊?댁＜?몄슂.
    */
   appLanguage: AppLanguagePreference;
 }
-//여기서 제공할 config 및 업데이트 함수 정의
+//?ш린???쒓났??config 諛??낅뜲?댄듃 ?⑥닔 ?뺤쓽
 interface SettingsContextValue {
   config: BannerConfig;
   ui: UIState;
-  /** `appLanguage === "system"`일 때 기기 로케일, 아니면 `appLanguage`와 동일 */
+  /** `appLanguage === "system"`????湲곌린 濡쒖??? ?꾨땲硫?`appLanguage`? ?숈씪 */
   resolvedAppLocale: AppLocaleKey;
   updateConfig: <K extends keyof BannerConfig>(
     group: K,
@@ -312,25 +315,29 @@ interface SettingsContextValue {
   handleTextChange: (text: string) => void;
   fontItems: { label: string; value: string }[];
   effectItems: string[];
-  /** playOption은 유지된 채로 이전 슬롯을 자동 저장합니다*/
+  /** playOption? ?좎???梨꾨줈 ?댁쟾 ?щ’???먮룞 ??ν빀?덈떎*/
   loadPreset: (index: number) => void;
-  /** 파싱 전체(디버그용). */
+  /** ?뚯떛 ?꾩껜(?붾쾭洹몄슜). */
   sheetParseResult: GoogleSheetParseResult | null;
   sheetStringsLoading: boolean;
   sheetStringsError: Error | null;
   refetchSheetStrings: () => Promise<void>;
-  /** 시트 우선, 없으면 코드 fallback */
+  /** ?쒗듃 ?곗꽑, ?놁쑝硫?肄붾뱶 fallback */
   textSectionLabel: (key: TextSectionLabelKey) => string;
   effectSectionLabel: (key: EffectSectionLabelKey) => string;
   effectChipLabel: (effectId: string) => string;
   rewardAdLabel: (key: RewardAdLabelKey) => string;
+  isProMode: boolean;
+  proExpiresAt: number | null;
+  activateProFromReward: () => void;
+  clearProMode: () => void;
   /**
-   * 게시 CSV 행·셀 내용이 바뀔 때마다 바뀜.
+   * 寃뚯떆 CSV ?됀룹? ?댁슜??諛붾??뚮쭏??諛붾?
    */
   sheetStringsRevision: number;
 }
 const SettingsContext = createContext<SettingsContextValue | null>(null);
-//해당 context 값을 제공하는 provider 컴포넌트
+//?대떦 context 媛믪쓣 ?쒓났?섎뒗 provider 而댄룷?뚰듃
 export const useSettings = () => {
   const ctx = useContext(SettingsContext);
   if (!ctx) throw new Error("useSettings must be used within SettingsProvider");
@@ -338,7 +345,7 @@ export const useSettings = () => {
 };
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  /**스프레드 시트 데이터 */
+  /**?ㅽ봽?덈뱶 ?쒗듃 ?곗씠??*/
   const {
     data: sheetData,
     loading: sheetStringsLoading,
@@ -346,10 +353,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     refetch: refetchSheetStrings,
   } = useGoogleSheets();
 
-  /** 기기 로케일 */
+  /** 湲곌린 濡쒖???*/
   const locales = useLocales();
   const primaryLocale = locales[0];
-  /** 기기 로케일을 AppLocaleKey (ko, en, ja, zhTC, zhSC)로 변환 */
+  /** 湲곌린 濡쒖??쇱쓣 AppLocaleKey (ko, en, ja, zhTC, zhSC)濡?蹂??*/
   const deviceAppLocale = useMemo(
     () => deviceLocaleToAppLocale(primaryLocale ?? { languageCode: "en" }),
     [
@@ -368,9 +375,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     ),
   );
 
-  /** AsyncStorage에서 슬롯 복원 완료 전에는 자식을 마운트하지 않음(로드 전 저장·조작 레이스 방지) */
+  /** AsyncStorage?먯꽌 ?щ’ 蹂듭썝 ?꾨즺 ?꾩뿉???먯떇??留덉슫?명븯吏 ?딆쓬(濡쒕뱶 ????Β룹“???덉씠??諛⑹?) */
   const [presetsStorageReady, setPresetsStorageReady] = useState(false);
-  /** state 커밋 전에도 “복원 완료” 여부를 동기적으로 알기 위함(저장 콜백에서 사용) */
+  /** state 而ㅻ컠 ?꾩뿉???쒕났???꾨즺???щ?瑜??숆린?곸쑝濡??뚭린 ?꾪븿(???肄쒕갚?먯꽌 ?ъ슜) */
   const presetsStorageReadyRef = useRef(false);
 
   const [ui, setUI] = useState<UIState>({
@@ -379,6 +386,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     activePreset: 0,
     appLanguage: "system",
   });
+
+  const [proExpiresAt, setProExpiresAt] = useState<number | null>(null);
+  const isProMode = isProActive(proExpiresAt);
 
   const resolvedAppLocale: AppLocaleKey =
     ui.appLanguage === "system" ? deviceAppLocale : ui.appLanguage;
@@ -416,7 +426,28 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     [resolvedAppLocale, sheetRows],
   );
 
-  /** 프리셋 저장/로드 시 최신 state용 */
+  const clearProMode = useCallback(() => {
+    setProExpiresAt(null);
+    void writeProExpiresAt(null);
+  }, []);
+
+  const activateProFromReward = useCallback(() => {
+    const expiresAt = Date.now() + PRO_REWARD_DURATION_MS;
+    setProExpiresAt(expiresAt);
+    void writeProExpiresAt(expiresAt);
+  }, []);
+
+  useEffect(() => {
+    if (!isProActive(proExpiresAt)) return;
+
+    const timeoutId = setTimeout(() => {
+      clearProMode();
+    }, proExpiresAt! - Date.now());
+
+    return () => clearTimeout(timeoutId);
+  }, [proExpiresAt, clearProMode]);
+
+  /** ?꾨━?????濡쒕뱶 ??理쒖떊 state??*/
   const configRef = useRef(config);
   const presetSlotsRef = useRef(presetSlots);
   const activePresetRef = useRef(ui.activePreset);
@@ -455,8 +486,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     );
     (async () => {
       try {
-        const raw = await readPresetSlotsJson();
+        const [raw, storedProExpiresAt] = await Promise.all([
+          readPresetSlotsJson(),
+          readProExpiresAt(),
+        ]);
         if (cancelled) return;
+
+        if (isProActive(storedProExpiresAt)) {
+          setProExpiresAt(storedProExpiresAt);
+        } else if (storedProExpiresAt != null) {
+          void writeProExpiresAt(null);
+        }
+
         let slots = blankSlots;
         if (raw) {
           const parsed = JSON.parse(raw) as unknown;
@@ -503,7 +544,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // config 업데이트 함수
+  // config ?낅뜲?댄듃 ?⑥닔
   const updateConfig = <K extends keyof BannerConfig>(
     group: K,
     updates: Partial<BannerConfig[K]>,
@@ -592,6 +633,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       effectSectionLabel,
       effectChipLabel,
       rewardAdLabel,
+      isProMode,
+      proExpiresAt,
+      activateProFromReward,
+      clearProMode,
       sheetStringsRevision,
     }),
     [
@@ -609,6 +654,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       effectSectionLabel,
       effectChipLabel,
       rewardAdLabel,
+      isProMode,
+      proExpiresAt,
+      activateProFromReward,
+      clearProMode,
       sheetStringsRevision,
     ],
   );
