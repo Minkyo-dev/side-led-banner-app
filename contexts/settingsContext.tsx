@@ -1,4 +1,8 @@
 import {
+  getDefaultAppearanceFontForLocale,
+  getFontItemsForLocale,
+} from "@/constants/appFonts";
+import {
   APP_LOCALE_KEYS,
   type AppLanguagePreference,
   type AppLocaleKey,
@@ -131,6 +135,15 @@ export const PRESET_SLOT_COUNT = 5;
 export const PREVIEW_TEXT_MAX_LINES = 3;
 const PRESET_AUTOSAVE_DEBOUNCE_MS = 500;
 
+export function normalizePreviewTextMaxLines(text: string): string | null {
+  const normalized = text.replace(/\r\n?/g, "\n");
+  const lines = normalized.split("\n");
+  if (lines.length <= PREVIEW_TEXT_MAX_LINES) {
+    return normalized;
+  }
+  return null;
+}
+
 /** appearance만 deep copy용 (배열·맵 참조 끊기) */
 function dupAppearance(
   appearance: BannerConfig["appearance"],
@@ -177,7 +190,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     blurColor: "",
   },
   appearance: {
-    font: "nanum_gothic",
+    font: "black_han_sans",
     fontSize: 50,
     lineSpacing: 10,
     letterSpacing: 10,
@@ -506,17 +519,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleTextChange = (text: string) => {
-    const normalized = text.replace(/\r\n?/g, "\n");
-    const lines = normalized.split("\n");
-    if (lines.length <= PREVIEW_TEXT_MAX_LINES) {
-      updateConfig("content", { previewText: normalized });
-      return;
-    }
-    const merged =
-      lines.slice(0, PREVIEW_TEXT_MAX_LINES - 1).join("\n") +
-      "\n" +
-      lines.slice(PREVIEW_TEXT_MAX_LINES - 1).join("\n");
-    updateConfig("content", { previewText: merged });
+    const next = normalizePreviewTextMaxLines(text);
+    if (next == null) return;
+    updateConfig("content", { previewText: next });
   };
 
   const loadPreset = useCallback((slot: number) => {
@@ -543,16 +548,25 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setUI((u) => ({ ...u, activePreset: slot }));
   }, []);
 
+  useEffect(() => {
+    const localeFonts = getFontItemsForLocale(resolvedAppLocale);
+    if (localeFonts.some((item) => item.value === config.appearance.font)) {
+      return;
+    }
+
+    setConfig((prev) => ({
+      ...prev,
+      appearance: {
+        ...prev.appearance,
+        font: getDefaultAppearanceFontForLocale(resolvedAppLocale),
+      },
+    }));
+  }, [config.appearance.font, resolvedAppLocale]);
+
   // font select state
   const fontItems = useMemo(
-    () => [
-      { label: "Nanum Gothic", value: "nanum_gothic" },
-      { label: "Noto Sans KR", value: "noto_sans_kr" },
-      { label: "Roboto", value: "roboto" },
-      { label: "Montserrat", value: "montserrat" },
-      { label: "Open Sans", value: "open_sans" },
-    ],
-    [],
+    () => getFontItemsForLocale(resolvedAppLocale),
+    [resolvedAppLocale],
   );
   // effect items list
   const effectItems = useMemo(

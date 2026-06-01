@@ -1,5 +1,7 @@
 import { appFontFamilyForText } from "@/constants/appFonts";
-import { CONTENTS_INPUT_FONT_SIZE } from "@/constants/styles";
+import {
+  CONTENTS_INPUT_FONT_SIZE,
+} from "@/constants/styles";
 import { PRESET_SLOT_COUNT } from "@/contexts/settingsContext";
 import type { ComponentProps } from "react";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";

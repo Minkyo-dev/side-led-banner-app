@@ -3,17 +3,17 @@ import { ColorPicker } from "@/components/colorPicker";
 import { btnStyles } from "@/constants/btnStyles";
 import { textColorPalette } from "@/constants/colorPalette";
 import { styles } from "@/constants/styles";
+import { normalizeOneLineJoinMode } from "@/utils/viewMode";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { normalizeOneLineJoinMode } from "@/utils/viewMode";
 import { useSettings } from "../../contexts/settingsContext";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
@@ -46,9 +46,24 @@ export const TextSection = () => {
     if (!maxFontLabelWidth) return undefined;
     const ICON_WIDTH = 30; // dropdownIconStyle.width
     const HORIZONTAL_PADDING = 10 * 2; // dropdownContainer.paddingHorizontal
-    const BUFFER = 8;
+    const BUFFER = 24; 
     return Math.ceil(maxFontLabelWidth) + ICON_WIDTH + HORIZONTAL_PADDING + BUFFER;
   }, [maxFontLabelWidth]);
+  const renderFontItem = useCallback(
+    (item: { label: string; value: string }) => (
+      <View style={styles.dropdownItemContent}>
+        <Text
+          allowFontScaling={false}
+          numberOfLines={1}
+          ellipsizeMode="clip"
+          style={styles.dropdownItemTextStyle}
+        >
+          {item.label}
+        </Text>
+      </View>
+    ),
+    [],
+  );
 
   const {
     config,
@@ -141,6 +156,7 @@ export const TextSection = () => {
           selectedTextProps={{ allowFontScaling: false, numberOfLines: 1 }}
           itemContainerStyle={styles.dropdownItemContainerStyle}
           itemTextStyle={styles.dropdownItemTextStyle}
+          renderItem={renderFontItem}
           iconStyle={styles.dropdownIconStyle}
           placeholderStyle={styles.dropdownPlaceholderStyle}
         />
