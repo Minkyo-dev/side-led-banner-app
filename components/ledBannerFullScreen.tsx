@@ -101,6 +101,8 @@ export const LedBannerFullScreen = ({
     windowWidth,
     windowHeight,
     isPortrait,
+    appearanceFont: font,
+    fontWeight,
   });
 
   const effects = useEffects({
