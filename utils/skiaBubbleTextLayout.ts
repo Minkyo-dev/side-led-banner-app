@@ -47,7 +47,6 @@ export function resolveBubbleCanvasOpts(params: {
   return Object.keys(opts).length > 0 ? opts : {};
 }
 
-/** Pixel edgeInset 반영 — 폰트 상한을 bubbleGlyphs innerH와 맞춤 */
 export function speechMaxHeightForMetrics(
   maxTextHeight: number,
   canvasOpts: BubbleCanvasOpts | null,

@@ -4,7 +4,6 @@ import {
   skiaTextBlockHeightPx,
 } from "@/utils/skiaTextBlockMetrics";
 
-/** 폰트 메트릭 오차·효과 여유 */
 export const SKIA_BLOCK_HEIGHT_SAFETY_PX = 2;
 
 export type SkiaFontProbe = {
@@ -193,7 +192,6 @@ function resolveMaxFontSizeForBox(params: {
   return Math.min(ratioMax, skiaMax);
 }
 
-/** 슬라이더 100 = `maxFontSizeForBox`(박스 상한), 20 = 상한의 20% */
 export function fontSizeFromSliderPercent(params: {
   maxFontSizeForBox: number;
   sizePct: number;

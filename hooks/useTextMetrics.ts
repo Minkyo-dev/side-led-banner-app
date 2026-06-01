@@ -117,7 +117,6 @@ function resolveTextMetrics(
 
 const SKIA_PROBE_FONT_SIZE = FONT_SIZE_MAX;
 
-/** preview / fullscreen 공통: cap → (preview 일반 배경만) 박스 보정 */
 export function useTextMetrics(input: TextMetricsInput) {
   const probeFont = useSkiaAppearanceFont(
     input.appearanceFont,
