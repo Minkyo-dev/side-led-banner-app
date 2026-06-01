@@ -1,12 +1,12 @@
 import React from "react";
 import { Platform, View } from "react-native";
 import {
-    BannerAd,
-    BannerAdSize,
-    TestIds,
+  BannerAd,
+  BannerAdSize,
+  TestIds,
 } from "react-native-google-mobile-ads";
 
-// Define your ad unit IDs
+// 실제 광고 단위 ID (개발 단계에서는 테스트 광고 단위 ID로 대체)
 const BANNER_AD_UNIT_ID = Platform.select({
   ios: "ca-app-pub-3506417530430977/4875843768",
   android: "ca-app-pub-3506417530430977/9971880471",
