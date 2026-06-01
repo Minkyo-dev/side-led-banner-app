@@ -3,6 +3,7 @@ import {
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
+import BannerAdComponent from "@/components/admob/bannerAd";
 import { RewardAdDebugFab } from "@/components/dev/rewardAdDebugFab";
 import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
@@ -14,8 +15,8 @@ import { TextSection } from "@/components/settings/textSection";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
-import * as NavigationBar from "expo-navigation-bar";
 import { Image } from "expo-image";
+import * as NavigationBar from "expo-navigation-bar";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import React, { useEffect, useState } from "react";
@@ -26,7 +27,8 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { config, ui, updateConfig, updateUI, textSectionLabel } = useSettings();
+  const { config, ui, updateConfig, updateUI, textSectionLabel } =
+    useSettings();
   const { playOption } = config.content;
   const { isPlaying, activeTab } = ui;
   const [rewardAdVisible, setRewardAdVisible] = useState(false);
@@ -98,10 +100,7 @@ export default function Index() {
             { id: "EFFECT" as const, labelKey: "tabEffects" as const },
           ] satisfies readonly {
             id: TabType;
-            labelKey:
-              | "tabText"
-              | "tabBackground"
-              | "tabEffects";
+            labelKey: "tabText" | "tabBackground" | "tabEffects";
           }[]
         ).map(({ id, labelKey }) => (
           <TouchableOpacity
@@ -110,10 +109,7 @@ export default function Index() {
             onPress={() => handleTabPress(id)}
           >
             <Text
-              style={[
-                styles.tabText,
-                activeTab === id && styles.activeTabText,
-              ]}
+              style={[styles.tabText, activeTab === id && styles.activeTabText]}
               allowFontScaling={false}
             >
               {textSectionLabel(labelKey)}
@@ -127,9 +123,8 @@ export default function Index() {
         {activeTab === "BACKGROUND" && <BackgroundSection />}
         {activeTab === "EFFECT" && <EffectSection />}
       </View>
-      <View style={{ height: 50 }}>
-        {/* Banner Ad placeholder */}
-      </View>
+      <View>{/* Banner Ad placeholder */}</View>
+      <BannerAdComponent style={{ height: 50 }} />
       <RewardAdModal
         visible={rewardAdVisible}
         onClose={() => setRewardAdVisible(false)}
