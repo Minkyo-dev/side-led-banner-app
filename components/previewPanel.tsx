@@ -11,26 +11,26 @@ import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useEffects } from "@/hooks/useEffects";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
-import { useTextInput } from "@/hooks/useTextInput";
 import {
-    resolveSpeechCanvasFallback,
-    useSpeechBubble,
+  resolveSpeechCanvasFallback,
+  useSpeechBubble,
 } from "@/hooks/useSpeechBubble";
+import { useTextInput } from "@/hooks/useTextInput";
 import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { getSizingPolicy } from "@/utils/textSizing";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useMemo, useState } from "react";
 import {
-    Keyboard,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  Keyboard,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
 import { buildCanvas } from "./animation/buildCanvas";
@@ -45,13 +45,8 @@ export default function PreviewPanel() {
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
 
-  const {
-    config,
-    handleTextChange,
-    updateConfig,
-    ui,
-    loadPreset,
-  } = useSettings();
+  const { config, handleTextChange, updateConfig, ui, loadPreset } =
+    useSettings();
   const { activePreset } = ui;
 
   const { previewText, playOption, oneLineJoinMode } = config.content;
@@ -381,7 +376,7 @@ export default function PreviewPanel() {
             editable
             allowFontScaling={false}
             multiline={playOption === "multi"}
-            scrollEnabled={false}
+            scrollEnabled={true}
             style={[
               styles.contentsInput,
               {

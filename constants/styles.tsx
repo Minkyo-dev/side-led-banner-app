@@ -4,7 +4,7 @@ import { Dimensions, Platform, StyleSheet } from "react-native";
 /** 미리보기 하단 `TextInput`·측정용 `Text`와 동일 */
 export const CONTENTS_INPUT_FONT_SIZE = 24;
 export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
-  CONTENTS_INPUT_FONT_SIZE * 1.00,
+  CONTENTS_INPUT_FONT_SIZE * 1.2,
 );
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -51,7 +51,7 @@ export const styles = StyleSheet.create({
     alignItems: "stretch",
     paddingHorizontal: 5,
     marginTop: 2,
-    marginBottom: 11,
+    marginBottom: 5,
   },
   contentsInput: {
     fontSize: CONTENTS_INPUT_FONT_SIZE,
