@@ -9,8 +9,8 @@ function normalizeWeight(w: string | number): "normal" | "bold" {
 }
 
 /**
- * `appearance.font`(textSection)에 맞는 regular·bold TTF 쌍을 동시에 로드하고,
- * `fontWeight`에 해당하는 `SkFont`만 반환합니다.
+ * `appearance.font`(textSection)에 맞는 SkFont.
+ * 단일 웨이트 폰트는 에셋을 한 번만 로드합니다.
  */
 export function useSkiaAppearanceFont(
   appearanceFont: string,
@@ -22,8 +22,10 @@ export function useSkiaAppearanceFont(
     [appearanceFont],
   );
 
-  const regularFont = useFont(regularSrc, size);
-  const boldFont = useFont(boldSrc, size);
+  const src =
+    normalizeWeight(fontWeight) === "bold" && boldSrc !== regularSrc
+      ? boldSrc
+      : regularSrc;
 
-  return normalizeWeight(fontWeight) === "bold" ? boldFont : regularFont;
+  return useFont(src, size);
 }

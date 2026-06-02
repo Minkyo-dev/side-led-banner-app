@@ -1,14 +1,15 @@
+import { DOT_MATRIX_TEXT_SOURCE } from "@/components/animation/dotMatrixTextShader";
 import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
 import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import { useTilePicture } from "@/hooks/useTilePicture";
 import {
-  Canvas,
-  Group,
-  Paint,
-  Rect,
-  RuntimeShader,
-  Skia,
+    Canvas,
+    Group,
+    Paint,
+    Rect,
+    RuntimeShader,
+    Skia,
 } from "@shopify/react-native-skia";
 import React, { useMemo } from "react";
 import type { SharedValue } from "react-native-reanimated";
@@ -16,8 +17,21 @@ import type { SharedValue } from "react-native-reanimated";
 export interface MarqueeCanvasProps {
   canvas: ReturnType<typeof usePreviewPanelCanvas>;
   isPixelEffect: boolean;
+  /** false면 Pixel이어도 글자는 도트 셰이더 없이 벡터 */
+  isPixelTextDots: boolean;
   isPixelColorMix: boolean;
   pixelShaderSize: number;
+  pixelTextShaderUniforms: {
+    textThreshold: number;
+    panelAlphaThreshold: number;
+    dotRadiusScale: number;
+    sampleReachScale: number;
+    sampleReachYScale: number;
+    dotMaskAaScale: number;
+  };
+  pixelMaskDilateRadius: number;
+  pixelMaskErodeRadius: number;
+  pixelGlyphPadCells: number;
   showGradientBackdrop: boolean;
   gradientBackgroundPreset: string;
   hasBgPhoto: boolean;
@@ -33,65 +47,6 @@ export interface MarqueeCanvasProps {
   backgroundColor: string;
 }
 
-// LED: 셀당 1도트
-const DOT_MATRIX_SOURCE = Skia.RuntimeEffect.Make(`
-  uniform shader content;
-  uniform float dotSize;
-  uniform float dotRadius;
-  uniform float textThreshold;
-  uniform float panelAlphaThreshold;
-  uniform float offLedR;
-  uniform float offLedG;
-  uniform float offLedB;
-  uniform float offLedAlpha;
-
-  half3 unpremultiply(half4 c) {
-    return c.a > 0.001 ? c.rgb / c.a : half3(0.0);
-  }
-
-  float ledDotMask(vec2 pos, vec2 cellCenter) {
-    float d = distance(pos, cellCenter);
-    float aa = dotRadius * 0.12;
-    return 1.0 - smoothstep(dotRadius - aa, dotRadius + 0.001, d);
-  }
-
-  half4 main(vec2 pos) {
-    vec2 cellOrigin = floor(pos / dotSize) * dotSize;
-    vec2 cellCenter = cellOrigin + dotSize * 0.5;
-    float mask = ledDotMask(pos, cellCenter);
-    if (mask <= 0.0) {
-      return half4(0.0);
-    }
-
-    half4 sampled = content.eval(cellCenter);
-    if (sampled.a < panelAlphaThreshold) {
-      return half4(0.0);
-    }
-
-    bool on = sampled.a >= textThreshold;
-
-    if (on) {
-      half3 rgb = unpremultiply(sampled);
-      return half4(rgb * mask, mask);
-    }
-
-    return half4(offLedR, offLedG, offLedB, offLedAlpha * mask);
-  }
-`)!;
-
-function resolveOffLedUniforms(backgroundColor: string) {
-  const raw = backgroundColor.replace("#", "").trim().toLowerCase();
-  const hex = raw.length === 6 ? raw : "000000";
-  const r = Number.parseInt(hex.slice(0, 2), 16) / 255;
-  const g = Number.parseInt(hex.slice(2, 4), 16) / 255;
-  const b = Number.parseInt(hex.slice(4, 6), 16) / 255;
-  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-  if (lum < 0.45) {
-    return { offLedR: 0.2, offLedG: 0.2, offLedB: 0.22, offLedAlpha: 0.92 };
-  }
-  return { offLedR: 0.72, offLedG: 0.72, offLedB: 0.76, offLedAlpha: 0.88 };
-}
-
 // dotted 글자 실루엣 바깥 한 격자(이상)에 흰 도트 — content는 textOnly fill 마스크
 const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
   uniform shader content;
@@ -99,13 +54,20 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
   uniform float dotRadius;
   uniform float textThreshold;
   uniform float outlineRings;
+  uniform float dotMaskAaScale;
 
   float coverageAt(half4 s) {
     return s.a;
   }
 
   float bodyCoverage(vec2 p) {
-    return coverageAt(content.eval(p));
+    vec2 cellOrigin = floor(p / dotSize) * dotSize;
+    float m = coverageAt(content.eval(p));
+    m = max(m, coverageAt(content.eval(cellOrigin + vec2(dotSize * 0.2, dotSize * 0.5))));
+    m = max(m, coverageAt(content.eval(cellOrigin + vec2(dotSize * 0.8, dotSize * 0.5))));
+    m = max(m, coverageAt(content.eval(cellOrigin + vec2(dotSize * 0.5, dotSize * 0.2))));
+    m = max(m, coverageAt(content.eval(cellOrigin + vec2(dotSize * 0.5, dotSize * 0.8))));
+    return m;
   }
 
   float maxBodyAtRing(vec2 cellCenter, float ringIndex) {
@@ -145,8 +107,9 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
     }
 
     float d = distance(pos, cellCenter);
-    float aa = dotRadius * 0.12;
-    float mask = 1.0 - smoothstep(dotRadius - aa, dotRadius + 0.001, d);
+    float aa = max(dotRadius * dotMaskAaScale, 0.001);
+    float coverage = 1.0 - smoothstep(dotRadius - aa, dotRadius + 0.001, d);
+    float mask = step(0.5, coverage);
     return half4(1.0, 1.0, 1.0, mask);
   }
 `)!;
@@ -154,8 +117,13 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
 export function MarqueeCanvas({
   canvas,
   isPixelEffect,
+  isPixelTextDots,
   isPixelColorMix,
   pixelShaderSize,
+  pixelTextShaderUniforms,
+  pixelMaskDilateRadius,
+  pixelMaskErodeRadius,
+  pixelGlyphPadCells,
   showGradientBackdrop,
   gradientBackgroundPreset,
   hasBgPhoto,
@@ -174,7 +142,8 @@ export function MarqueeCanvas({
   const strokeWidthPx = skiaStrokeWidthPx;
   const dropShadowBlur = Math.round((dropShadow / 100) * 5);
   const layout = canvas.skiaCanvasLayout;
-  const splitGlowFromDots = isPixelEffect && isGlowEffect;
+  const splitGlowFromDots = isPixelTextDots && isGlowEffect;
+  const recordTextAsPixel = isPixelTextDots;
   const hasPixelOutlineDots = pixelOutlineRings > 0;
 
   const { stripPaint, glowStripPaint, stripWidth } = useTilePicture({
@@ -186,9 +155,10 @@ export function MarqueeCanvas({
     previewTextColor,
     glowLayerColor,
     isGlowEffect,
-    isPixelEffect,
-    isPixelColorMix,
+    isPixelEffect: recordTextAsPixel,
+    isPixelColorMix: recordTextAsPixel && isPixelColorMix,
     pixelShaderSize,
+    pixelGlyphPadCells,
     glowBlurRadius,
     strokeWidthPx,
     dropShadow,
@@ -196,6 +166,8 @@ export function MarqueeCanvas({
     glyphPositions: canvas.skiaGlyphPositions,
     font: canvas.skiaFont,
     backgroundColor,
+    pixelMaskDilateRadius,
+    pixelMaskErodeRadius,
   });
 
   const canDrawStrip = useMemo(
@@ -222,28 +194,27 @@ export function MarqueeCanvas({
     [hasPixelOutlineDots, stripPaint, stripWidth, layout.height],
   );
 
-  const offLedUniforms = useMemo(
-    () => resolveOffLedUniforms(backgroundColor),
-    [backgroundColor],
-  );
+  const pixelDotRadius = pixelShaderSize * pixelTextShaderUniforms.dotRadiusScale;
 
-  const dotShaderLayer = useMemo(
+  const textDotShaderLayer = useMemo(
     () =>
-      isPixelEffect ? (
+      isPixelTextDots ? (
         <Paint>
           <RuntimeShader
-            source={DOT_MATRIX_SOURCE}
+            source={DOT_MATRIX_TEXT_SOURCE}
             uniforms={{
               dotSize: pixelShaderSize,
-              dotRadius: pixelShaderSize * 0.46,
-              textThreshold: 0.45,
-              panelAlphaThreshold: 0.08,
-              ...offLedUniforms,
+              dotRadius: pixelDotRadius,
+              textThreshold: pixelTextShaderUniforms.textThreshold,
+              panelAlphaThreshold: pixelTextShaderUniforms.panelAlphaThreshold,
+              sampleReachScale: pixelTextShaderUniforms.sampleReachScale,
+              sampleReachYScale: pixelTextShaderUniforms.sampleReachYScale,
+              dotMaskAaScale: pixelTextShaderUniforms.dotMaskAaScale,
             }}
           />
         </Paint>
       ) : undefined,
-    [isPixelEffect, pixelShaderSize, offLedUniforms],
+    [isPixelTextDots, pixelShaderSize, pixelDotRadius, pixelTextShaderUniforms],
   );
 
   const outlineDotShaderLayer = useMemo(
@@ -254,25 +225,31 @@ export function MarqueeCanvas({
             source={OUTLINE_RING_DOT_SOURCE}
             uniforms={{
               dotSize: pixelShaderSize,
-              dotRadius: pixelShaderSize * 0.46,
-              textThreshold: 0.45,
+              dotRadius: pixelDotRadius,
+              textThreshold: pixelTextShaderUniforms.textThreshold,
               outlineRings: pixelOutlineRings,
+              dotMaskAaScale: pixelTextShaderUniforms.dotMaskAaScale,
             }}
           />
         </Paint>
       ) : undefined,
-    [hasPixelOutlineDots, pixelShaderSize, pixelOutlineRings],
+    [
+      hasPixelOutlineDots,
+      pixelShaderSize,
+      pixelDotRadius,
+      pixelOutlineRings,
+      pixelTextShaderUniforms,
+    ],
   );
 
   return (
     <Canvas style={{ flex: 1 }} opaque={false}>
-      {showGradientBackdrop ? (
+      {!isPixelEffect && showGradientBackdrop ? (
         <GradientBackdrop
           key={`gradient-${gradientBackgroundPreset}`}
           preset={gradientBackgroundPreset as GradientBackdropId}
           width={layout.width}
           height={layout.height}
-          opacity={hasBgPhoto ? 0.4 : 1}
         />
       ) : null}
       <Group opacity={blinkOpacity} transform={canvas.skiaMarqueeTransform}>
@@ -285,8 +262,8 @@ export function MarqueeCanvas({
             paint={glowStripPaint!}
           />
         ) : null}
-        {isPixelEffect && canDrawStrip ? (
-          <Group layer={dotShaderLayer}>
+        {isPixelTextDots && canDrawStrip ? (
+          <Group layer={textDotShaderLayer}>
             <Rect
               x={0}
               y={0}
@@ -295,6 +272,15 @@ export function MarqueeCanvas({
               paint={stripPaint!}
             />
           </Group>
+        ) : null}
+        {isPixelEffect && !isPixelTextDots && canDrawStrip ? (
+          <Rect
+            x={0}
+            y={0}
+            width={stripWidth}
+            height={layout.height}
+            paint={stripPaint!}
+          />
         ) : null}
         {canDrawPixelOutlineDots ? (
           <Group layer={outlineDotShaderLayer}>

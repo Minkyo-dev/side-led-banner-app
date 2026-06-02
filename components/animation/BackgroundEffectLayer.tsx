@@ -11,6 +11,7 @@ import React from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import { HeartBackgroundTicker } from "./HeartBackgroundTicker";
+import { resolveEffect1EdgeStyle } from "./resolveBackgroundEffectImage";
 
 type BackgroundEffectLayerMode = "preview" | "fullscreen";
 
@@ -19,12 +20,15 @@ interface BackgroundEffectLayerProps {
   translateX: SharedValue<number>;
   isPortrait: boolean;
   mode: BackgroundEffectLayerMode;
+  /** PixelSkia배경용 */
+  suppressPixelManagedBackgrounds?: boolean;
 }
 
 type EffectProps = BackgroundEffectLayerProps & {
   isTablet: boolean;
   isFullscreen: boolean;
   isFullscreenPortrait: boolean;
+  suppressPixelManagedBackgrounds: boolean;
 };
 
 type EffectRenderer = (props: EffectProps) => React.ReactNode;
@@ -42,24 +46,16 @@ function renderNone() {
 function renderEffect1({
   effect,
   isFullscreenPortrait,
+  suppressPixelManagedBackgrounds,
 }: EffectProps): React.ReactNode {
+  if (suppressPixelManagedBackgrounds) {
+    return null;
+  }
   if (effect.id !== "effect1" || !effect.sources) {
     return null;
   }
 
-  const effect1EdgeStyle = isFullscreenPortrait
-    ? {
-        top: "37.5%" as const,
-        bottom: "37.5%" as const,
-        width: "50%" as const,
-        height: "25%" as const,
-      }
-    : {
-        top: 0 as const,
-        bottom: 0 as const,
-        width: "50%" as const,
-        height: "100%" as const,
-      };
+  const effect1EdgeStyle = resolveEffect1EdgeStyle(isFullscreenPortrait);
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -84,7 +80,11 @@ function renderHeartBackground({
   isFullscreenPortrait,
   isPortrait,
   translateX,
+  suppressPixelManagedBackgrounds,
 }: EffectProps): React.ReactNode {
+  if (suppressPixelManagedBackgrounds) {
+    return null;
+  }
   if (effect.id !== "heartBgA" || !effect.imageSource) {
     return null;
   }
@@ -110,7 +110,11 @@ function renderSpeechBubble({
   effect,
   isPortrait,
   mode,
+  suppressPixelManagedBackgrounds,
 }: EffectProps): React.ReactNode {
+  if (suppressPixelManagedBackgrounds) {
+    return null;
+  }
   if (!isSpeechBubblePreset(effect.id)) {
     return null;
   }
@@ -144,12 +148,13 @@ const effectRenderers: Record<BackgroundEffectId, EffectRenderer> = {
   speechBg2: renderSpeechBubble,
 };
 
-// Preview/Fullscreen 공통 배경 이펙트 레이어 렌더링용 (응원봉의 edgestyle을 참고고)
+/** 배경이펙트레이어용 */
 export function BackgroundEffectLayer({
   effect,
   translateX,
   isPortrait,
   mode,
+  suppressPixelManagedBackgrounds = false,
 }: BackgroundEffectLayerProps) {
   const { width: winW, height: winH } = useWindowDimensions();
   const isTablet = Math.min(winW, winH) >= TABLET_MIN_SHORTEST_SIDE_DP;
@@ -165,5 +170,6 @@ export function BackgroundEffectLayer({
     isTablet,
     isFullscreen,
     isFullscreenPortrait,
+    suppressPixelManagedBackgrounds,
   });
 }

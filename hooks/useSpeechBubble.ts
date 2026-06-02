@@ -5,9 +5,9 @@ import {
   resolveSpeechBoxPx,
   resolveSpeechTextTopOffset,
 } from "@/utils/textSizing";
-import { Platform } from "react-native";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { ViewStyle } from "react-native";
+import { Platform } from "react-native";
 
 type SpeechBubbleId = NonNullable<
   ReturnType<typeof getSizingPolicy>["speechBubbleId"]
@@ -102,6 +102,37 @@ export function useSpeechBubble(input: SpeechBubbleInput) {
     input.viewportHeight,
   ]);
 
+  useEffect(() => {
+    if (!__DEV__ || !isActive || !speechTextBoxConfig || !speechBoxPx) {
+      return;
+    }
+    const orient = input.isPortrait ? "portrait" : "landscape";
+    const pct =
+      input.basisWidthPx > 0
+        ? ((speechBoxPx.widthPx / input.basisWidthPx) * 100).toFixed(1)
+        : "?";
+    console.log("[SpeechBubble layout]", {
+      preset: input.speechBubbleId,
+      platform: Platform.OS,
+      orient,
+      configuredWidth: speechTextBoxConfig.width,
+      basisWidthPx: Math.round(input.basisWidthPx),
+      textBoxWidthPx: Math.round(speechBoxPx.widthPx),
+      textBoxHeightPx: Math.round(speechBoxPx.heightPx),
+      resolvedWidthPct: `${pct}%`,
+      leftInsetPx: Math.round(
+        Math.max(0, (input.basisWidthPx - speechBoxPx.widthPx) / 2),
+      ),
+    });
+  }, [
+    isActive,
+    input.speechBubbleId,
+    input.isPortrait,
+    input.basisWidthPx,
+    speechTextBoxConfig,
+    speechBoxPx,
+  ]);
+
   return {
     isActive,
     speechTextBoxConfig,
@@ -109,6 +140,11 @@ export function useSpeechBubble(input: SpeechBubbleInput) {
     maxTextHeight,
     speechTextTop,
     textContainerStyle,
+    /** preset 문자열 (예: "82%") — 가로/세로 확인용 */
+    configuredTextBoxWidth: speechTextBoxConfig?.width ?? null,
+    layoutOrientation: input.isPortrait
+      ? ("portrait" as const)
+      : ("landscape" as const),
   };
 }
 

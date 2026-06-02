@@ -2,14 +2,14 @@ import { DeleteAllButton } from "@/assets/svg/deleteAllButton";
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import {
-  CONTENTS_INPUT_FONT_SIZE,
-  CONTENTS_INPUT_LINE_HEIGHT,
-  styles,
+    CONTENTS_INPUT_FONT_SIZE,
+    CONTENTS_INPUT_LINE_HEIGHT,
+    styles,
 } from "@/constants/styles";
 import {
-  normalizePreviewTextMaxLines,
-  PREVIEW_TEXT_MAX_LINES,
-  useSettings,
+    normalizePreviewTextMaxLines,
+    PREVIEW_TEXT_MAX_LINES,
+    useSettings,
 } from "@/contexts/settingsContext";
 import { useBackgroundAnimation } from "@/hooks/useBackgroundAnimation";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
@@ -17,13 +17,13 @@ import { useEffects } from "@/hooks/useEffects";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
-  resolveSpeechCanvasFallback,
-  useSpeechBubble,
+    resolveSpeechCanvasFallback,
+    useSpeechBubble,
 } from "@/hooks/useSpeechBubble";
 import { useTextInput } from "@/hooks/useTextInput";
 import { useTextMetrics } from "@/hooks/useTextMetrics";
-import { getSizingPolicy } from "@/utils/textSizing";
 import { resolveBubbleCanvasOpts } from "@/utils/skiaBubbleTextLayout";
+import { getSizingPolicy } from "@/utils/textSizing";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -57,8 +57,14 @@ export default function PreviewPanel() {
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
 
-  const { config, handleTextChange, updateConfig, ui, loadPreset } =
-    useSettings();
+  const {
+    config,
+    handleTextChange,
+    updateConfig,
+    ui,
+    loadPreset,
+    resolvedAppLocale,
+  } = useSettings();
   const { activePreset } = ui;
 
   const { previewText, playOption, oneLineJoinMode } = config.content;
@@ -103,14 +109,6 @@ export default function PreviewPanel() {
     viewportHeight: previewHeight,
   });
 
-  const fullscreenSpeechBubble = useSpeechBubble({
-    speechBubbleId: sizingPolicy.speechBubbleId,
-    effectId: backgroundEdgeEffectAnim.id,
-    isPortrait,
-    basisWidthPx: windowWidth,
-    viewportHeight: windowHeight,
-  });
-
   const { effectiveLineSpacing, previewFontSize, marqueeReferenceFontSize } =
     useTextMetrics({
       mode: "preview",
@@ -126,29 +124,6 @@ export default function PreviewPanel() {
       fontWeight,
     });
 
-  const { previewFontSize: fullscreenFontSize } = useTextMetrics({
-    mode: "fullscreen",
-    text: previewText,
-    fontSize,
-    lineSpacing,
-    playOption,
-    sizingPolicy,
-    isSpeechBgActive: fullscreenSpeechBubble.isActive,
-    speechMaxHeight: fullscreenSpeechBubble.maxTextHeight,
-    windowWidth,
-    windowHeight,
-    isPortrait,
-    appearanceFont: font,
-    fontWeight,
-  });
-
-  const pixelViewportScale = useMemo(() => {
-    if (!effectSelectedItems.includes("Pixel") || fullscreenFontSize <= 0) {
-      return 1;
-    }
-    return Math.min(1, Math.max(0.15, previewFontSize / fullscreenFontSize));
-  }, [effectSelectedItems, previewFontSize, fullscreenFontSize]);
-
   const effects = useEffects({
     effectSelectedItems,
     gradientBackgroundPreset,
@@ -158,7 +133,7 @@ export default function PreviewPanel() {
     dropShadow,
     pixelColorMix,
     playOption,
-    pixelViewportScale,
+    fontSizePx: previewFontSize,
   });
 
   const marqueeViewportWidthPx =
@@ -187,6 +162,7 @@ export default function PreviewPanel() {
     previewFontSize,
     marqueeReferenceFontSize,
     appearanceFont: font,
+    appearanceFontOverride: effects.pixelSkiaFontOverride,
     fontWeight,
     letterSpacing,
     lineSpacingPx: effectiveLineSpacing,
@@ -254,12 +230,12 @@ export default function PreviewPanel() {
   const {
     displayInputText,
     inputHorizontalCanvasWidth,
+    needsHorizontalScroll,
     pendingSelection,
     inputScrollRef,
     handleInputMeasureLayout,
     handleFontLinesProbeLayout,
     handleWrappedHeightMeasureLayout,
-    handleInputContentSizeChange,
     measureOffscreenStyle,
     fontLineProbeText,
     onSelectionChange,
@@ -272,6 +248,7 @@ export default function PreviewPanel() {
     windowWidth,
     font,
     fontWeight,
+    appLocale: resolvedAppLocale,
   });
 
   const setPreviewText = (text: string) =>
@@ -418,7 +395,7 @@ export default function PreviewPanel() {
         id="contentsInputContainer"
         style={[
           styles.contentsInputContainer,
-          { minHeight: inputViewportHeightPx },
+          { height: inputViewportHeightPx },
         ]}
       >
         <Text
@@ -453,8 +430,9 @@ export default function PreviewPanel() {
           ref={inputScrollRef}
           horizontal
           nestedScrollEnabled
+          scrollEnabled={needsHorizontalScroll}
           keyboardShouldPersistTaps="handled"
-          showsHorizontalScrollIndicator
+          showsHorizontalScrollIndicator={needsHorizontalScroll}
           scrollEventThrottle={16}
           onScroll={onInputScroll}
           style={{ flex: 0.9, height: inputViewportHeightPx }}
@@ -487,6 +465,7 @@ export default function PreviewPanel() {
                 fontFamily: appFontFamilyForText(
                   font,
                   fontWeight === "bold" ? "bold" : "normal",
+                  resolvedAppLocale,
                 ),
               },
             ]}
@@ -494,7 +473,6 @@ export default function PreviewPanel() {
             value={displayInputText}
             selection={rejectedEnterSelection ?? pendingSelection}
             onChangeText={onPreviewTextChange}
-            onContentSizeChange={handleInputContentSizeChange}
             onKeyPress={handleInputKeyPress}
             onSelectionChange={(e) => {
               const { start, end } = e.nativeEvent.selection;

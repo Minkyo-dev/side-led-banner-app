@@ -1,0 +1,233 @@
+import {
+  DOT_MATRIX_BACKGROUND_SOURCE,
+  DOT_MATRIX_PHOTO_BACKGROUND_SOURCE,
+  resolveDefaultLedFromBackground,
+} from "@/components/animation/dotMatrixBackgroundShader";
+import { PixelEffect1Background } from "@/components/animation/PixelEffect1Background";
+import { PixelHeartBackground } from "@/components/animation/PixelHeartBackground";
+import { PixelSpeechBubbleFrame } from "@/components/animation/PixelSpeechBubbleFrame";
+import {
+  resolveSpeechBubbleImageSource,
+  type BackgroundEffectImageMode,
+} from "@/components/animation/resolveBackgroundEffectImage";
+import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
+import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
+import { pixelLedDotUniforms } from "@/constants/pixelLed";
+import {
+  isSpeechBubblePreset,
+  SPEECH_BUBBLE_PRESETS,
+} from "@/constants/speechBubblePresets";
+import type { BackgroundEffectAnimationResult } from "@/hooks/useBackgroundAnimation";
+import {
+  Canvas,
+  Group,
+  Image,
+  Paint,
+  Rect,
+  RuntimeShader,
+  useImage,
+} from "@shopify/react-native-skia";
+import React, { useMemo } from "react";
+import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
+import type { SharedValue } from "react-native-reanimated";
+
+const TABLET_MIN_SHORTEST_SIDE_DP = 600;
+
+export type PixelBackgroundCanvasProps = {
+  width: number;
+  height: number;
+  isPixelEffect: boolean;
+  pixelShaderSize: number;
+  showGradientBackdrop: boolean;
+  gradientBackgroundPreset: string;
+  hasBgPhoto: boolean;
+  backgroundColor: string;
+  backgroundImageUri?: string | null;
+  backgroundEffect: BackgroundEffectAnimationResult;
+  translateX: SharedValue<number>;
+  isPortrait: boolean;
+  mode: BackgroundEffectImageMode;
+};
+
+function PixelBackgroundImage({
+  uri,
+  width,
+  height,
+}: {
+  uri: string;
+  width: number;
+  height: number;
+}) {
+  const image = useImage(uri);
+  if (!image) return null;
+  return (
+    <Image image={image} x={0} y={0} width={width} height={height} fit="cover" />
+  );
+}
+
+/** Pixel배경캔버스용 */
+export function PixelBackgroundCanvas({
+  width,
+  height,
+  isPixelEffect,
+  pixelShaderSize,
+  showGradientBackdrop,
+  gradientBackgroundPreset,
+  hasBgPhoto,
+  backgroundColor,
+  backgroundImageUri,
+  backgroundEffect,
+  translateX,
+  isPortrait,
+  mode,
+}: PixelBackgroundCanvasProps) {
+  const { width: winW, height: winH } = useWindowDimensions();
+  const isTablet = Math.min(winW, winH) >= TABLET_MIN_SHORTEST_SIDE_DP;
+  const isFullscreen = mode === "fullscreen";
+  const isFullscreenPortrait = isFullscreen && isPortrait;
+  const effectId = backgroundEffect.id;
+  const isHeartBg = effectId === "heartBgA";
+  const isEffect1 = effectId === "effect1";
+  const isSpeechBg = isSpeechBubblePreset(effectId);
+  const hasPhoto = hasBgPhoto && backgroundImageUri;
+  const isSolidPanelOnly =
+    !isSpeechBg && !isHeartBg && !isEffect1 && !hasPhoto && !showGradientBackdrop;
+
+  const { backgroundShaderLayer, photoBackgroundShaderLayer } =
+    usePixelDotShaderLayers(pixelShaderSize, backgroundColor);
+
+  const speechBubbleSource = useMemo(
+    () =>
+      isSpeechBg ? resolveSpeechBubbleImageSource(effectId, mode, isPortrait) : null,
+    [isSpeechBg, effectId, mode, isPortrait],
+  );
+
+  const speechPreviewInset = useMemo(() => {
+    if (!isSpeechBg || mode !== "preview") return 0;
+    const preset = SPEECH_BUBBLE_PRESETS[effectId];
+    const platformPreset = Platform.OS === "ios" ? preset.ios : preset.android;
+    return (platformPreset.previewHeightBoostPx ?? 0) / 2;
+  }, [isSpeechBg, effectId, mode]);
+
+  if (!isPixelEffect || width <= 0 || height <= 0) {
+    return null;
+  }
+
+  const solidPanel = (
+    <Rect x={0} y={0} width={width} height={height} color={backgroundColor} />
+  );
+
+  const photoLayer = hasPhoto ? (
+    <>
+      {solidPanel}
+      <PixelBackgroundImage
+        uri={backgroundImageUri}
+        width={width}
+        height={height}
+      />
+      {showGradientBackdrop ? (
+        <GradientBackdrop
+          key={`gradient-${gradientBackgroundPreset}`}
+          preset={gradientBackgroundPreset as GradientBackdropId}
+          width={width}
+          height={height}
+          opacity={0.4}
+        />
+      ) : null}
+    </>
+  ) : null;
+
+  const presetUnderlay =
+    isHeartBg || isSpeechBg || isEffect1 ? solidPanel : null;
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Canvas style={{ width, height }} opaque={false}>
+        {isSolidPanelOnly
+          ? solidPanel
+          : hasPhoto
+            ? (
+              <Group layer={photoBackgroundShaderLayer}>{photoLayer}</Group>
+            )
+            : showGradientBackdrop
+              ? (
+                <GradientBackdrop
+                  key={`gradient-${gradientBackgroundPreset}`}
+                  preset={gradientBackgroundPreset as GradientBackdropId}
+                  width={width}
+                  height={height}
+                  opacity={1}
+                />
+              )
+              : presetUnderlay}
+
+        {isEffect1 && backgroundEffect.sources != null ? (
+          <Group layer={backgroundShaderLayer}>
+            <PixelEffect1Background
+              sources={backgroundEffect.sources}
+              width={width}
+              height={height}
+              isFullscreenPortrait={isFullscreenPortrait}
+            />
+          </Group>
+        ) : null}
+
+        {isHeartBg && backgroundEffect.imageSource != null ? (
+          <Group layer={backgroundShaderLayer}>
+            <PixelHeartBackground
+              heartSource={backgroundEffect.imageSource}
+              width={width}
+              height={height}
+              translateX={translateX}
+              isTablet={isTablet}
+              isFullscreen={isFullscreen}
+              isFullscreenPortrait={isFullscreenPortrait}
+              isPortrait={isPortrait}
+            />
+          </Group>
+        ) : null}
+
+        {isSpeechBg && speechBubbleSource != null ? (
+          <PixelSpeechBubbleFrame
+            source={speechBubbleSource}
+            width={width}
+            height={height}
+            previewInset={speechPreviewInset}
+            pixelShaderSize={pixelShaderSize}
+          />
+        ) : null}
+      </Canvas>
+    </View>
+  );
+}
+
+function usePixelDotShaderLayers(dotSize: number, backgroundColor: string) {
+  const pixelDotUniforms = useMemo(() => pixelLedDotUniforms(dotSize), [dotSize]);
+  const defaultLedUniforms = useMemo(
+    () => resolveDefaultLedFromBackground(backgroundColor),
+    [backgroundColor],
+  );
+  const backgroundShaderLayer = useMemo(
+    () => (
+      <Paint>
+        <RuntimeShader
+          source={DOT_MATRIX_BACKGROUND_SOURCE}
+          uniforms={{ ...pixelDotUniforms, ...defaultLedUniforms }}
+        />
+      </Paint>
+    ),
+    [pixelDotUniforms, defaultLedUniforms],
+  );
+  const photoBackgroundShaderLayer = useMemo(
+    () => (
+      <Paint>
+        <RuntimeShader
+          source={DOT_MATRIX_PHOTO_BACKGROUND_SOURCE}
+          uniforms={pixelDotUniforms}
+        />
+      </Paint>
+    ),
+    [pixelDotUniforms],
+  );
+  return { backgroundShaderLayer, photoBackgroundShaderLayer };
+}

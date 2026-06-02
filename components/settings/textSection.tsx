@@ -2,9 +2,11 @@
 import { ColorPicker } from "@/components/colorPicker";
 import { btnStyles } from "@/constants/btnStyles";
 import { textColorPalette } from "@/constants/colorPalette";
-import { styles } from "@/constants/styles";
+import { resolvePixelFontSizeSliderMinPercent } from "@/constants/pixelLed";
+import { resolveDropdownMaxHeight, styles } from "@/constants/styles";
+import { FONT_SIZE_MIN } from "@/utils/textSizing";
 import { normalizeOneLineJoinMode } from "@/utils/viewMode";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ScrollView,
     Text,
@@ -13,28 +15,15 @@ import {
     View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../../contexts/settingsContext";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 export const TextSection = () => {
-  const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
-  /** 하단 네비바와 겹치지 않게 최대 높이를 설정 */
-  const fontDropdownMaxHeight = useMemo(() => {
-    const cap = Math.min(220, windowH * 0.32 - insets.bottom);
-    return Math.max(140, cap);
-  }, [insets.bottom, windowH]);
 
-  const fontDropdownFlatListProps = useMemo(
-    () => ({
-      contentContainerStyle: { paddingBottom: insets.bottom + 8 },
-    }),
-    [insets.bottom],
-  );
-
-  /** 폰트 라벨 중 가장 긴 텍스트 폭에 맞춰 드롭다운 폭을 자동 산출(두 줄 줄바꿈 방지) */
+  /** 드롭다운너비측정용 */
   const [maxFontLabelWidth, setMaxFontLabelWidth] = useState(0);
+  const [fontDropdownContentHeight, setFontDropdownContentHeight] = useState(0);
   const onFontLabelLayout = useCallback(
     (e: { nativeEvent: { layout: { width: number } } }) => {
       const w = e.nativeEvent.layout.width;
@@ -70,7 +59,21 @@ export const TextSection = () => {
     updateConfig,
     fontItems,
     textSectionLabel,
+    resolvedAppLocale,
   } = useSettings();
+
+  const fontDropdownMaxHeight = useMemo(
+    () => resolveDropdownMaxHeight(fontDropdownContentHeight, windowH),
+    [fontDropdownContentHeight, windowH],
+  );
+
+  const fontDropdownFlatListProps = useMemo(
+    () => ({
+      contentContainerStyle: { paddingBottom: 0 },
+    }),
+    [],
+  );
+
   const { playOption, oneLineJoinMode: oneLineJoinModeRaw } = config.content;
   const oneLineJoinMode = normalizeOneLineJoinMode(oneLineJoinModeRaw);
   const {
@@ -83,12 +86,34 @@ export const TextSection = () => {
     dropShadow,
   } = config.appearance;
   const { textMoveSpeed } = config.motion;
+  const { effectSelectedItems } = config.appearance;
+  const isPixelEffect = effectSelectedItems.includes("Pixel");
+  const fontSizeSliderMin = useMemo(
+    () =>
+      isPixelEffect
+        ? resolvePixelFontSizeSliderMinPercent({
+            playOption,
+            locale: resolvedAppLocale,
+            sliderFloor: FONT_SIZE_MIN,
+          })
+        : FONT_SIZE_MIN,
+    [isPixelEffect, playOption, resolvedAppLocale],
+  );
+
+  useEffect(() => {
+    if (fontSize < fontSizeSliderMin) {
+      updateConfig("appearance", { fontSize: fontSizeSliderMin });
+    }
+  }, [fontSize, fontSizeSliderMin, updateConfig]);
+
   const onFontChange = (item: { value: string }) =>
     updateConfig("appearance", { font: item.value });
   const setTextMoveSpeed = (value: number) =>
     updateConfig("motion", { textMoveSpeed: value });
   const setFontSize = (value: number) =>
-    updateConfig("appearance", { fontSize: value });
+    updateConfig("appearance", {
+      fontSize: Math.max(fontSizeSliderMin, value),
+    });
   const setLineSpacing = (value: number) =>
     updateConfig("appearance", { lineSpacing: Math.max(0, value) });
   const setLetterSpacing = (value: number) =>
@@ -112,7 +137,7 @@ export const TextSection = () => {
         <Text style={styles.settingsRowLabel} allowFontScaling={false}>
           {textSectionLabel("font")}
         </Text>
-        {/* 가장 긴 라벨 폭을 알아내기 위한 투명 view */}
+        {/* 드롭다운 항목과 동일 스타일로 폭·높이 측정 */}
         <View
           pointerEvents="none"
           style={{
@@ -122,16 +147,28 @@ export const TextSection = () => {
             overflow: "hidden",
           }}
         >
-          {fontItems.map((item) => (
-            <Text
-              key={item.value}
-              style={styles.dropdownItemTextStyle}
-              allowFontScaling={false}
-              onLayout={onFontLabelLayout}
-            >
-              {item.label}
-            </Text>
-          ))}
+          <View
+            onLayout={(e) =>
+              setFontDropdownContentHeight(e.nativeEvent.layout.height)
+            }
+          >
+            {fontItems.map((item) => (
+              <View
+                key={item.value}
+                style={styles.dropdownItemContainerStyle}
+              >
+                <View style={styles.dropdownItemContent}>
+                  <Text
+                    style={styles.dropdownItemTextStyle}
+                    allowFontScaling={false}
+                    onLayout={onFontLabelLayout}
+                  >
+                    {item.label}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
         <Dropdown
           data={fontItems}
@@ -150,6 +187,7 @@ export const TextSection = () => {
           ]}
           containerStyle={[
             styles.dropdownContainer,
+            styles.dropdownMenuContainer,
             fontDropdownWidth ? { width: fontDropdownWidth } : null,
           ]}
           selectedTextStyle={styles.dropdownSelectedTextStyle}
@@ -176,7 +214,7 @@ export const TextSection = () => {
         label={textSectionLabel("size")}
         value={fontSize}
         onChange={setFontSize}
-        minimumValue={20}
+        minimumValue={fontSizeSliderMin}
         maximumValue={100}
         step={1}
       />
