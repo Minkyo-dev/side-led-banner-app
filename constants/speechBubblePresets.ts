@@ -7,15 +7,15 @@ export const SPEECH_BUBBLE_PRESETS = {
       previewHeightBoostPx: 20,
       // 가로 세로 위치는 textSizing SPEECH_BG_TEXT_LAYOUT, portrait만 yOffset
       textBox: {
-        landscape: { width: "100%", yOffset: 0 },
-        portrait: { width: "70%", yOffset: 0 },
+        landscape: { width: "70%", yOffset: 0 },
+        portrait: { width: "65%", yOffset: 0 },
       },
     },
     android: {
       previewHeightBoostPx: 20,
       textBox: {
-        landscape: { width: "100%", yOffset: 0 },
-        portrait: { width: "70%", yOffset: 0 },
+        landscape: { width: "70%", yOffset: 0 },
+        portrait: { width: "65%", yOffset: 0 },
       },
     },
   },
@@ -26,14 +26,14 @@ export const SPEECH_BUBBLE_PRESETS = {
     ios: {
       previewHeightBoostPx: 20,
       textBox: {
-        landscape: { width: "82%", yOffset: 0 },
+        landscape: { width: "80%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 10 },
       },
     },
     android: {
       previewHeightBoostPx: 20,
       textBox: {
-        landscape: { width: "100%", yOffset: 0 },
+        landscape: { width: "80%", yOffset: 0 },
         portrait: { width: "70%", yOffset: 0 },
       },
     },

@@ -1,28 +1,35 @@
 import type { AppLocaleKey } from "@/constants/language";
 import { settingsStyles } from "@/constants/settingsStyles";
-import { styles as base } from "@/constants/styles";
+import { resolveDropdownMaxHeight, styles as base } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { type Href, useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Linking,
   Platform,
   ScrollView,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const INSTAGRAM_URL = "https://www.instagram.com/sunnyinnolab/";
-const TWITTER_URL = "https://x.com/Sunnyinnolab";
+const SUNNY_LINKS = {
+  homepage: "https://ssongyc.github.io/sunny-homepage/",
+  instagram: "https://www.instagram.com/sunnyinnolab/",
+  twitter: "https://x.com/Sunnyinnolab",
+} as const;
 
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { height: windowH } = useWindowDimensions();
+  const [languageDropdownContentHeight, setLanguageDropdownContentHeight] =
+    useState(0);
   const {
     updateUI,
     textSectionLabel,
@@ -38,6 +45,11 @@ export default function SettingsScreen() {
       { label: "简体中文", value: "zhSC" as const },
     ],
     [],
+  );
+
+  const languageDropdownMaxHeight = useMemo(
+    () => resolveDropdownMaxHeight(languageDropdownContentHeight, windowH),
+    [languageDropdownContentHeight, windowH],
   );
 
   const onAppLanguageChange = (item: { value: string }) =>
@@ -91,6 +103,37 @@ export default function SettingsScreen() {
           <Text style={base.settingsRowLabel} allowFontScaling={false}>
             {textSectionLabel("language")}
           </Text>
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              opacity: 0,
+              height: 0,
+              overflow: "hidden",
+            }}
+          >
+            <View
+              onLayout={(e) =>
+                setLanguageDropdownContentHeight(e.nativeEvent.layout.height)
+              }
+            >
+              {languageDropdownItems.map((item) => (
+                <View
+                  key={item.value}
+                  style={base.dropdownItemContainerStyle}
+                >
+                  <View style={base.dropdownItemContent}>
+                    <Text
+                      style={base.dropdownItemTextStyle}
+                      allowFontScaling={false}
+                    >
+                      {item.label}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
           <Dropdown
             data={languageDropdownItems}
             labelField="label"
@@ -98,10 +141,14 @@ export default function SettingsScreen() {
             value={resolvedAppLocale}
             onChange={onAppLanguageChange}
             autoScroll={false}
-            maxHeight={240}
+            maxHeight={languageDropdownMaxHeight}
             showsVerticalScrollIndicator
             style={[base.dropdownContainer, { width: "56%" }]}
-            containerStyle={[base.dropdownContainer, { width: "56%" }]}
+            containerStyle={[
+              base.dropdownContainer,
+              base.dropdownMenuContainer,
+              { width: "56%" },
+            ]}
             selectedTextStyle={base.dropdownSelectedTextStyle}
             selectedTextProps={{ allowFontScaling: false }}
             itemContainerStyle={base.dropdownItemContainerStyle}
@@ -119,13 +166,13 @@ export default function SettingsScreen() {
         <LinkRow
           label={textSectionLabel("instagram")}
           linkText={textSectionLabel("link")}
-          onPress={() => openUrl(INSTAGRAM_URL)}
+          onPress={() => openUrl(SUNNY_LINKS.instagram)}
         />
 
         <LinkRow
           label={textSectionLabel("twitter")}
           linkText={textSectionLabel("link")}
-          onPress={() => openUrl(TWITTER_URL)}
+          onPress={() => openUrl(SUNNY_LINKS.twitter)}
         />
 
         <NavigationRow

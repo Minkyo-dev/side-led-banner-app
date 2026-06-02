@@ -7,12 +7,12 @@ import { useDerivedValue, useSharedValue } from "react-native-reanimated";
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
 import { buildMarqueeTextBlob } from "@/utils/buildMarqueeTextBlob";
 import {
-    BUBBLE_MAX_ROWS,
-    BUBBLE_SAFE,
-    bubbleGlyphs,
-    bubbleLayouts,
-    bubbleRows,
-    type BubbleCanvasOpts,
+  BUBBLE_MAX_ROWS,
+  BUBBLE_SAFE,
+  bubbleGlyphs,
+  bubbleLayouts,
+  bubbleRows,
+  type BubbleCanvasOpts,
 } from "@/utils/skiaBubbleTextLayout";
 
 type TextLayoutEvent = {
@@ -88,6 +88,7 @@ export interface UsePreviewPanelCanvasParams {
   previewFontSize: number;
   marqueeReferenceFontSize: number;
   appearanceFont: string;
+  appearanceFontOverride?: string | null;
   fontWeight: "normal" | "bold" | string;
   letterSpacing: number;
   lineSpacingPx?: number;
@@ -104,6 +105,7 @@ export function usePreviewPanelCanvas({
   previewFontSize,
   marqueeReferenceFontSize,
   appearanceFont,
+  appearanceFontOverride,
   fontWeight,
   letterSpacing,
   lineSpacingPx,
@@ -112,13 +114,14 @@ export function usePreviewPanelCanvas({
   speechBubbleLayout = null,
   playOption = "multi",
 }: UsePreviewPanelCanvasParams) {
+  const skiaAppearanceFont = appearanceFontOverride ?? appearanceFont;
   const skiaFont = useSkiaAppearanceFont(
-    appearanceFont,
+    skiaAppearanceFont,
     fontWeight,
     previewFontSize,
   );
   const referenceSkiaFont = useSkiaAppearanceFont(
-    appearanceFont,
+    skiaAppearanceFont,
     fontWeight,
     marqueeReferenceFontSize,
   );

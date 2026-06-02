@@ -17,7 +17,7 @@ export type BackgroundEffectPreset =
   | "heartBgA"
   | SpeechBubblePresetId;
 type BackgroundEffectFrame = "on" | "light" | "off";
-type Effect1Sources = {
+export type Effect1Sources = {
   left: number;
   right: number;
 };

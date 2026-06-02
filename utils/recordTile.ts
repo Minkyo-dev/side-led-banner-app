@@ -23,8 +23,20 @@ const DROP_SHADOW_RGBA = Skia.Color("rgba(0, 0, 0, 0.5)");
 
 export type MarqueeTileLayerMode = "full" | "glowOnly" | "textOnly";
 
+function drawTextBlobs(
+  canvas: ReturnType<ReturnType<typeof Skia.PictureRecorder>["beginRecording"]>,
+  blobs: SkTextBlob[],
+  fill: ReturnType<typeof Skia.Paint>,
+) {
+  for (const blob of blobs) {
+    canvas.drawTextBlob(blob, 0, 0, fill);
+  }
+}
+
 export type RecordMarqueeTileParams = {
   blob: SkTextBlob;
+  /** ja 혼합 폰트 등 — `blob` 대신 전부 그림 */
+  textBlobs?: SkTextBlob[];
   periodWidth: number;
   height: number;
   previewTextColor: string;
@@ -37,6 +49,8 @@ export type RecordMarqueeTileParams = {
   layerMode?: MarqueeTileLayerMode;
   /** Pixel 도트용 마스크를 살짝 두껍게 (얇은 획 보강) */
   maskDilateRadius?: number;
+  /** Pixel 도트용 마스크 침식 — 획을 가늘게 (밝기는 유지) */
+  maskErodeRadius?: number;
   /** Pixel: 셀당 LED 1개 — 마스크 경계 흐림 최소화 */
   pixelCrispMask?: boolean;
   /** Pixel: 글자 1자당 LED 패널 사각형 */
@@ -69,6 +83,23 @@ function withDropShadow(blur: number): SkImageFilter {
 
 function withBlur(radius: number): SkImageFilter {
   return Skia.ImageFilter.MakeBlur(radius, radius, TileMode.Clamp);
+}
+
+function applyPixelMaskMorph(
+  paint: SkPaint,
+  dilate: number,
+  erode: number,
+) {
+  let chain: SkImageFilter | null = null;
+  if (dilate > 0) {
+    chain = Skia.ImageFilter.MakeDilate(dilate, dilate, chain);
+  }
+  if (erode > 0) {
+    chain = Skia.ImageFilter.MakeErode(erode, erode, chain);
+  }
+  if (chain) {
+    paint.setImageFilter(chain);
+  }
 }
 
 function setPaintFilters(paint: SkPaint, ...filters: (SkImageFilter | null)[]) {
@@ -134,16 +165,13 @@ function drawGlyphColorMixLayer(
     backgroundColor: string;
     pixelCrispMask?: boolean;
     dilate: number;
+    erode: number;
     fallbackColor: string;
   },
 ) {
   const fill = Skia.Paint();
   fill.setAntiAlias(!params.pixelCrispMask);
-  if (params.dilate > 0) {
-    fill.setImageFilter(
-      Skia.ImageFilter.MakeDilate(params.dilate, params.dilate, null),
-    );
-  }
+  applyPixelMaskMorph(fill, params.dilate, params.erode);
 
   const colors = assignGlyphMixColors(params.glyphPositions, {
     backgroundColor: params.backgroundColor,
@@ -178,18 +206,23 @@ export function recordTile(
   const canvas = recorder.beginRecording(bounds);
 
   if (drawGlow) {
-    drawBlobLayer(canvas, p.blob, {
-      fillColor: p.glowLayerColor,
-      strokeWidthPx: p.strokeWidthPx,
-      dropShadowBlur: p.dropShadowBlur,
-      dropShadowEnabled,
-      glowBlurRadius: p.glowBlurRadius,
-    });
+    const glowBlobs =
+      p.textBlobs && p.textBlobs.length > 0 ? p.textBlobs : [p.blob];
+    for (const blob of glowBlobs) {
+      drawBlobLayer(canvas, blob, {
+        fillColor: p.glowLayerColor,
+        strokeWidthPx: p.strokeWidthPx,
+        dropShadowBlur: p.dropShadowBlur,
+        dropShadowEnabled,
+        glowBlurRadius: p.glowBlurRadius,
+      });
+    }
   }
 
   if (drawText) {
     if (mode === "textOnly") {
       const dilate = Math.max(0, p.maskDilateRadius ?? 0);
+      const erode = Math.max(0, p.maskErodeRadius ?? 0);
       const panels = p.glyphLedPanels ?? [];
       if (panels.length > 0) {
         const panelPaint = Skia.Paint();
@@ -218,15 +251,14 @@ export function recordTile(
           backgroundColor: p.backgroundColor ?? "#000000",
           pixelCrispMask: p.pixelCrispMask,
           dilate,
+          erode,
           fallbackColor: p.previewTextColor,
         });
       } else {
-        if (dilate > 0) {
-          fill.setImageFilter(
-            Skia.ImageFilter.MakeDilate(dilate, dilate, null),
-          );
-        }
-        canvas.drawTextBlob(p.blob, 0, 0, fill);
+        applyPixelMaskMorph(fill, dilate, erode);
+        const blobs =
+          p.textBlobs && p.textBlobs.length > 0 ? p.textBlobs : [p.blob];
+        drawTextBlobs(canvas, blobs, fill);
       }
     } else {
       drawBlobLayer(canvas, p.blob, {
@@ -292,10 +324,11 @@ export function makeMarqueeStripPaint(
   picture: SkPicture,
   tileWidth: number,
   tileHeight: number,
+  filterMode: FilterMode = FilterMode.Linear,
 ): SkPaint {
   const paint = Skia.Paint();
   paint.setShader(
-    makeMarqueePictureShader(picture, tileWidth, tileHeight, FilterMode.Linear),
+    makeMarqueePictureShader(picture, tileWidth, tileHeight, filterMode),
   );
   return paint;
 }

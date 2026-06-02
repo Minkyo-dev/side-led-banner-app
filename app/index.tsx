@@ -17,13 +17,12 @@ import { TextSection } from "@/components/settings/textSection";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
-import * as NavigationBar from "expo-navigation-bar";
 import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useRewardedAdShow } from "@/hooks/useRewardedAdShow";
 import React, { useCallback, useEffect, useState } from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {
@@ -42,11 +41,6 @@ export default function Index() {
   const { isPlaying, activeTab } = ui;
   const [rewardAdVisible, setRewardAdVisible] = useState(false);
   const [proStatusVisible, setProStatusVisible] = useState(false);
-
-  useEffect(() => {
-    if (Platform.OS !== "android") return;
-    void NavigationBar.setVisibilityAsync("hidden");
-  }, []);
 
   const handleRewardEarned = useCallback(() => {
     activateProFromReward();

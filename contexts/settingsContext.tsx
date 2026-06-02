@@ -1,57 +1,64 @@
 import {
-  appearanceFontSupportsBold,
-  getDefaultAppearanceFontForLocale,
-  getFontItemsForLocale,
-  normalizeAppearanceFontId,
+    appearanceFontSupportsBold,
+    getDefaultAppearanceFontForLocale,
+    getFontItemsForLocale,
+    normalizeAppearanceFontId,
+    GALMURI11_FONT_ID,
+    ZITI_GUANJIA_BODIAN_FONT_ID,
 } from "@/constants/appFonts";
 import {
-  APP_LOCALE_KEYS,
-  type AppLanguagePreference,
-  type AppLocaleKey,
+    isGalmuriPixelMode,
+    isPixelFontBoDianMode,
+    migrateLegacyEffectItems,
+} from "@/constants/pixelLed";
+import {
+    APP_LOCALE_KEYS,
+    type AppLanguagePreference,
+    type AppLocaleKey,
 } from "@/constants/language";
 import { PRO_REWARD_DURATION_MS } from "@/constants/proMode";
 import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import {
-  type GoogleSheetLocaleRow,
-  type GoogleSheetParseResult,
-  useGoogleSheets,
+    type GoogleSheetLocaleRow,
+    type GoogleSheetParseResult,
+    useGoogleSheets,
 } from "@/hooks/useGoogleSheets";
 import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
 import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import {
-  effectChipLabel as resolveEffectChipLabel,
-  tEffectSectionLabel,
+    effectChipLabel as resolveEffectChipLabel,
+    tEffectSectionLabel,
 } from "@/language/effectSectionLabels";
 import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { tRewardAdLabel } from "@/language/rewardAdLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
 import {
-  readAppLanguage,
-  writeAppLanguage,
+    readAppLanguage,
+    writeAppLanguage,
 } from "@/utils/appLanguageStorage";
 import {
-  isProActive,
-  readProExpiresAt,
-  writeProExpiresAt,
-} from "@/utils/proModeStorage";
-import {
-  persistPresetSlotsSnapshot,
-  readPresetSlotsJson,
+    persistPresetSlotsSnapshot,
+    readPresetSlotsJson,
 } from "@/utils/presetStorage";
 import {
-  normalizeOneLineJoinMode,
-  type OneLineJoinMode,
+    isProActive,
+    readProExpiresAt,
+    writeProExpiresAt,
+} from "@/utils/proModeStorage";
+import {
+    normalizeOneLineJoinMode,
+    type OneLineJoinMode,
 } from "@/utils/viewMode";
 import { useLocales } from "expo-localization";
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 
 /** 시트 B~F 셀 내용이 바뀌면 같이 바뀌는 정수*/
@@ -272,7 +279,7 @@ function normalizePresetSlot(raw: unknown): PresetSnapshot {
     lineSpacing: legacyLineSpacing ?? base.appearance.lineSpacing,
     letterSpacing: legacyLetterSpacing ?? base.appearance.letterSpacing,
     effectSelectedItems: Array.isArray(appearancePartial.effectSelectedItems)
-      ? [...appearancePartial.effectSelectedItems]
+      ? migrateLegacyEffectItems([...appearancePartial.effectSelectedItems])
       : base.appearance.effectSelectedItems,
     effectParamValues: {
       ...base.appearance.effectParamValues,
@@ -614,9 +621,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const localeFonts = getFontItemsForLocale(resolvedAppLocale);
     const normalizedFont = normalizeAppearanceFontId(config.appearance.font);
+    const pixelFontMode = isPixelFontBoDianMode(
+      resolvedAppLocale,
+      config.appearance.effectSelectedItems,
+    );
+    const pixelFontOk =
+      pixelFontMode && normalizedFont === ZITI_GUANJIA_BODIAN_FONT_ID;
+    const pixelGalmuriMode = isGalmuriPixelMode(
+      resolvedAppLocale,
+      config.appearance.effectSelectedItems,
+    );
+    const pixelGalmuriOk =
+      pixelGalmuriMode && normalizedFont === GALMURI11_FONT_ID;
     if (
       normalizedFont &&
-      localeFonts.some((item) => item.value === normalizedFont)
+      (localeFonts.some((item) => item.value === normalizedFont) ||
+        pixelFontOk ||
+        pixelGalmuriOk)
     ) {
       if (config.appearance.font !== normalizedFont) {
         setConfig((prev) => ({
@@ -634,7 +655,57 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         font: getDefaultAppearanceFontForLocale(resolvedAppLocale),
       },
     }));
-  }, [config.appearance.font, resolvedAppLocale]);
+  }, [
+    config.appearance.font,
+    config.appearance.effectSelectedItems,
+    resolvedAppLocale,
+  ]);
+
+  /** zhSC픽셀폰트용 */
+  useEffect(() => {
+    if (
+      !isPixelFontBoDianMode(
+        resolvedAppLocale,
+        config.appearance.effectSelectedItems,
+      ) ||
+      config.appearance.font === ZITI_GUANJIA_BODIAN_FONT_ID
+    ) {
+      return;
+    }
+    setConfig((prev) => ({
+      ...prev,
+      appearance: {
+        ...prev.appearance,
+        font: ZITI_GUANJIA_BODIAN_FONT_ID,
+      },
+    }));
+  }, [
+    resolvedAppLocale,
+    config.appearance.effectSelectedItems,
+    config.appearance.font,
+  ]);
+
+  /** Galmuri픽셀폰트용 */
+  useEffect(() => {
+    const galmuriPixel = isGalmuriPixelMode(
+      resolvedAppLocale,
+      config.appearance.effectSelectedItems,
+    );
+    if (!galmuriPixel || config.appearance.font === GALMURI11_FONT_ID) {
+      return;
+    }
+    setConfig((prev) => ({
+      ...prev,
+      appearance: {
+        ...prev.appearance,
+        font: GALMURI11_FONT_ID,
+      },
+    }));
+  }, [
+    resolvedAppLocale,
+    config.appearance.effectSelectedItems,
+    config.appearance.font,
+  ]);
 
   useEffect(() => {
     if (appearanceFontSupportsBold(config.appearance.font)) return;
