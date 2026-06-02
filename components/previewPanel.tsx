@@ -22,6 +22,8 @@ import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useMemo, useState } from "react";
 import {
+  Button,
+  InputAccessoryView,
   Keyboard,
   Platform,
   ScrollView,
@@ -39,6 +41,8 @@ import { MarqueeCanvas } from "./animation/MarqueeCanvas";
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
 };
+
+const inputAccessoryViewID = "doneAccessory";
 
 export default function PreviewPanel() {
   const [previewHeight, setPreviewHeight] = useState(0);
@@ -400,8 +404,16 @@ export default function PreviewPanel() {
             onKeyPress={handleInputKeyPress}
             onSelectionChange={onSelectionChange}
             textAlignVertical="top"
+            inputAccessoryViewID={
+              Platform.OS === "ios" ? inputAccessoryViewID : undefined
+            }
           />
         </ScrollView>
+        {Platform.OS === "ios" && (
+          <InputAccessoryView nativeID={inputAccessoryViewID}>
+            <Button onPress={Keyboard.dismiss} title="close" />
+          </InputAccessoryView>
+        )}
         <View
           id="contentsInputResetButtonContainer"
           style={styles.contentsInputResetButtonContainer}
