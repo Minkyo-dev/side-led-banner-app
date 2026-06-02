@@ -8,10 +8,12 @@ import {
 import type { MarqueeGlyphPos } from "@/utils/buildMarqueeTextBlob";
 import { computeGlyphLedPanels } from "@/utils/glyphLedPanels";
 import type { SkFont, SkPaint } from "@shopify/react-native-skia";
+import { FilterMode } from "@shopify/react-native-skia";
 import { useMemo } from "react";
 
 export type UseTilePictureParams = {
   blob: import("@shopify/react-native-skia").SkTextBlob | null;
+  textBlobs?: import("@shopify/react-native-skia").SkTextBlob[];
   textWidthPx: number;
   spacerPx: number;
   canvasWidthPx: number;
@@ -22,6 +24,9 @@ export type UseTilePictureParams = {
   isPixelEffect: boolean;
   isPixelColorMix: boolean;
   pixelShaderSize: number;
+  pixelMaskDilateRadius?: number;
+  pixelMaskErodeRadius?: number;
+  pixelGlyphPadCells?: number;
   glowBlurRadius: number;
   strokeWidthPx: number;
   dropShadow: number;
@@ -62,14 +67,22 @@ export function useTilePicture(
       p.font,
       p.glyphPositions,
       p.pixelShaderSize,
-      1,
+      p.pixelGlyphPadCells ?? 1,
     );
-  }, [p.isPixelEffect, p.font, p.glyphPositions, p.pixelShaderSize]);
+  }, [
+    p.isPixelEffect,
+    p.font,
+    p.glyphPositions,
+    p.pixelShaderSize,
+    p.pixelGlyphPadCells,
+  ]);
 
   const recordBase = useMemo(() => {
-    if (!p.blob) return null;
+    const hasBlobs = p.textBlobs != null && p.textBlobs.length > 0;
+    if (!p.blob && !hasBlobs) return null;
     return {
-      blob: p.blob,
+      blob: p.blob ?? p.textBlobs![0]!,
+      textBlobs: hasBlobs ? p.textBlobs : undefined,
       periodWidth: periodPx,
       height: tileHeight,
       previewTextColor: p.previewTextColor,
@@ -79,7 +92,8 @@ export function useTilePicture(
       strokeWidthPx: p.strokeWidthPx,
       dropShadow: p.dropShadow,
       dropShadowBlur: p.dropShadowBlur,
-      maskDilateRadius: p.isPixelEffect ? 1 : 0,
+      maskDilateRadius: p.isPixelEffect ? (p.pixelMaskDilateRadius ?? 1) : 0,
+      maskErodeRadius: p.isPixelEffect ? (p.pixelMaskErodeRadius ?? 0) : 0,
       pixelCrispMask: p.isPixelEffect,
       pixelColorMix: p.isPixelColorMix,
       glyphLedPanels,
@@ -89,6 +103,7 @@ export function useTilePicture(
     };
   }, [
     p.blob,
+    p.textBlobs,
     periodPx,
     tileHeight,
     p.previewTextColor,
@@ -104,6 +119,8 @@ export function useTilePicture(
     p.dropShadowBlur,
     p.backgroundColor,
     glyphLedPanels,
+    p.pixelMaskDilateRadius,
+    p.pixelMaskErodeRadius,
   ]);
 
   const tilePicture = useMemo(() => {
@@ -129,8 +146,13 @@ export function useTilePicture(
 
   const stripPaint = useMemo(() => {
     if (!tilePicture) return null;
-    return makeMarqueeStripPaint(tilePicture, periodPx, tileHeight);
-  }, [tilePicture, periodPx, tileHeight]);
+    return makeMarqueeStripPaint(
+      tilePicture,
+      periodPx,
+      tileHeight,
+      p.isPixelEffect ? FilterMode.Nearest : FilterMode.Linear,
+    );
+  }, [tilePicture, periodPx, tileHeight, p.isPixelEffect]);
 
   const glowStripPaint = useMemo(() => {
     if (!glowTilePicture) return null;

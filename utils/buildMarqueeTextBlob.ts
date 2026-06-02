@@ -24,3 +24,31 @@ export function buildMarqueeTextBlob(
   if (glyphs.length === 0) return null;
   return Skia.TextBlob.MakeFromRSXformGlyphs(glyphs, rsxforms, font);
 }
+
+/** 글자마다 다른 SkFont — ja Pixel(가나 8-bit + 한자 Dotted Songti) 등 */
+export function buildMarqueeTextBlobs(
+  positions: MarqueeGlyphPos[],
+  pickFont: (ch: string) => SkFont,
+): SkTextBlob[] {
+  if (positions.length === 0) return [];
+
+  const byFont = new Map<SkFont, MarqueeGlyphPos[]>();
+  for (const g of positions) {
+    const ch = g.text;
+    if (!ch) continue;
+    const font = pickFont(ch);
+    const bucket = byFont.get(font);
+    if (bucket) {
+      bucket.push(g);
+    } else {
+      byFont.set(font, [g]);
+    }
+  }
+
+  const blobs: SkTextBlob[] = [];
+  for (const [font, glyphs] of byFont) {
+    const blob = buildMarqueeTextBlob(font, glyphs);
+    if (blob) blobs.push(blob);
+  }
+  return blobs;
+}

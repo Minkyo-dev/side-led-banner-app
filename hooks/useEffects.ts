@@ -1,14 +1,21 @@
+import { GALMURI11_FONT_ID, ZITI_GUANJIA_BODIAN_FONT_ID } from "@/constants/appFonts";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
   GRADIENT_BACKDROP_IDS,
   type GradientBackdropId,
 } from "@/constants/gradientBackgroundPresets";
+import {
+  hasPixelLedEffect,
+  isPixelFontBoDianMode,
+  pixelGlyphPanelPadCells,
+  resolvePixelBackgroundShaderSizePx,
+  resolvePixelFontCircleGridMode,
+  resolvePixelShaderSizePx,
+  resolvePixelTextShaderUniforms,
+} from "@/constants/pixelLed";
+import { useSettings } from "@/contexts/settingsContext";
 import { computeEffectSpace } from "@/utils/recordTile";
 import { useMemo } from "react";
-
-/** 격자 한 칸(px) = LED 1개 크기. 클수록 POP처럼 굵은 원형 모듈 */
-const PIXEL_DOT_SIZE_PX = 12;
-const PIXEL_DOT_SIZE_PX_MULTILINE = 6;
 
 export type EffectsInput = {
   effectSelectedItems: string[];
@@ -19,41 +26,66 @@ export type EffectsInput = {
   dropShadow: number;
   pixelColorMix: boolean;
   playOption: "one" | "multi";
-  /**
-   * Pixel dot px 배율. fullscreen = 1.
-   * preview는 previewFont/fullscreenFont 비율로 축소해 격자 밀도를 맞춤.
-   */
-  pixelViewportScale?: number;
+  fontSizePx?: number;
 };
 
-/** Skia 마퀴: Pixel/Glow/Gradient·stroke·effect space */
+/** Skia마퀴효과용 */
 export function useEffects(input: EffectsInput) {
-  const isPixelEffect = input.effectSelectedItems.includes("Pixel");
+  const { resolvedAppLocale } = useSettings();
+  const isPixelEffect = hasPixelLedEffect(input.effectSelectedItems);
+  const pixelFontCircleGrid = resolvePixelFontCircleGridMode(
+    resolvedAppLocale,
+    input.effectSelectedItems,
+  );
+  const isPixelFontMode = isPixelFontBoDianMode(
+    resolvedAppLocale,
+    input.effectSelectedItems,
+  );
+  const isPixelCircleGrid = pixelFontCircleGrid != null;
+  const isPixelTextDots = isPixelEffect && !isPixelFontMode;
+  const useThinKoPixelStrokes =
+    isPixelTextDots &&
+    resolvedAppLocale === "ko" &&
+    input.effectSelectedItems.includes("Pixel");
   const isGlowEffect = input.effectSelectedItems.includes("Glow");
   const showGradientBackdrop =
     input.effectSelectedItems.includes("Gradient") &&
     GRADIENT_BACKDROP_IDS.includes(
       input.gradientBackgroundPreset as GradientBackdropId,
     );
-  const basePixelDotPx =
-    input.playOption === "multi"
-      ? PIXEL_DOT_SIZE_PX_MULTILINE
-      : PIXEL_DOT_SIZE_PX;
-  const pixelScale = Math.min(
-    1,
-    Math.max(0.15, input.pixelViewportScale ?? 1),
-  );
+
+  const pixelPlay = { playOption: input.playOption, locale: resolvedAppLocale };
   const pixelShaderSize = isPixelEffect
-    ? Math.max(1, basePixelDotPx * pixelScale)
+    ? resolvePixelShaderSizePx({ ...pixelPlay, fontSizePx: input.fontSizePx })
     : 1;
-  const strokeWidthScale = (input.outLine / 100) * 24;
-  const skiaStrokeWidthPx = Math.round((strokeWidthScale / 100) * 30);
-  /** Pixel 모드: dotted 글자 바깥 흰 도트 링 개수 (Text → Outline 슬라이더) */
+  const pixelBackgroundShaderSize = isPixelEffect
+    ? resolvePixelBackgroundShaderSizePx(pixelPlay)
+    : 1;
+
+  const pixelTextShaderUniforms = resolvePixelTextShaderUniforms(
+    resolvedAppLocale,
+    pixelShaderSize,
+    { koThinStrokes: useThinKoPixelStrokes, pixelFontCircleGrid },
+  );
+  const koPixelTight =
+    useThinKoPixelStrokes &&
+    (pixelShaderSize <= 5 || input.playOption === "multi");
+  const pixelMaskErodeRadius = useThinKoPixelStrokes
+    ? Math.max(1, Math.round(pixelShaderSize / (koPixelTight ? 5 : 7)))
+    : 0;
+  const pixelMaskDilateRadius =
+    isPixelTextDots && !useThinKoPixelStrokes && !isPixelCircleGrid ? 1 : 0;
+  const pixelGlyphPadCells = pixelGlyphPanelPadCells(
+    resolvedAppLocale,
+    pixelShaderSize,
+    isPixelCircleGrid,
+  );
+  const skiaStrokeWidthPx = Math.round(((input.outLine / 100) * 24 * 30) / 100);
   const pixelOutlineRings =
-    isPixelEffect && input.outLine > 0
+    isPixelTextDots && input.outLine > 0
       ? Math.max(1, Math.min(4, Math.ceil((input.outLine / 100) * 3)))
       : 0;
-  const isPixelColorMix = isPixelEffect && input.pixelColorMix;
+  const isPixelColorMix = isPixelTextDots && isPixelEffect && input.pixelColorMix;
 
   const glowBlurRadius = useMemo(
     () => Math.max(2, Math.min(18, 2 + (input.glowIntensity / 100) * 16)),
@@ -76,9 +108,20 @@ export function useEffects(input: EffectsInput) {
 
   return {
     isPixelEffect,
+    isPixelTextDots,
+    pixelSkiaFontOverride: isPixelCircleGrid
+      ? GALMURI11_FONT_ID
+      : isPixelFontMode
+        ? ZITI_GUANJIA_BODIAN_FONT_ID
+        : null,
     isGlowEffect,
     showGradientBackdrop,
     pixelShaderSize,
+    pixelBackgroundShaderSize,
+    pixelTextShaderUniforms,
+    pixelMaskDilateRadius,
+    pixelMaskErodeRadius,
+    pixelGlyphPadCells,
     skiaStrokeWidthPx,
     pixelOutlineRings,
     isPixelColorMix,

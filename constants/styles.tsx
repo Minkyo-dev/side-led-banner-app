@@ -1,4 +1,5 @@
 import { uiThemeFontStyle } from "@/constants/appFonts";
+import { PREVIEW_TEXT_MAX_LINES } from "@/contexts/settingsContext";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
 /** 미리보기 하단 `TextInput`·측정용 `Text`와 동일 */
@@ -6,6 +7,9 @@ export const CONTENTS_INPUT_FONT_SIZE = 24;
 export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
   CONTENTS_INPUT_FONT_SIZE * 1.2,
 );
+/** one / multi 공통 입력 높이 */
+export const CONTENTS_INPUT_VIEWPORT_HEIGHT =
+  PREVIEW_TEXT_MAX_LINES * CONTENTS_INPUT_LINE_HEIGHT;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
@@ -46,7 +50,7 @@ export const styles = StyleSheet.create({
 
   // ===
   contentsInputContainer: {
-    minHeight: 80,
+    minHeight: CONTENTS_INPUT_VIEWPORT_HEIGHT,
     flexDirection: "row",
     alignItems: "stretch",
     paddingHorizontal: 5,
@@ -165,6 +169,11 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 24,
     backgroundColor: "#E7E7E7",
+  },
+  /** 펼친 목록 패널 — 트리거와 동일 paddingVertical(7)이면 하단 여백이 과함 */
+  dropdownMenuContainer: {
+    paddingVertical: 4,
+    paddingBottom: 2,
   },
 
   // ===
@@ -492,3 +501,18 @@ export const ledBannerFullScreenStyles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
 });
+
+/** 드롭다운maxHeight용 */
+export function resolveDropdownMaxHeight(
+  contentHeightPx: number,
+  windowHeight: number,
+  options?: { capPx?: number; menuPaddingPx?: number },
+): number {
+  const capPx = options?.capPx ?? 220;
+  const menuPaddingPx = options?.menuPaddingPx ?? 6;
+  const cap = Math.min(capPx, Math.floor(windowHeight * 0.32));
+  if (contentHeightPx <= 0) {
+    return cap;
+  }
+  return Math.min(cap, Math.ceil(contentHeightPx + menuPaddingPx));
+}

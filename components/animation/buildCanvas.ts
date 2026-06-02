@@ -1,7 +1,7 @@
 import type { useEffects } from "@/hooks/useEffects";
 import type { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
-import type { MarqueeCanvasProps } from "./MarqueeCanvas";
 import type { SharedValue } from "react-native-reanimated";
+import type { MarqueeCanvasProps } from "./MarqueeCanvas";
 
 type SkiaEffects = ReturnType<typeof useEffects>;
 type BuiltMarqueeCanvasProps = Omit<MarqueeCanvasProps, "gradientBackgroundPreset">;
@@ -19,8 +19,13 @@ export function buildCanvas(params: {
   return {
     canvas: params.canvas,
     isPixelEffect: params.effects.isPixelEffect,
+    isPixelTextDots: params.effects.isPixelTextDots,
     isPixelColorMix: params.effects.isPixelColorMix,
     pixelShaderSize: params.effects.pixelShaderSize,
+    pixelTextShaderUniforms: params.effects.pixelTextShaderUniforms,
+    pixelMaskDilateRadius: params.effects.pixelMaskDilateRadius,
+    pixelMaskErodeRadius: params.effects.pixelMaskErodeRadius,
+    pixelGlyphPadCells: params.effects.pixelGlyphPadCells,
     showGradientBackdrop: params.effects.showGradientBackdrop,
     hasBgPhoto: params.hasBgPhoto,
     blinkOpacity: params.blinkOpacity,

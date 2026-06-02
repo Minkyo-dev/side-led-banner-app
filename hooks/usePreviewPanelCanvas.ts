@@ -88,6 +88,7 @@ export interface UsePreviewPanelCanvasParams {
   previewFontSize: number;
   marqueeReferenceFontSize: number;
   appearanceFont: string;
+  appearanceFontOverride?: string | null;
   fontWeight: "normal" | "bold" | string;
   letterSpacing: number;
   lineSpacingPx?: number;
@@ -104,6 +105,7 @@ export function usePreviewPanelCanvas({
   previewFontSize,
   marqueeReferenceFontSize,
   appearanceFont,
+  appearanceFontOverride,
   fontWeight,
   letterSpacing,
   lineSpacingPx,
@@ -112,13 +114,14 @@ export function usePreviewPanelCanvas({
   speechBubbleLayout = null,
   playOption = "multi",
 }: UsePreviewPanelCanvasParams) {
+  const skiaAppearanceFont = appearanceFontOverride ?? appearanceFont;
   const skiaFont = useSkiaAppearanceFont(
-    appearanceFont,
+    skiaAppearanceFont,
     fontWeight,
     previewFontSize,
   );
   const referenceSkiaFont = useSkiaAppearanceFont(
-    appearanceFont,
+    skiaAppearanceFont,
     fontWeight,
     marqueeReferenceFontSize,
   );
@@ -127,6 +130,11 @@ export function usePreviewPanelCanvas({
     width: 0,
     height: 0,
   });
+
+  // 말풍선 ON/OFF 시 onLayout이 다른 View로 옮겨져 재측정이 안 될 수 있음 → stale 높이로 위쪽 붙음
+  useEffect(() => {
+    setSkiaCanvasLayout({ width: 0, height: 0 });
+  }, [speechBubbleLayout != null]);
 
   const hasCanvasLayout =
     skiaCanvasLayout.width > 0 && skiaCanvasLayout.height > 0;
@@ -205,6 +213,7 @@ export function usePreviewPanelCanvas({
           safeWRatio:
             speechBubbleLayout!.safeWRatio ?? BUBBLE_SAFE.widthRatio,
           lineGapPx: lineSpacingPx,
+          edgeInsetPx: speechBubbleLayout!.edgeInsetPx,
         })
       : lineLayoutsToGlyphs(
           skiaFont,
