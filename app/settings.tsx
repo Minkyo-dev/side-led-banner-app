@@ -130,9 +130,7 @@ export default function SettingsScreen() {
 
         <NavigationRow
           label={textSectionLabel("credits")}
-          onPress={() => {
-            /** TODO: Credits*/
-          }}
+          onPress={() => router.push("/credits" as Href)}
         />
 
         <NavigationRow

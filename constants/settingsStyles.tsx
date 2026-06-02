@@ -77,6 +77,29 @@ export const openSourceInfoStyles = StyleSheet.create({
   },
 });
 
+/** Credits 스크린*/
+export const creditsStyles = StyleSheet.create({
+  row: {
+    paddingVertical: 14,
+    paddingHorizontal: 15,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#DDDDDD",
+    gap: 4,
+  },
+  roleText: {
+    ...uiThemeFontStyle,
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#9A9A9A",
+  },
+  namesText: {
+    ...uiThemeFontStyle,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "black",
+  },
+});
+
 const SUNNY_LIST_THUMBNAIL_SIZE = 44;
 
 export const sunnyListStyles = StyleSheet.create({

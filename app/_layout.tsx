@@ -44,6 +44,10 @@ export default function RootLayout() {
               name="sunnyList"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="credits"
+              options={{ headerShown: false }}
+            />
           </Stack>
         ) : null}
         <StatusBar style="auto" />
