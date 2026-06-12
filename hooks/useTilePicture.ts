@@ -11,6 +11,35 @@ import type { SkFont, SkPaint } from "@shopify/react-native-skia";
 import { FilterMode } from "@shopify/react-native-skia";
 import { useMemo } from "react";
 
+function isNearWhiteColor(color: string): boolean {
+  const s = color.trim().toLowerCase().replace(/\s/g, "");
+  const hex = s.startsWith("#") ? s.slice(1) : null;
+  if (hex) {
+    let r: number, g: number, b: number;
+    if (hex.length === 3 || hex.length === 4) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    }
+    return r > 229 && g > 229 && b > 229;
+  }
+  const rgb = s.match(/^rgba?\((\d+),(\d+),(\d+)/);
+  if (rgb) {
+    return Number(rgb[1]) > 229 && Number(rgb[2]) > 229 && Number(rgb[3]) > 229;
+  }
+  return s === "white";
+}
+
+function resolveOutlineStrokeColor(backgroundColor: string, textColor: string): string {
+  return isNearWhiteColor(backgroundColor) || isNearWhiteColor(textColor)
+    ? "#cacaca"
+    : "#ffffff";
+}
+
 export type UseTilePictureParams = {
   blob: import("@shopify/react-native-skia").SkTextBlob | null;
   textBlobs?: import("@shopify/react-native-skia").SkTextBlob[];
@@ -90,6 +119,7 @@ export function useTilePicture(
       isGlowEffect: p.isGlowEffect,
       glowBlurRadius: p.glowBlurRadius,
       strokeWidthPx: p.strokeWidthPx,
+      strokeColor: resolveOutlineStrokeColor(p.backgroundColor, p.previewTextColor),
       dropShadow: p.dropShadow,
       dropShadowBlur: p.dropShadowBlur,
       maskDilateRadius: p.isPixelEffect ? (p.pixelMaskDilateRadius ?? 1) : 0,

@@ -4,25 +4,20 @@
     "slug": "side-led-banner-app",
     "version": "1.0.0",
     "orientation": "default",
-    "icon": "./assets/images/splash-icon.png",
+    "icon": "./assets/images/Logo_IOS.png",
     "scheme": "sideledbannerapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/Logo_IOS.png",
+      "icon": "./assets/images/LOGO_05_Final.png",
       "bundleIdentifier": "com.minkyokim.sideledbannerapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
+      "icon": "./assets/images/LOGO_05_Final.png",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.minkyokim.sideledbannerapp"
@@ -43,12 +38,9 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#1a1a1a",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#1a1a1a"
           }
         }
       ],

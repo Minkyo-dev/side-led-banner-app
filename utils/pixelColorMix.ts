@@ -7,8 +7,6 @@ import type { MarqueeGlyphPos } from "@/utils/buildMarqueeTextBlob";
 type Rgb = { r: number; g: number; b: number };
 
 const MIX_COLOR_FALLBACK = "#FF6E00";
-const MIX_DISTANCE_MIN = 96;
-const MIX_CONTRAST_MIN = 1.6;
 
 const MIX_PALETTE = Array.from(
   new Set([...textColorPalette, ...backgroundColorPalette].map(normalizeHex)),
@@ -69,8 +67,8 @@ function pickMixPalette(backgroundColor: string): string[] {
   const filtered = MIX_PALETTE.filter(
     (color) =>
       color !== bg &&
-      colorDistance(color, bg) >= MIX_DISTANCE_MIN &&
-      contrastRatio(color, bg) >= MIX_CONTRAST_MIN,
+      colorDistance(color, bg) >= 96 &&
+      contrastRatio(color, bg) >= 1.6,
   );
 
   if (filtered.length >= 3) {

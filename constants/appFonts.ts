@@ -193,11 +193,12 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
       { label: "Noto Sans KR", value: "noto_sans_kr" },
     ],
     ja: [
+      { label: "LINE Seed JP", value: "line_seed_jp" },
       { label: "Kaisei", value: "kaisei" },
       { label: "IBM Plex Sans JP", value: "ibm_plex_sans_jp" },
       { label: "Dela Gothic One", value: "dela_gothic_one" },
       { label: "Mochiy Pop One", value: "mochiy_pop_one" },
-      { label: "LINE Seed JP", value: "line_seed_jp" },
+      
     ],
     zhTC: [
       { label: "Noto Sans TC", value: "noto_sans_tc" },

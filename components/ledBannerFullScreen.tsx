@@ -1,7 +1,9 @@
 import { BackgroundEffectLayer } from "@/components/animation/BackgroundEffectLayer";
 import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
+import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
+import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
 import { ledBannerFullScreenStyles as styles } from "@/constants/styles";
-import { BannerConfig } from "@/contexts/settingsContext";
+import { useSettings } from "@/contexts/settingsContext";
 import { useBackgroundAnimation } from "@/hooks/useBackgroundAnimation";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useEffects } from "@/hooks/useEffects";
@@ -24,6 +26,7 @@ import {
     useWindowDimensions,
     View,
 } from "react-native";
+import { Canvas } from "@shopify/react-native-skia";
 import { buildCanvas } from "./animation/buildCanvas";
 import { buildPixelBackground } from "./animation/buildPixelBackground";
 import { PixelBackgroundCanvas } from "./animation/PixelBackgroundCanvas";
@@ -31,39 +34,16 @@ import { PixelBackgroundCanvas } from "./animation/PixelBackgroundCanvas";
 interface LedBannerFullScreenProps {
   visible: boolean;
   onClose: () => void;
-  config: BannerConfig;
 }
 
 export const LedBannerFullScreen = ({
   visible,
   onClose,
-  config,
 }: LedBannerFullScreenProps) => {
-  const { previewText, playOption, oneLineJoinMode } = config.content;
-  const {
-    font,
-    fontSize,
-    dropShadow,
-    textSelectedColor,
-    lineSpacing,
-    letterSpacing,
-    fontWeight,
-    glowIntensity,
-    glowColor,
-    effectSelectedItems,
-    gradientBackgroundPreset,
-    backgroundEffectPreset,
-    blinkSpeed,
-    outLine,
-    pixelColorMix,
-  } = config.appearance;
-
-  const { backgroundColor, backgroundImageUri, backgroundBlur } =
-    config.background;
-
-  const { textMoveSpeed } = config.motion;
-  const hasBgPhoto =
-    backgroundImageUri != null && backgroundImageUri.length > 0;
+  const { config } = useSettings();
+  const { textSelectedColor, gradientBackgroundPreset, dropShadow } = config.appearance;
+  const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
+  const hasBgPhoto = backgroundImageUri != null && backgroundImageUri.length > 0;
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
@@ -81,9 +61,7 @@ export const LedBannerFullScreen = ({
     [],
   );
 
-  const backgroundEdgeEffectAnim = useBackgroundAnimation(
-    backgroundEffectPreset,
-  );
+  const backgroundEdgeEffectAnim = useBackgroundAnimation();
   const sizingPolicy = useMemo(
     () => getSizingPolicy({ effectId: backgroundEdgeEffectAnim.id }),
     [backgroundEdgeEffectAnim.id],
@@ -100,35 +78,18 @@ export const LedBannerFullScreen = ({
   const {
     effectiveLineSpacing,
     previewFontSize,
-    marqueeReferenceFontSize,
     fullscreenLineHeightRatio,
   } = useTextMetrics({
     mode: "fullscreen",
-    text: previewText,
-    fontSize,
-    lineSpacing,
-    playOption,
     sizingPolicy,
     isSpeechBgActive: speechBubble.isActive,
     speechMaxHeight: speechBubble.maxTextHeight,
     windowWidth: stageWidth,
     windowHeight: stageHeight,
     isPortrait,
-    appearanceFont: font,
-    fontWeight,
   });
 
-  const effects = useEffects({
-    effectSelectedItems,
-    gradientBackgroundPreset,
-    outLine,
-    glowIntensity,
-    glowColor,
-    dropShadow,
-    pixelColorMix,
-    playOption,
-    fontSizePx: previewFontSize,
-  });
+  const effects = useEffects({ fontSizePx: previewFontSize });
 
   const speechBubbleCanvasLayout = useMemo(
     () =>
@@ -149,21 +110,12 @@ export const LedBannerFullScreen = ({
   const marqueeViewportWidthPx =
     speechBubble.speechBoxPx?.widthPx ?? stageWidth;
 
-  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
-    {
-      text: previewText,
-      speed: textMoveSpeed,
-      playOption,
-      oneLineJoinMode,
-      viewportWidthPx: marqueeViewportWidthPx,
-      effectBleedPx: effects.effectSpacePx,
-    },
-  );
+  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation({
+    viewportWidthPx: marqueeViewportWidthPx,
+    effectBleedPx: effects.effectSpacePx,
+  });
 
-  const { opacity: blinkOpacity } = useBlinkOpacityStyle(
-    effectSelectedItems.includes("Blink"),
-    blinkSpeed,
-  );
+  const { opacity: blinkOpacity } = useBlinkOpacityStyle();
 
   const canvasFallback = useMemo(
     () =>
@@ -179,15 +131,11 @@ export const LedBannerFullScreen = ({
     translateX,
     onTextLayout,
     previewFontSize,
-    marqueeReferenceFontSize,
-    appearanceFont: font,
     appearanceFontOverride: effects.pixelSkiaFontOverride,
-    fontWeight,
-    letterSpacing,
     lineSpacingPx: effectiveLineSpacing,
     fallbackLayout: canvasFallback,
     lineHeightRatio: fullscreenLineHeightRatio,
-    playOption,
+    isPixelMode: effects.isPixelEffect,
     speechBubbleLayout: speechBubbleCanvasLayout,
   });
 
@@ -270,6 +218,18 @@ export const LedBannerFullScreen = ({
             {effects.isPixelEffect ? (
               <PixelBackgroundCanvas {...pixelBackgroundProps} />
             ) : null}
+            {!effects.isPixelEffect && effects.showGradientBackdrop && stageWidth > 0 && stageHeight > 0 ? (
+              <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                <Canvas style={{ flex: 1 }} opaque={false}>
+                  <GradientBackdrop
+                    key={`gradient-${gradientBackgroundPreset}`}
+                    preset={gradientBackgroundPreset as GradientBackdropId}
+                    width={stageWidth}
+                    height={stageHeight}
+                  />
+                </Canvas>
+              </View>
+            ) : null}
             <BackgroundEffectLayer
               effect={backgroundEdgeEffectAnim}
               translateX={translateX}
@@ -294,7 +254,6 @@ export const LedBannerFullScreen = ({
                 >
                   <MarqueeCanvas
                     {...marqueeCanvasProps}
-                    gradientBackgroundPreset={gradientBackgroundPreset}
                   />
                 </View>
               </View>
@@ -305,7 +264,6 @@ export const LedBannerFullScreen = ({
               >
                 <MarqueeCanvas
                   {...marqueeCanvasProps}
-                  gradientBackgroundPreset={gradientBackgroundPreset}
                 />
               </View>
             )}

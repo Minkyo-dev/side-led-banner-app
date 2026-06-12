@@ -1,25 +1,26 @@
 import { appFontFamilyForText } from "@/constants/appFonts";
-import type { AppLocaleKey } from "@/constants/language";
+import { useSettings } from "@/contexts/settingsContext";
 import {
-    CONTENTS_INPUT_FONT_SIZE,
-    CONTENTS_INPUT_LINE_HEIGHT,
-    CONTENTS_INPUT_VIEWPORT_HEIGHT,
+  CONTENTS_INPUT_FONT_SIZE,
+  CONTENTS_INPUT_LINE_HEIGHT,
+  CONTENTS_INPUT_VIEWPORT_HEIGHT,
 } from "@/constants/styles";
 import {
-    PRESET_SLOT_COUNT,
-    PREVIEW_TEXT_MAX_LINES,
+  PRESET_SLOT_COUNT,
+  PREVIEW_TEXT_MAX_LINES,
 } from "@/contexts/settingsContext";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Platform, ScrollView, TextLayoutEvent } from "react-native";
+import { Platform, ScrollView, TextLayoutEvent, useWindowDimensions } from "react-native";
 
 type WrappedLayoutLine = TextLayoutEvent["nativeEvent"]["lines"][number];
 
 const TEXT_MEASURE_OFFSCREEN_LEFT = -100_000;
 /** 텍스트 끝 여유*/
 const INPUT_WIDTH_CURSOR_PAD = 28;
-const INPUT_LINE_WIDTH_PER_CHAR_FACTOR = 0.72;
+
 /** 커서가 스크롤 뷰포트 안에 남도록 하는 여백 */
 const CURSOR_SCROLL_MARGIN = 28;
+const INPUT_MARGIN = 16;
 
 function snapInputViewportHeightPx(
   measuredTotalPx: number,
@@ -30,7 +31,7 @@ function snapInputViewportHeightPx(
     CONTENTS_INPUT_LINE_HEIGHT,
     Math.ceil(measuredTotalPx / logicalLines),
   );
-  return Math.max(fallbackPx, perLine * logicalLines);
+  return Math.max(fallbackPx, perLine * logicalLines) + INPUT_MARGIN;
 }
 
 function stripLegacyInputMarkers(text: string): string {
@@ -78,14 +79,12 @@ function cursorXFromSelection(
   lines: WrappedLayoutLine[],
 ): number {
   if (!lines.length) {
-    const charPx = CONTENTS_INPUT_FONT_SIZE * INPUT_LINE_WIDTH_PER_CHAR_FACTOR;
-    return selectionStart * charPx;
+    return selectionStart * (CONTENTS_INPUT_FONT_SIZE * 0.72);
   }
 
   const line = lineAtSelection(text, selectionStart, lines);
   if (!line) {
-    const charPx = CONTENTS_INPUT_FONT_SIZE * INPUT_LINE_WIDTH_PER_CHAR_FACTOR;
-    return selectionStart * charPx;
+    return selectionStart * (CONTENTS_INPUT_FONT_SIZE * 0.72);
   }
 
   let textIndex = 0;
@@ -110,23 +109,14 @@ function cursorXFromSelection(
 }
 
 export function useTextInput(params: {
-  previewText: string;
-  activePreset: number;
   inputScrollViewportW: number;
-  windowWidth: number;
-  font: string;
-  fontWeight: "normal" | "bold";
-  appLocale: AppLocaleKey;
 }) {
-  const {
-    previewText,
-    activePreset,
-    inputScrollViewportW,
-    windowWidth,
-    font,
-    fontWeight,
-    appLocale,
-  } = params;
+  const { inputScrollViewportW } = params;
+  const { config, ui, resolvedAppLocale: appLocale } = useSettings();
+  const { previewText } = config.content;
+  const { font, fontWeight } = config.appearance;
+  const { activePreset } = ui;
+  const { width: windowWidth } = useWindowDimensions();
 
   /** 입력 박스 높이는 one / multi 모두 멀티 최대 줄 수와 동일 */
   const inputViewportLogicalLines = PREVIEW_TEXT_MAX_LINES;
@@ -170,8 +160,7 @@ export function useTextInput(params: {
     for (const line of displayInputText.split("\n")) {
       if (line.length > maxChars) maxChars = line.length;
     }
-    const charPx = CONTENTS_INPUT_FONT_SIZE * INPUT_LINE_WIDTH_PER_CHAR_FACTOR;
-    return maxChars * charPx;
+    return maxChars * (CONTENTS_INPUT_FONT_SIZE * 0.72);
   }, [displayInputText]);
 
   const inputScrollViewportWResolved = useMemo(
@@ -289,20 +278,6 @@ export function useTextInput(params: {
       }
 
       const lines = wrappedLayoutLinesRef.current;
-      const currentLine = lineAtSelection(
-        displayInputText,
-        selectionStart,
-        lines,
-      );
-      if (currentLine && currentLine.width <= viewportW) {
-        const targetX = Math.max(0, currentLine.x);
-        if (inputScrollXRef.current !== targetX) {
-          inputScrollXRef.current = targetX;
-          inputScrollRef.current?.scrollTo({ x: targetX, animated: false });
-        }
-        return;
-      }
-
       const cursorX = cursorXFromSelection(
         displayInputText,
         selectionStart,

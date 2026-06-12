@@ -1,8 +1,7 @@
-import { hasPixelTextDotShader } from "@/constants/pixelLed";
+import { hasPixelLedEffect } from "@/constants/pixelLed";
 import {
   uiThemeFontStyle,
   GALMURI11_FONT_ID,
-  ZITI_GUANJIA_BODIAN_FONT_ID,
 } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import {
@@ -190,14 +189,7 @@ export const EffectSection = () => {
                         gradientBackgroundPreset ??
                         DEFAULT_GRADIENT_BACKGROUND_PRESET_ID;
                     } else if (effect === "Pixel") {
-                      if (resolvedAppLocale === "zhSC") {
-                        patch.font = ZITI_GUANJIA_BODIAN_FONT_ID;
-                      } else if (
-                        resolvedAppLocale === "zhTC" ||
-                        resolvedAppLocale === "ja"
-                      ) {
-                        patch.font = GALMURI11_FONT_ID;
-                      }
+                      patch.font = GALMURI11_FONT_ID;
                     }
                     updateConfig("appearance", patch);
                   }
@@ -236,7 +228,7 @@ export const EffectSection = () => {
         </View>
       ) : null}
 
-      {hasPixelTextDotShader(resolvedAppLocale, effectSelectedItems) ? (
+      {hasPixelLedEffect(effectSelectedItems) ? (
         <View style={{ marginTop: 12, marginHorizontal: 15 }}>
           <Text
             allowFontScaling={false}

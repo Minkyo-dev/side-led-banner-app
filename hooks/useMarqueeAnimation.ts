@@ -2,22 +2,17 @@ import {
   buildMarqueeDisplayText,
   normalizeOneLineJoinMode,
   resolveMarqueeJoinSpacerPx,
-  type OneLineJoinMode,
 } from "@/utils/viewMode";
+import { useSettings } from "@/contexts/settingsContext";
 import { useEffect, useState } from "react";
 import {
   Easing,
-  cancelAnimation,
   useSharedValue,
   withRepeat,
-  withTiming,
+  withTiming
 } from "react-native-reanimated";
 
 export interface UseMarqueeAnimationParams {
-  text: string;
-  speed: number;
-  playOption: "one" | "multi";
-  oneLineJoinMode: OneLineJoinMode | "space3" | "concat";
   /** Style B(lineClear)*/
   viewportWidthPx?: number;
   /** 타일 끝 여유(글로우·stroke)*/
@@ -34,13 +29,12 @@ type TextLayoutEvent = {
  * 애니메이션에서 재사용할 `translateX` shared value와 표시 텍스트를 제공할 겁니다.
  */
 export function useMarqueeAnimation({
-  text,
-  speed,
-  playOption,
-  oneLineJoinMode: oneLineJoinModeRaw,
   viewportWidthPx = 0,
   effectBleedPx = 0,
-}: UseMarqueeAnimationParams) {
+}: UseMarqueeAnimationParams = {}) {
+  const { config } = useSettings();
+  const { previewText: text, playOption, oneLineJoinMode: oneLineJoinModeRaw } = config.content;
+  const speed = config.motion.textMoveSpeed;
   const translateX = useSharedValue(0);
   const [textWidth, setTextWidth] = useState(0);
   const oneLineJoinMode = normalizeOneLineJoinMode(oneLineJoinModeRaw);
@@ -56,14 +50,14 @@ export function useMarqueeAnimation({
   });
 
   useEffect(() => {
-    if (speed === 0 || textWidth === 0) {
-      cancelAnimation(translateX);
-      translateX.value = 0;
-      return;
-    }
+    // if (speed === 0 || textWidth === 0) {
+    //   cancelAnimation(translateX);
+    //   translateX.value = 0;
+    //   return;
+    // }
 
     const totalShift = textWidth + spacer + effectBleedPx;
-    const duration = (totalShift / (speed * 2)) * 1000;
+    const duration = (totalShift / (speed * 3)) * 1000;
 
     translateX.value = 0;
     translateX.value = withRepeat(

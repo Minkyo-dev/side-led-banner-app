@@ -1,3 +1,4 @@
+import { useSettings } from "@/contexts/settingsContext";
 import { useEffect } from "react";
 import {
   cancelAnimation,
@@ -15,7 +16,10 @@ function blinkHalfCycleMs(speed: number) {
   return Math.round(slow - ((s - 1) / 9) * (slow - fast));
 }
 
-export function useBlinkOpacityStyle(active: boolean, blinkSpeed: number) {
+export function useBlinkOpacityStyle() {
+  const { config } = useSettings();
+  const active = config.appearance.effectSelectedItems.includes("Blink");
+  const blinkSpeed = config.appearance.blinkSpeed;
   const opacity = useSharedValue(1);
 
   useEffect(() => {

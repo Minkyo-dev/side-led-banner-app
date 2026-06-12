@@ -1,58 +1,56 @@
 import {
-    appearanceFontSupportsBold,
-    getDefaultAppearanceFontForLocale,
-    getFontItemsForLocale,
-    normalizeAppearanceFontId,
-    GALMURI11_FONT_ID,
-    ZITI_GUANJIA_BODIAN_FONT_ID,
+  appearanceFontSupportsBold,
+  GALMURI11_FONT_ID,
+  getDefaultAppearanceFontForLocale,
+  getFontItemsForLocale,
+  normalizeAppearanceFontId,
 } from "@/constants/appFonts";
 import {
-    isGalmuriPixelMode,
-    isPixelFontBoDianMode,
-    migrateLegacyEffectItems,
-} from "@/constants/pixelLed";
-import {
-    APP_LOCALE_KEYS,
-    type AppLanguagePreference,
-    type AppLocaleKey,
+  APP_LOCALE_KEYS,
+  type AppLanguagePreference,
+  type AppLocaleKey,
 } from "@/constants/language";
+import {
+  hasPixelLedEffect,
+  migrateLegacyEffectItems,
+} from "@/constants/pixelLed";
 import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import {
-    type GoogleSheetLocaleRow,
-    type GoogleSheetParseResult,
-    useGoogleSheets,
+  type GoogleSheetLocaleRow,
+  type GoogleSheetParseResult,
+  useGoogleSheets,
 } from "@/hooks/useGoogleSheets";
 import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
 import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import {
-    effectChipLabel as resolveEffectChipLabel,
-    tEffectSectionLabel,
+  effectChipLabel as resolveEffectChipLabel,
+  tEffectSectionLabel,
 } from "@/language/effectSectionLabels";
 import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { tRewardAdLabel } from "@/language/rewardAdLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
 import {
-    readAppLanguage,
-    writeAppLanguage,
+  readAppLanguage,
+  writeAppLanguage,
 } from "@/utils/appLanguageStorage";
 import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
 import {
-    normalizeOneLineJoinMode,
-    type OneLineJoinMode,
+  normalizeOneLineJoinMode,
+  type OneLineJoinMode,
 } from "@/utils/viewMode";
 import { useLocales } from "expo-localization";
 import React, {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 
 /** 시트 B~F 셀 내용이 바뀌면 같이 바뀌는 정수*/
@@ -580,22 +578,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const localeFonts = getFontItemsForLocale(resolvedAppLocale);
     const normalizedFont = normalizeAppearanceFontId(config.appearance.font);
-    const pixelFontMode = isPixelFontBoDianMode(
-      resolvedAppLocale,
-      config.appearance.effectSelectedItems,
-    );
-    const pixelFontOk =
-      pixelFontMode && normalizedFont === ZITI_GUANJIA_BODIAN_FONT_ID;
-    const pixelGalmuriMode = isGalmuriPixelMode(
-      resolvedAppLocale,
-      config.appearance.effectSelectedItems,
-    );
-    const pixelGalmuriOk =
-      pixelGalmuriMode && normalizedFont === GALMURI11_FONT_ID;
+    const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
+    const pixelGalmuriOk = isPixelActive && normalizedFont === GALMURI11_FONT_ID;
     if (
       normalizedFont &&
       (localeFonts.some((item) => item.value === normalizedFont) ||
-        pixelFontOk ||
         pixelGalmuriOk)
     ) {
       if (config.appearance.font !== normalizedFont) {
@@ -620,37 +607,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     resolvedAppLocale,
   ]);
 
-  /** zhSC픽셀폰트용 */
+  /** 픽셀폰트용 */
   useEffect(() => {
-    if (
-      !isPixelFontBoDianMode(
-        resolvedAppLocale,
-        config.appearance.effectSelectedItems,
-      ) ||
-      config.appearance.font === ZITI_GUANJIA_BODIAN_FONT_ID
-    ) {
-      return;
-    }
-    setConfig((prev) => ({
-      ...prev,
-      appearance: {
-        ...prev.appearance,
-        font: ZITI_GUANJIA_BODIAN_FONT_ID,
-      },
-    }));
-  }, [
-    resolvedAppLocale,
-    config.appearance.effectSelectedItems,
-    config.appearance.font,
-  ]);
-
-  /** Galmuri픽셀폰트용 */
-  useEffect(() => {
-    const galmuriPixel = isGalmuriPixelMode(
-      resolvedAppLocale,
-      config.appearance.effectSelectedItems,
-    );
-    if (!galmuriPixel || config.appearance.font === GALMURI11_FONT_ID) {
+    const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
+    if (!isPixelActive || config.appearance.font === GALMURI11_FONT_ID) {
       return;
     }
     setConfig((prev) => ({
@@ -661,7 +621,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       },
     }));
   }, [
-    resolvedAppLocale,
     config.appearance.effectSelectedItems,
     config.appearance.font,
   ]);

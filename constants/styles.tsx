@@ -2,12 +2,10 @@ import { uiThemeFontStyle } from "@/constants/appFonts";
 import { PREVIEW_TEXT_MAX_LINES } from "@/contexts/settingsContext";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
-/** 미리보기 하단 `TextInput`·측정용 `Text`와 동일 */
 export const CONTENTS_INPUT_FONT_SIZE = 24;
 export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
   CONTENTS_INPUT_FONT_SIZE * 1.2,
 );
-/** one / multi 공통 입력 높이 */
 export const CONTENTS_INPUT_VIEWPORT_HEIGHT =
   PREVIEW_TEXT_MAX_LINES * CONTENTS_INPUT_LINE_HEIGHT;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -18,14 +16,12 @@ export const styles = StyleSheet.create({
     backgroundColor: "#F6F6F6",
   },
 
-  // ===
   scrollViewContainer: {
     paddingBottom: 30,
   },
 
   previewContainer: {
     height: (SCREEN_WIDTH - 18) * (355 / 373),
-    // height: 224,
     flexDirection: "column",
     padding: 5,
     marginHorizontal: 9,
@@ -40,15 +36,12 @@ export const styles = StyleSheet.create({
     overflow: "hidden",
   },
 
-  // ===
   presetButtonsContainer: {
-    // flex: 0.15,
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 8,
   },
 
-  // ===
   contentsInputContainer: {
     minHeight: CONTENTS_INPUT_VIEWPORT_HEIGHT,
     flexDirection: "row",
@@ -68,14 +61,12 @@ export const styles = StyleSheet.create({
     }),
   },
 
-  // ===
   contentsInputResetButtonContainer: {
     flex: 0.25,
     justifyContent: "center",
     alignItems: "flex-end",
   },
 
-  // ===
   playBarContainer: {
     flexDirection: "row",
     justifyContent: "space-evenly",
@@ -88,7 +79,6 @@ export const styles = StyleSheet.create({
     borderRadius: 20,
   },
 
-  // ===
   tabContainer: {
     height: 50,
     flexDirection: "row",
@@ -115,7 +105,6 @@ export const styles = StyleSheet.create({
     color: "#FF6E00",
   },
 
-  // ===
   settingsPanelContainer: {
     flex: 1,
     marginBottom: 20,
@@ -129,7 +118,6 @@ export const styles = StyleSheet.create({
     marginBottom: 5,
     borderBottomWidth: 2,
     borderBottomColor: "#DDDDDD",
-    // backgroundColor: 'red',
   },
   settingsRowLabel: {
     ...uiThemeFontStyle,
@@ -138,7 +126,6 @@ export const styles = StyleSheet.create({
     fontWeight: "400",
   },
 
-  // ===
   settingsRowValueContainer: {
     minWidth: 45,
     justifyContent: "center",
@@ -155,41 +142,33 @@ export const styles = StyleSheet.create({
     fontWeight: "400",
   },
 
-  // ===
   colorPickerContainer: {
     borderBottomWidth: 2,
     borderBottomColor: "#DDDDDD",
   },
 
-  // ===
   dropdownContainer: {
-    // 드롭다운 컨테이너 스타일
     width: "55%",
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 24,
     backgroundColor: "#E7E7E7",
   },
-  /** 펼친 목록 패널 — 트리거와 동일 paddingVertical(7)이면 하단 여백이 과함 */
   dropdownMenuContainer: {
     paddingVertical: 4,
     paddingBottom: 2,
   },
 
-  // ===
   dropdownPlaceholderStyle: { ...uiThemeFontStyle },
   dropdownSelectedTextStyle: {
     ...uiThemeFontStyle,
-    // 선택된 텍스트 스타일
     fontSize: 17,
   },
   dropdownIconStyle: {
     width: 30,
   },
 
-  // ===
   dropdownItemContainerStyle: {
-    // 아이템 컨테이너 스타일
     borderRadius: 0,
   },
   dropdownItemContent: {
@@ -197,12 +176,10 @@ export const styles = StyleSheet.create({
   },
   dropdownItemTextStyle: {
     ...uiThemeFontStyle,
-    // 아이템 텍스트 스타일
     fontSize: 17,
     flexShrink: 1,
   },
 
-  // ===
   effectContainer: {
     flex: 1,
     gap: 10,
@@ -221,7 +198,6 @@ export const styles = StyleSheet.create({
     alignSelf: "stretch",
   },
 
-  // ===
   effectImageContainer: {
     flex: 1,
     flexDirection: "row",
@@ -269,92 +245,113 @@ export const rewardAdModalStyles = StyleSheet.create({
     width: "100%",
     maxWidth: 340,
     backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    paddingTop: 28,
-    paddingBottom: 22,
-    paddingHorizontal: 22,
+    borderRadius: 32,
+    paddingTop: 54,
+    paddingBottom: 28,
+    paddingHorizontal: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 8,
+    marginTop: 40,
+    position: "relative",
   },
   closeButton: {
     position: "absolute",
-    top: 14,
-    right: 14,
+    top: 16,
+    right: 16,
     width: 32,
     height: 32,
+    backgroundColor: "#EFEFEF",
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 1,
+    zIndex: 10,
   },
-  headerRow: {
-    flexDirection: "row",
+  appIconContainer: {
+    position: "absolute",
+    top: -40,
+    alignSelf: "center",
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: "#1A1A1A",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 22,
-    paddingRight: 24,
-  },
-  appIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 7,
-    overflow: "hidden",
-    marginRight: 10,
-    backgroundColor: "#E8E8E8",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
   },
   appIconImage: {
     width: "100%",
     height: "100%",
+    borderRadius: 20,
+  },
+  contentContainer: {
+    width: "100%",
+    alignItems: "center",
   },
   headerBadge: {
     ...uiThemeFontStyle,
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "bold",
     color: "#1A1A1A",
-    lineHeight: 21,
+    textAlign: "center",
+    lineHeight: 26,
+    marginBottom: 24,
+    paddingHorizontal: 10,
+  },
+  benefitContainer: {
+    width: "100%",
+    marginBottom: 24,
   },
   benefitRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 14,
   },
-  benefitIconWrap: {
-    width: 28,
-    alignItems: "center",
+  checkIcon: {
+    width: 24,
+    height: 24,
     marginRight: 12,
   },
   benefitText: {
     ...uiThemeFontStyle,
     flex: 1,
     fontSize: 15,
-    fontWeight: "400",
-    color: "#1A1A1A",
+    fontWeight: "500",
+    color: "#333333",
     lineHeight: 21,
   },
-  description: {
-    ...uiThemeFontStyle,
-    fontSize: 13,
-    fontWeight: "400",
-    color: "#6B6B6B",
-    lineHeight: 19,
-    marginTop: 6,
-    marginBottom: 20,
-    textAlign: "center",
-  },
   ctaButton: {
-    backgroundColor: "#000000",
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
+    width: "83.18%",
+    aspectRatio: 277 / 56,
+    alignSelf: "center",
   },
-  ctaText: {
-    ...uiThemeFontStyle,
-    fontSize: 16,
+  ctaButtonBg: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  ctaButtonContent: {
+    position: "absolute",
+    left: "31.39%",
+    top: "25%",
+    bottom: "25%",
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  ctaPlayBg: {
+    height: "100%",
+    aspectRatio: 1,
+  },
+  ctaButtonText: {
+    fontSize: 15,
     fontWeight: "600",
-    color: "#FFFFFF",
+    flexShrink: 1,
   },
 });
 
@@ -441,7 +438,7 @@ export const colorPickerStyles = StyleSheet.create({
   },
 });
 
-const SLIDER_WIDTH = SCREEN_WIDTH - 100; // 슬라이더의 총 너비 (버튼 공간 제외)
+const SLIDER_WIDTH = SCREEN_WIDTH - 100;
 export const sliderComponentStyles = StyleSheet.create({
   sliderContainer: {
     height: 40,
@@ -502,7 +499,38 @@ export const ledBannerFullScreenStyles = StyleSheet.create({
   },
 });
 
-/** 드롭다운maxHeight용 */
+export const settingsFooterStyles = StyleSheet.create({
+  container: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 24,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    gap: 12,
+    backgroundColor: "#F9F9F9",
+  },
+  logo: {
+    width: 130,
+    height: 36,
+  },
+  linksRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  linkText: {
+    fontSize: 12,
+    color: "#666666",
+    fontWeight: "500",
+  },
+  separator: {
+    fontSize: 11,
+    color: "#CCCCCC",
+  },
+});
+
 export function resolveDropdownMaxHeight(
   contentHeightPx: number,
   windowHeight: number,

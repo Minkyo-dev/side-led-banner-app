@@ -22,7 +22,6 @@ import * as ScreenOrientation from "expo-screen-orientation";
 import React, { useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -136,7 +135,6 @@ export default function Index() {
       <LedBannerFullScreen
         visible={isPlaying}
         onClose={handleStop}
-        config={config}
       />
       <RewardAdDebugFab onOpen={() => setRewardAdVisible(true)} />
       <SheetFetchDebugPanel />
