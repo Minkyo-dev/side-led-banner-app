@@ -224,7 +224,7 @@ export default function PreviewPanel() {
 
     const lineCount = previewText.replace(/\r\n?/g, "\n").split("\n").length;
     if (lineCount >= PREVIEW_TEXT_MAX_LINES) {
-      dismissKeyboard();
+      // dismissKeyboard();
     }
   };
 

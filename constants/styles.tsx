@@ -502,6 +502,7 @@ export const ledBannerFullScreenStyles = StyleSheet.create({
 export const settingsFooterStyles = StyleSheet.create({
   container: {
     width: "100%",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 24,
