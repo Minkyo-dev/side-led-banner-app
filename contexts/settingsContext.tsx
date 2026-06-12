@@ -310,6 +310,7 @@ export interface UIState {
    * 설정 화면에서 언어 전환 UI를 붙일 때 `updateUI({ appLanguage: "ko" })` 등으로 갱신해주세요.
    */
   appLanguage: AppLanguagePreference;
+  proMode: number | null;
 }
 //여기서 제공할 config 및 업데이트 함수 정의
 interface SettingsContextValue {
@@ -322,6 +323,8 @@ interface SettingsContextValue {
     updates: Partial<BannerConfig[K]>,
   ) => void;
   updateUI: (updates: Partial<UIState>) => void;
+  isProActive: boolean;
+  activatePro: () => void;
   handleTextChange: (text: string) => void;
   fontItems: { label: string; value: string }[];
   effectItems: string[];
@@ -391,6 +394,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     activeTab: "TEXT",
     activePreset: 0,
     appLanguage: "system",
+    proMode: null,
   });
 
   const resolvedAppLocale: AppLocaleKey =
@@ -545,6 +549,25 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setUI((prev) => ({ ...prev, ...updates }));
   };
 
+  const isProActive = ui.proMode !== null && Date.now() < ui.proMode;
+
+  const activatePro = useCallback(() => {
+    setUI((prev) => ({ ...prev, proMode: Date.now() + 2 * 60 * 1000 }));
+  }, []);
+
+  useEffect(() => {
+    if (ui.proMode === null) return;
+    const remaining = ui.proMode - Date.now();
+    if (remaining <= 0) {
+      setUI((prev) => ({ ...prev, proMode: null }));
+      return;
+    }
+    const id = setTimeout(() => {
+      setUI((prev) => ({ ...prev, proMode: null }));
+    }, remaining);
+    return () => clearTimeout(id);
+  }, [ui.proMode]);
+
   const handleTextChange = (text: string) => {
     const next = normalizePreviewTextMaxLines(text);
     if (next === null) return;
@@ -668,6 +691,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       resolvedAppLocale,
       updateConfig,
       updateUI,
+      isProActive,
+      activatePro,
       handleTextChange,
       fontItems,
       effectItems,

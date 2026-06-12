@@ -326,6 +326,19 @@ export const rewardAdModalStyles = StyleSheet.create({
     color: "#333333",
     lineHeight: 21,
   },
+  proActiveBadge: {
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 16,
+  },
+  proActiveBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#fff",
+  },
   ctaButton: {
     width: "83.18%",
     aspectRatio: 277 / 56,
@@ -505,7 +518,7 @@ export const settingsFooterStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 24,
+    paddingTop: 8,
     paddingBottom: 24,
     paddingHorizontal: 20,
     gap: 12,

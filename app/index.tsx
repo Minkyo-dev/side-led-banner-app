@@ -14,7 +14,9 @@ import { EffectSection } from "@/components/settings/effectSection";
 import { TextSection } from "@/components/settings/textSection";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
+import { ProActiveBadge } from "@/components/ProActiveBadge";
 import { TabType, useSettings } from "@/contexts/settingsContext";
+import { useRewardedAd } from "@/hooks/useRewardedAd";
 import { Image } from "expo-image";
 import * as NavigationBar from "expo-navigation-bar";
 import { type Href, useRouter } from "expo-router";
@@ -26,11 +28,12 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { config, ui, updateConfig, updateUI, textSectionLabel } =
+  const { config, ui, updateConfig, updateUI, textSectionLabel, activatePro } =
     useSettings();
   const { playOption } = config.content;
   const { isPlaying, activeTab } = ui;
   const [rewardAdVisible, setRewardAdVisible] = useState(false);
+  const { loaded: rewardAdLoaded, show: showRewardedAd } = useRewardedAd(activatePro);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const { height: windowHeight } = useWindowDimensions();
   const baseWindowHeightRef = useRef(windowHeight);
@@ -144,9 +147,8 @@ export default function Index() {
       <RewardAdModal
         visible={rewardAdVisible}
         onClose={() => setRewardAdVisible(false)}
-        onWatchAd={() => {
-          // TODO: show rewarded ad, then unlock Pro for 6 hours
-        }}
+        adReady={rewardAdLoaded}
+        onWatchAd={showRewardedAd}
       />
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen
@@ -167,11 +169,13 @@ export default function Index() {
           </Text>
         </TouchableOpacity>
       )}
+      <ProActiveBadge />
       <RewardAdDebugFab onOpen={() => setRewardAdVisible(true)} />
       <SheetFetchDebugPanel />
     </View>
   );
 }
+
 
 const kbCloseStyles = StyleSheet.create({
   button: {

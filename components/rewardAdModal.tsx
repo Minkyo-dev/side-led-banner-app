@@ -161,10 +161,11 @@ const BENEFIT_ROWS: BenefitRow[] = [
 type Props = {
   visible: boolean;
   onClose: () => void;
+  adReady?: boolean;
   onWatchAd?: () => void;
 };
 
-export function RewardAdModal({ visible, onClose, onWatchAd }: Props) {
+export function RewardAdModal({ visible, onClose, adReady = false, onWatchAd }: Props) {
   const { rewardAdLabel, resolvedAppLocale } = useSettings();
   const watchAdFontFamily =
     resolvedAppLocale === "ko" || resolvedAppLocale === "en"
@@ -236,9 +237,10 @@ export function RewardAdModal({ visible, onClose, onWatchAd }: Props) {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleWatchAd}
+            disabled={!adReady}
             accessibilityRole="button"
             accessibilityLabel={rewardAdLabel("rewardWatchAd")}
-            style={styles.ctaButton}
+            style={[styles.ctaButton, !adReady && { opacity: 0.4 }]}
           >
             <Image
               source={WATCH_AD_BUTTON}
