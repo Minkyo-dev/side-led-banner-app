@@ -5,6 +5,10 @@ import { LayoutChangeEvent } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import { useDerivedValue, useSharedValue } from "react-native-reanimated";
 
+import {
+  getDefaultAppearanceFontForLocale,
+  resolveAppearanceFontFaceSet,
+} from "@/constants/appFonts";
 import { useSettings } from "@/contexts/settingsContext";
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
 import {
@@ -113,6 +117,25 @@ export interface UsePreviewPanelCanvasParams {
 const ARK_PIXEL_CN_ASSET = require("@/assets/fonts/ark_pixel_16px/ArkPixel16px-zhHans.ttf");
 const ARK_PIXEL_TW_ASSET = require("@/assets/fonts/ark_pixel_16px/ArkPixel16px-zhHant.ttf");
 
+// 로케일 폴백 폰트 에셋 (각 로케일 기본 폰트)
+const JA_FALLBACK_ASSET = resolveAppearanceFontFaceSet(getDefaultAppearanceFontForLocale("ja")).regular;
+const KO_FALLBACK_ASSET = resolveAppearanceFontFaceSet(getDefaultAppearanceFontForLocale("ko")).regular;
+const TC_FALLBACK_ASSET = resolveAppearanceFontFaceSet(getDefaultAppearanceFontForLocale("zhTC")).regular;
+
+function isHangulChar(ch: string): boolean {
+  const code = ch.codePointAt(0) ?? 0;
+  return (code >= 0xac00 && code <= 0xd7a3) || (code >= 0x1100 && code <= 0x11ff);
+}
+
+function isJapaneseKanaChar(ch: string): boolean {
+  const code = ch.codePointAt(0) ?? 0;
+  return (
+    (code >= 0x3040 && code <= 0x309f) ||  // Hiragana
+    (code >= 0x30a0 && code <= 0x30ff) ||  // Katakana
+    (code >= 0xff65 && code <= 0xff9f)     // 반각 Katakana
+  );
+}
+
 /** CJKFont선택용 */
 function pickBestCJKFont(
   ch: string,
@@ -144,7 +167,7 @@ export function usePreviewPanelCanvas({
   speechBubbleLayout = null,
   isPixelMode = false,
 }: UsePreviewPanelCanvasParams) {
-  const { config } = useSettings();
+  const { config, resolvedAppLocale } = useSettings();
   const { font: appearanceFont, fontWeight, letterSpacing } = config.appearance;
   const { playOption } = config.content;
   const skiaAppearanceFont = appearanceFontOverride ?? appearanceFont;
@@ -155,6 +178,29 @@ export function usePreviewPanelCanvas({
   );
   const arkPixelCNFont = useFont(isPixelMode ? ARK_PIXEL_CN_ASSET : null, previewFontSize);
   const arkPixelTWFont = useFont(isPixelMode ? ARK_PIXEL_TW_ASSET : null, previewFontSize);
+
+  // 픽셀 모드 아닐 때 로케일 폴백 폰트
+  const jaFallbackFont = useFont(!isPixelMode && resolvedAppLocale !== "ja" ? JA_FALLBACK_ASSET : null, previewFontSize);
+  const koFallbackFont = useFont(!isPixelMode && resolvedAppLocale !== "ko" ? KO_FALLBACK_ASSET : null, previewFontSize);
+  const tcFallbackFont = useFont(!isPixelMode && resolvedAppLocale !== "zhTC" ? TC_FALLBACK_ASSET : null, previewFontSize);
+
+  // 문자별 폰트 선택기
+  const localeCharFontPicker = useMemo((): ((ch: string) => SkFont) | null => {
+    if (!skiaFont || isPixelMode) return null;
+    if (!jaFallbackFont && !koFallbackFont && !tcFallbackFont) return null;
+    const font = skiaFont;
+    const locale = resolvedAppLocale;
+    return (ch) => {
+      if (isHangulChar(ch)) return koFallbackFont ?? font;
+      if (isJapaneseKanaChar(ch)) return jaFallbackFont ?? font;
+      if (isCJKChar(ch)) {
+        if (locale === "zhSC") return font; // 이미 간체 폰트
+        if (locale === "zhTC") return font; // 이미 번체 폰트
+        return tcFallbackFont ?? font;
+      }
+      return font;
+    };
+  }, [skiaFont, isPixelMode, resolvedAppLocale, jaFallbackFont, koFallbackFont, tcFallbackFont]);
 
   const [skiaCanvasLayout, setSkiaCanvasLayout] = useState({
     width: 0,
@@ -189,11 +235,10 @@ export function usePreviewPanelCanvas({
       return bubbleLayouts(skiaFont, rows, letterSpacing);
     }
 
-    const getCharFont =
+    const getCharFont: ((ch: string) => SkFont) | undefined =
       isPixelMode && (arkPixelCNFont || arkPixelTWFont)
-        ? (ch: string): SkFont =>
-            pickBestCJKFont(ch, arkPixelCNFont, arkPixelTWFont, skiaFont)
-        : undefined;
+        ? (ch) => pickBestCJKFont(ch, arkPixelCNFont, arkPixelTWFont, skiaFont)
+        : (localeCharFontPicker ?? undefined);
 
     return rows.map((line) => layoutSkiaLine(skiaFont, line, letterSpacing, getCharFont));
   }, [
@@ -206,6 +251,7 @@ export function usePreviewPanelCanvas({
     isPixelMode,
     arkPixelCNFont,
     arkPixelTWFont,
+    localeCharFontPicker,
   ]);
 
   const resolvedLineHeightRatio =
@@ -280,9 +326,13 @@ export function usePreviewPanelCanvas({
       );
       return blobs.length > 0 ? blobs : null;
     }
+    if (localeCharFontPicker) {
+      const blobs = buildMarqueeTextBlobs(skiaGlyphLayout.glyphPositions, localeCharFontPicker);
+      return blobs.length > 0 ? blobs : null;
+    }
     const blob = buildMarqueeTextBlob(skiaFont, skiaGlyphLayout.glyphPositions);
     return blob ? [blob] : null;
-  }, [skiaFont, skiaGlyphLayout.glyphPositions, isPixelMode, arkPixelCNFont, arkPixelTWFont]);
+  }, [skiaFont, skiaGlyphLayout.glyphPositions, isPixelMode, arkPixelCNFont, arkPixelTWFont, localeCharFontPicker]);
 
   const skiaMarqueeTransform = useDerivedValue(() => [
     { translateX: translateX.value + marqueeOffsetX.value },

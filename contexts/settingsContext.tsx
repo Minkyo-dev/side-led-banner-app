@@ -3,6 +3,7 @@ import {
   GALMURI11_FONT_ID,
   getDefaultAppearanceFontForLocale,
   getFontItemsForLocale,
+  isAppearanceFontHiddenFromPicker,
   normalizeAppearanceFontId,
 } from "@/constants/appFonts";
 import {
@@ -606,14 +607,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const localeFonts = getFontItemsForLocale(resolvedAppLocale);
     const normalizedFont = normalizeAppearanceFontId(config.appearance.font);
     const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
     const pixelGalmuriOk = isPixelActive && normalizedFont === GALMURI11_FONT_ID;
     if (
       normalizedFont &&
-      (localeFonts.some((item) => item.value === normalizedFont) ||
-        pixelGalmuriOk)
+      (!isAppearanceFontHiddenFromPicker(normalizedFont) || pixelGalmuriOk)
     ) {
       if (config.appearance.font !== normalizedFont) {
         setConfig((prev) => ({
