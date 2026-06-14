@@ -1,6 +1,4 @@
 import { DOT_MATRIX_TEXT_SOURCE } from "@/components/animation/dotMatrixTextShader";
-import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
-import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import { useTilePicture } from "@/hooks/useTilePicture";
 import {
@@ -32,8 +30,6 @@ export interface MarqueeCanvasProps {
   pixelMaskDilateRadius: number;
   pixelMaskErodeRadius: number;
   pixelGlyphPadCells: number;
-  showGradientBackdrop: boolean;
-  gradientBackgroundPreset: string;
   hasBgPhoto: boolean;
   blinkOpacity: number | SharedValue<number>;
   spacer: number;
@@ -47,7 +43,29 @@ export interface MarqueeCanvasProps {
   backgroundColor: string;
 }
 
-// dotted 글자 실루엣 바깥 한 격자(이상)에 흰 도트 — content는 textOnly fill 마스크
+function isNearWhiteColor(color: string): boolean {
+  const s = color.trim().toLowerCase().replace(/\s/g, "");
+  const hex = s.startsWith("#") ? s.slice(1) : null;
+  if (hex) {
+    let r: number, g: number, b: number;
+    if (hex.length === 3 || hex.length === 4) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    }
+    return r > 229 && g > 229 && b > 229;
+  }
+  const rgb = s.match(/^rgba?\((\d+),(\d+),(\d+)/);
+  if (rgb) {
+    return Number(rgb[1]) > 229 && Number(rgb[2]) > 229 && Number(rgb[3]) > 229;
+  }
+  return s === "white";
+}
+
 const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
   uniform shader content;
   uniform float dotSize;
@@ -55,6 +73,7 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
   uniform float textThreshold;
   uniform float outlineRings;
   uniform float dotMaskAaScale;
+  uniform float outlineLuminance;
 
   float coverageAt(half4 s) {
     return s.a;
@@ -107,10 +126,9 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
     }
 
     float d = distance(pos, cellCenter);
-    float aa = max(dotRadius * dotMaskAaScale, 0.001);
-    float coverage = 1.0 - smoothstep(dotRadius - aa, dotRadius + 0.001, d);
-    float mask = step(0.5, coverage);
-    return half4(1.0, 1.0, 1.0, mask);
+    float aa = max(dotRadius * dotMaskAaScale, 0.5);
+    float mask = 1.0 - smoothstep(dotRadius - aa, dotRadius + aa, d);
+    return half4(half3(outlineLuminance), mask);
   }
 `)!;
 
@@ -124,8 +142,6 @@ export function MarqueeCanvas({
   pixelMaskDilateRadius,
   pixelMaskErodeRadius,
   pixelGlyphPadCells,
-  showGradientBackdrop,
-  gradientBackgroundPreset,
   hasBgPhoto,
   blinkOpacity,
   spacer,
@@ -148,6 +164,7 @@ export function MarqueeCanvas({
 
   const { stripPaint, glowStripPaint, stripWidth } = useTilePicture({
     blob,
+    textBlobs: canvas.skiaTextBlobs,
     textWidthPx: canvas.skiaTextWidth,
     spacerPx: spacer,
     canvasWidthPx: layout.width,
@@ -196,6 +213,11 @@ export function MarqueeCanvas({
 
   const pixelDotRadius = pixelShaderSize * pixelTextShaderUniforms.dotRadiusScale;
 
+  const outlineLuminance = useMemo(
+    () => isNearWhiteColor(backgroundColor) || isNearWhiteColor(previewTextColor) ? 0.5 : 1.0,
+    [backgroundColor, previewTextColor],
+  );
+
   const textDotShaderLayer = useMemo(
     () =>
       isPixelTextDots ? (
@@ -229,6 +251,7 @@ export function MarqueeCanvas({
               textThreshold: pixelTextShaderUniforms.textThreshold,
               outlineRings: pixelOutlineRings,
               dotMaskAaScale: pixelTextShaderUniforms.dotMaskAaScale,
+              outlineLuminance,
             }}
           />
         </Paint>
@@ -239,19 +262,12 @@ export function MarqueeCanvas({
       pixelDotRadius,
       pixelOutlineRings,
       pixelTextShaderUniforms,
+      outlineLuminance,
     ],
   );
 
   return (
     <Canvas style={{ flex: 1 }} opaque={false}>
-      {!isPixelEffect && showGradientBackdrop ? (
-        <GradientBackdrop
-          key={`gradient-${gradientBackgroundPreset}`}
-          preset={gradientBackgroundPreset as GradientBackdropId}
-          width={layout.width}
-          height={layout.height}
-        />
-      ) : null}
       <Group opacity={blinkOpacity} transform={canvas.skiaMarqueeTransform}>
         {canDrawGlowStrip ? (
           <Rect

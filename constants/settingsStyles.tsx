@@ -88,15 +88,16 @@ export const creditsStyles = StyleSheet.create({
   },
   roleText: {
     ...uiThemeFontStyle,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "500",
     color: "#9A9A9A",
   },
   namesText: {
     ...uiThemeFontStyle,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: "black",
+    textAlign: "right",
   },
 });
 

@@ -15,7 +15,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 type CreditEntry = { role: string; names: string };
 
 const CREDITS: CreditEntry[] = [

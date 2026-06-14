@@ -8,11 +8,11 @@ import { FONT_SIZE_MIN } from "@/utils/textSizing";
 import { normalizeOneLineJoinMode } from "@/utils/viewMode";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useSettings } from "../../contexts/settingsContext";
@@ -60,6 +60,8 @@ export const TextSection = () => {
     fontItems,
     textSectionLabel,
     resolvedAppLocale,
+    isProActive,
+    openRewardAdModal,
   } = useSettings();
 
   const fontDropdownMaxHeight = useMemo(
@@ -204,7 +206,7 @@ export const TextSection = () => {
         label={textSectionLabel("speed")}
         value={textMoveSpeed}
         onChange={setTextMoveSpeed}
-        minimumValue={0}
+        minimumValue={10}
         maximumValue={100}
         step={1}
       />
@@ -303,6 +305,8 @@ export const TextSection = () => {
           colorList={textColorPalette}
           selectedColor={textSelectedColor}
           onColorSelect={setTextSelectedColor}
+          lockedCount={isProActive ? 0 : 10}
+          onLockedPress={openRewardAdModal}
         />
       </View>
 

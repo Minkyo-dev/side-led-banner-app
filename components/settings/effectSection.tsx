@@ -1,25 +1,27 @@
-import { hasPixelTextDotShader } from "@/constants/pixelLed";
+import { hasPixelLedEffect } from "@/constants/pixelLed";
 import {
   uiThemeFontStyle,
   GALMURI11_FONT_ID,
-  ZITI_GUANJIA_BODIAN_FONT_ID,
 } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import {
   DEFAULT_GRADIENT_BACKGROUND_PRESET_ID,
   GRADIENT_BACKGROUND_PRESETS,
 } from "@/constants/gradientBackgroundPresets";
-import { styles } from "@/constants/styles";
+import { styles, effectSectionLockStyles as fxLock } from "@/constants/styles";
 import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
-
 import { type BannerConfig, useSettings } from "../../contexts/settingsContext";
 import {
   SettingsSliderBlock,
   type SettingsSliderBlockProps,
 } from "./settingsSliderBlock";
+
+const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
+const PRO_LOCKED_EFFECTS = new Set(["Pixel", "Gradient", "Glow"]);
+const PRO_LOCKED_BG_EFFECTS = new Set(["heartBgA", "speechBg1", "speechBg2"]);
 
 const PRIMARY_EFFECT_CHIP_ROWS = [
   ["Bold", "Blink", "Pixel"],
@@ -71,6 +73,8 @@ export const EffectSection = () => {
     effectSectionLabel,
     effectChipLabel,
     resolvedAppLocale,
+    isProActive,
+    openRewardAdModal,
   } = useSettings();
 
   const {
@@ -159,66 +163,68 @@ export const EffectSection = () => {
             key={`effect-row-${rowIndex}`}
             style={[styles.effectChipWrapRow, { justifyContent: "flex-start" }]}
           >
-            {row.map((effect) => (
-              <TouchableOpacity
-                key={effect}
-                style={[
-                  btnStyles.effectItemButton,
-                  { alignSelf: "flex-start" },
-                  effectSelectedItems.includes(effect) &&
-                    btnStyles.effectItemButtonActive,
-                ]}
-                onPress={() => {
-                  const isOn = effectSelectedItems.includes(effect);
-                  const next = isOn
-                    ? effectSelectedItems.filter((e) => e !== effect)
-                    : [...effectSelectedItems, effect];
+            {row.map((effect) => {
+              const isLocked = !isProActive && PRO_LOCKED_EFFECTS.has(effect);
+              return (
+                <TouchableOpacity
+                  key={effect}
+                  style={[
+                    btnStyles.effectItemButton,
+                    { alignSelf: "flex-start" },
+                    !isLocked && effectSelectedItems.includes(effect) &&
+                      btnStyles.effectItemButtonActive,
+                  ]}
+                  onPress={() => {
+                    if (isLocked) { openRewardAdModal(); return; }
+                    const isOn = effectSelectedItems.includes(effect);
+                    const next = isOn
+                      ? effectSelectedItems.filter((e) => e !== effect)
+                      : [...effectSelectedItems, effect];
 
-                  if (isOn) {
-                    updateConfig("appearance", { effectSelectedItems: next });
-                  } else {
-                    const fx = fxVals;
-                    const patch: Partial<BannerConfig["appearance"]> = {
-                      effectSelectedItems: next,
-                    };
-                    if (effect === "Glow") {
-                      patch.glowIntensity = fx.Glow ?? glowIntensity;
-                    } else if (effect === "Blink") {
-                      patch.blinkSpeed = fx.Blink ?? blinkSpeed;
-                    } else if (effect === "Gradient") {
-                      patch.gradientBackgroundPreset =
-                        gradientBackgroundPreset ??
-                        DEFAULT_GRADIENT_BACKGROUND_PRESET_ID;
-                    } else if (effect === "Pixel") {
-                      if (resolvedAppLocale === "zhSC") {
-                        patch.font = ZITI_GUANJIA_BODIAN_FONT_ID;
-                      } else if (
-                        resolvedAppLocale === "zhTC" ||
-                        resolvedAppLocale === "ja"
-                      ) {
+                    if (isOn) {
+                      updateConfig("appearance", { effectSelectedItems: next });
+                    } else {
+                      const fx = fxVals;
+                      const patch: Partial<BannerConfig["appearance"]> = {
+                        effectSelectedItems: next,
+                      };
+                      if (effect === "Glow") {
+                        patch.glowIntensity = fx.Glow ?? glowIntensity;
+                      } else if (effect === "Blink") {
+                        patch.blinkSpeed = fx.Blink ?? blinkSpeed;
+                      } else if (effect === "Gradient") {
+                        patch.gradientBackgroundPreset =
+                          gradientBackgroundPreset ??
+                          DEFAULT_GRADIENT_BACKGROUND_PRESET_ID;
+                      } else if (effect === "Pixel") {
                         patch.font = GALMURI11_FONT_ID;
                       }
+                      updateConfig("appearance", patch);
                     }
-                    updateConfig("appearance", patch);
-                  }
 
-                  if (effect === "Bold") {
-                    setFontWeight(next.includes("Bold") ? "bold" : "normal");
-                  }
-                }}
-              >
-                <Text
-                  style={[
-                    btnStyles.effectItemButtonText,
-                    effectSelectedItems.includes(effect) &&
-                      btnStyles.effectItemButtonTextActive,
-                  ]}
-                  allowFontScaling={false}
+                    if (effect === "Bold") {
+                      setFontWeight(next.includes("Bold") ? "bold" : "normal");
+                    }
+                  }}
                 >
-                  {effectChipLabel(effect)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      btnStyles.effectItemButtonText,
+                      !isLocked && effectSelectedItems.includes(effect) &&
+                        btnStyles.effectItemButtonTextActive,
+                    ]}
+                    allowFontScaling={false}
+                  >
+                    {effectChipLabel(effect)}
+                  </Text>
+                  {isLocked && (
+                    <View style={fxLock.chipOverlay}>
+                      <Image source={LOCK_ICON} style={fxLock.chipIcon} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ))}
       </View>
@@ -236,7 +242,7 @@ export const EffectSection = () => {
         </View>
       ) : null}
 
-      {hasPixelTextDotShader(resolvedAppLocale, effectSelectedItems) ? (
+      {hasPixelLedEffect(effectSelectedItems) ? (
         <View style={{ marginTop: 12, marginHorizontal: 15 }}>
           <Text
             allowFontScaling={false}
@@ -415,64 +421,44 @@ export const EffectSection = () => {
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.backgroundEffectCard,
-            backgroundEffectPreset === "heartBgA" &&
-              styles.backgroundEffectCardSelected,
-          ]}
-          onPress={() =>
-            updateConfig("appearance", {
-              backgroundEffectPreset:
-                backgroundEffectPreset === "heartBgA" ? "none" : "heartBgA",
-            })
-          }
-        >
-          <Image
-            source={require("@/assets/images/Heart_BG_B.png")}
-            style={[styles.effectImage, styles.backgroundEffectThumb]}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.backgroundEffectCard,
-            backgroundEffectPreset === "speechBg1" &&
-              styles.backgroundEffectCardSelected,
-          ]}
-          onPress={() =>
-            updateConfig("appearance", {
-              backgroundEffectPreset:
-                backgroundEffectPreset === "speechBg1" ? "none" : "speechBg1",
-            })
-          }
-        >
-          <Image
-            source={require("@/assets/images/Speech_BG_1_B.png")}
-            style={[styles.effectImage, styles.backgroundEffectThumb]}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.backgroundEffectCard,
-            backgroundEffectPreset === "speechBg2" &&
-              styles.backgroundEffectCardSelected,
-          ]}
-          onPress={() =>
-            updateConfig("appearance", {
-              backgroundEffectPreset:
-                backgroundEffectPreset === "speechBg2" ? "none" : "speechBg2",
-            })
-          }
-        >
-          <Image
-            source={require("@/assets/images/Speech_BG_2_B.png")}
-            style={[styles.effectImage, styles.backgroundEffectThumb]}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+        {(
+          [
+            { preset: "heartBgA", src: require("@/assets/images/Heart_BG_B.png") },
+            { preset: "speechBg1", src: require("@/assets/images/Speech_BG_1_B.png") },
+            { preset: "speechBg2", src: require("@/assets/images/Speech_BG_2_B.png") },
+          ] as const
+        ).map(({ preset, src }) => {
+          const isLocked = !isProActive && PRO_LOCKED_BG_EFFECTS.has(preset);
+          return (
+            <TouchableOpacity
+              key={preset}
+              style={[
+                styles.backgroundEffectCard,
+                !isLocked && backgroundEffectPreset === preset &&
+                  styles.backgroundEffectCardSelected,
+              ]}
+              onPress={() => {
+                if (isLocked) { openRewardAdModal(); return; }
+                updateConfig("appearance", {
+                  backgroundEffectPreset: backgroundEffectPreset === preset ? "none" : preset,
+                });
+              }}
+            >
+              <Image
+                source={src}
+                style={[styles.effectImage, styles.backgroundEffectThumb]}
+                resizeMode="contain"
+              />
+              {isLocked && (
+                <View style={fxLock.cardOverlay}>
+                  <Image source={LOCK_ICON} style={fxLock.cardIcon} />
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </ScrollView>
   );
 };
+

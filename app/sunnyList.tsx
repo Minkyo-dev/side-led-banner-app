@@ -17,7 +17,6 @@ import {
   type ImageSourcePropType,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 type SunnyAppEntry = {
   id: string;
   name: string;

@@ -11,12 +11,8 @@ export type SkiaFontProbe = {
   probeFontSize: number;
 };
 
-const DEFAULT_LINE_HEIGHT_RATIO = 1.2;
-const FULLSCREEN_LINE_HEIGHT_RATIO = 1.16;
 export const FONT_SIZE_MIN = 20;
 export const FONT_SIZE_MAX = 100;
-const SPEECH_TEXT_HEIGHT_PADDING = 24;
-const PORTRAIT_FONT_BOOST = 0.8;
 const PREVIEW_VERTICAL_TEXT_PADDING = {
   default: 0,
   speechBg1: 12,
@@ -113,10 +109,10 @@ export function getSizingPolicy(params: { effectId: string }) {
       : PREVIEW_VERTICAL_TEXT_PADDING[speechBubbleId];
   return {
     speechBubbleId,
-    previewLineHeightRatio: DEFAULT_LINE_HEIGHT_RATIO,
-    fullscreenLineHeightRatio: FULLSCREEN_LINE_HEIGHT_RATIO,
-    speechTextHeightPadding: SPEECH_TEXT_HEIGHT_PADDING,
-    portraitFontBoost: PORTRAIT_FONT_BOOST,
+    previewLineHeightRatio: 1.2,
+    fullscreenLineHeightRatio: 1.16,
+    speechTextHeightPadding: 24,
+    portraitFontBoost: 0.8,
     previewPadding,
     clampByMaxHeight: true,
   };
@@ -228,7 +224,7 @@ export function getPreviewTextMetrics(params: {
     playOption,
     text,
     padding = 0,
-    lineHeightRatio = DEFAULT_LINE_HEIGHT_RATIO,
+    lineHeightRatio = 1.2,
     lineSpacingPx,
     maxLines = 3,
     fallbackFontSize = 100,

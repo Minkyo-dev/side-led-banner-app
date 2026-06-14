@@ -5,9 +5,11 @@ import {
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
 import BannerAdComponent from "@/components/admob/bannerAd";
 import { RewardAdDebugFab } from "@/components/dev/rewardAdDebugFab";
+import { ProDebugFab } from "@/components/dev/proDebugFab";
 import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
 import PreviewPanel from "@/components/previewPanel";
+import { ProActiveBadge } from "@/components/ProActiveBadge";
 import { RewardAdModal } from "@/components/rewardAdModal";
 import { BackgroundSection } from "@/components/settings/backgroundSection";
 import { EffectSection } from "@/components/settings/effectSection";
@@ -15,27 +17,50 @@ import { TextSection } from "@/components/settings/textSection";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
+import { useRewardedAd } from "@/hooks/useRewardedAd";
 import { Image } from "expo-image";
 import * as NavigationBar from "expo-navigation-bar";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useEffect, useState } from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Keyboard, Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { config, ui, updateConfig, updateUI, textSectionLabel } =
+  const { config, ui, updateConfig, updateUI, textSectionLabel, activatePro, isProActive, openRewardAdModal } =
     useSettings();
   const { playOption } = config.content;
-  const { isPlaying, activeTab } = ui;
-  const [rewardAdVisible, setRewardAdVisible] = useState(false);
+  const { isPlaying, activeTab, rewardAdVisible } = ui;
+  const { loaded: rewardAdLoaded, show: showRewardedAd } = useRewardedAd(activatePro);
+
+  useEffect(() => {
+    if (!isProActive) {
+      openRewardAdModal();
+    }
+  }, []);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const { height: windowHeight } = useWindowDimensions();
+  const baseWindowHeightRef = useRef(windowHeight);
+  if (keyboardHeight === 0 && windowHeight > 0) {
+    baseWindowHeightRef.current = windowHeight;
+  }
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
     void NavigationBar.setVisibilityAsync("hidden");
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    const show = Keyboard.addListener("keyboardDidShow", (e) =>
+      setKeyboardHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener("keyboardDidHide", () =>
+      setKeyboardHeight(0),
+    );
+    return () => { show.remove(); hide.remove(); };
   }, []);
 
   const handlePlay = async () => {
@@ -127,19 +152,58 @@ export default function Index() {
       <BannerAdComponent style={{ height: 50 }} />
       <RewardAdModal
         visible={rewardAdVisible}
-        onClose={() => setRewardAdVisible(false)}
-        onWatchAd={() => {
-          // TODO: show rewarded ad, then unlock Pro for 6 hours
-        }}
+        onClose={() => updateUI({ rewardAdVisible: false })}
+        adReady={rewardAdLoaded}
+        onWatchAd={showRewardedAd}
       />
       {/* fullscreen LED banner modal */}
       <LedBannerFullScreen
         visible={isPlaying}
         onClose={handleStop}
-        config={config}
       />
-      <RewardAdDebugFab onOpen={() => setRewardAdVisible(true)} />
+      {Platform.OS === "android" && keyboardHeight > 0 && (
+        <TouchableOpacity
+          onPress={() => Keyboard.dismiss()}
+          style={[
+            kbCloseStyles.button,
+            { bottom: windowHeight < baseWindowHeightRef.current ? 8 : keyboardHeight + 8 },
+          ]}
+          hitSlop={8}
+        >
+          <Text allowFontScaling={false} style={kbCloseStyles.text}>
+            close
+          </Text>
+        </TouchableOpacity>
+      )}
+      <ProActiveBadge />
+      <RewardAdDebugFab onOpen={openRewardAdModal} />
+      <ProDebugFab />
       <SheetFetchDebugPanel />
     </View>
   );
 }
+
+
+const kbCloseStyles = StyleSheet.create({
+  button: {
+    position: "absolute",
+    right: 12,
+    backgroundColor: "#E7E7E7",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#333",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    zIndex: 100,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  text: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "600",
+  },
+});

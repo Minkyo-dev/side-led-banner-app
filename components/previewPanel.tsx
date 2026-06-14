@@ -24,6 +24,9 @@ import { useTextInput } from "@/hooks/useTextInput";
 import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { resolveBubbleCanvasOpts } from "@/utils/skiaBubbleTextLayout";
 import { getSizingPolicy } from "@/utils/textSizing";
+import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
+import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
+import { Canvas } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -67,35 +70,14 @@ export default function PreviewPanel() {
   } = useSettings();
   const { activePreset } = ui;
 
-  const { previewText, playOption, oneLineJoinMode } = config.content;
-  const {
-    font,
-    fontSize,
-    textSelectedColor,
-    outLine,
-    lineSpacing,
-    letterSpacing,
-    dropShadow,
-    fontWeight,
-    effectSelectedItems,
-    gradientBackgroundPreset,
-    backgroundEffectPreset,
-    blinkSpeed,
-    glowIntensity,
-    glowColor,
-    pixelColorMix,
-  } = config.appearance;
-  const { backgroundColor, backgroundImageUri, backgroundBlur } =
-    config.background;
-  const hasBgPhoto =
-    backgroundImageUri != null && backgroundImageUri.length > 0;
-  const { textMoveSpeed } = config.motion;
+  const { previewText, playOption } = config.content;
+  const { font, textSelectedColor, gradientBackgroundPreset, dropShadow } = config.appearance;
+  const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
+  const hasBgPhoto = backgroundImageUri != null && backgroundImageUri.length > 0;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
 
-  const backgroundEdgeEffectAnim = useBackgroundAnimation(
-    backgroundEffectPreset,
-  );
+  const backgroundEdgeEffectAnim = useBackgroundAnimation();
   const sizingPolicy = useMemo(
     () => getSizingPolicy({ effectId: backgroundEdgeEffectAnim.id }),
     [backgroundEdgeEffectAnim.id],
@@ -109,46 +91,23 @@ export default function PreviewPanel() {
     viewportHeight: previewHeight,
   });
 
-  const { effectiveLineSpacing, previewFontSize, marqueeReferenceFontSize } =
-    useTextMetrics({
-      mode: "preview",
-      previewHeight,
-      text: previewText,
-      fontSize,
-      lineSpacing,
-      playOption,
-      sizingPolicy,
-      isSpeechBgActive: speechBubble.isActive,
-      speechMaxHeight: speechBubble.maxTextHeight,
-      appearanceFont: font,
-      fontWeight,
-    });
-
-  const effects = useEffects({
-    effectSelectedItems,
-    gradientBackgroundPreset,
-    outLine,
-    glowIntensity,
-    glowColor,
-    dropShadow,
-    pixelColorMix,
-    playOption,
-    fontSizePx: previewFontSize,
+  const { effectiveLineSpacing, previewFontSize } = useTextMetrics({
+    mode: "preview",
+    previewHeight,
+    sizingPolicy,
+    isSpeechBgActive: speechBubble.isActive,
+    speechMaxHeight: speechBubble.maxTextHeight,
   });
+
+  const effects = useEffects({ fontSizePx: previewFontSize });
 
   const marqueeViewportWidthPx =
     speechBubble.speechBoxPx?.widthPx ?? previewBox.width;
 
-  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
-    {
-      text: previewText,
-      speed: textMoveSpeed,
-      playOption,
-      oneLineJoinMode,
-      viewportWidthPx: marqueeViewportWidthPx,
-      effectBleedPx: effects.effectSpacePx,
-    },
-  );
+  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation({
+    viewportWidthPx: marqueeViewportWidthPx,
+    effectBleedPx: effects.effectSpacePx,
+  });
 
   const canvasFallback = useMemo(
     () => resolveSpeechCanvasFallback(speechBubble.speechBoxPx, previewBox),
@@ -160,14 +119,10 @@ export default function PreviewPanel() {
     translateX,
     onTextLayout,
     previewFontSize,
-    marqueeReferenceFontSize,
-    appearanceFont: font,
     appearanceFontOverride: effects.pixelSkiaFontOverride,
-    fontWeight,
-    letterSpacing,
     lineSpacingPx: effectiveLineSpacing,
     fallbackLayout: canvasFallback,
-    playOption,
+    isPixelMode: effects.isPixelEffect,
     speechBubbleLayout: resolveBubbleCanvasOpts({
       isSpeechActive: speechBubble.isActive,
       isPixelEffect: effects.isPixelEffect,
@@ -176,10 +131,7 @@ export default function PreviewPanel() {
     }),
   });
 
-  const { opacity: blinkOpacity } = useBlinkOpacityStyle(
-    effectSelectedItems.includes("Blink"),
-    blinkSpeed,
-  );
+  const { opacity: blinkOpacity } = useBlinkOpacityStyle();
 
   const marqueeCanvasProps = buildCanvas({
     canvas,
@@ -241,15 +193,7 @@ export default function PreviewPanel() {
     onSelectionChange,
     onInputScroll,
     inputViewportHeightPx,
-  } = useTextInput({
-    previewText,
-    activePreset,
-    inputScrollViewportW,
-    windowWidth,
-    font,
-    fontWeight,
-    appLocale: resolvedAppLocale,
-  });
+  } = useTextInput({ inputScrollViewportW });
 
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
@@ -280,7 +224,7 @@ export default function PreviewPanel() {
 
     const lineCount = previewText.replace(/\r\n?/g, "\n").split("\n").length;
     if (lineCount >= PREVIEW_TEXT_MAX_LINES) {
-      dismissKeyboard();
+      // dismissKeyboard();
     }
   };
 
@@ -295,7 +239,9 @@ export default function PreviewPanel() {
             justifyContent: "center",
             overflow: "hidden",
             backgroundColor:
-              hasBgPhoto || effects.isPixelEffect ? undefined : backgroundColor,
+              hasBgPhoto || effects.isPixelEffect
+                ? undefined
+                : backgroundColor,
           },
         ]}
         onLayout={onPreviewLayout}
@@ -310,6 +256,18 @@ export default function PreviewPanel() {
         ) : null}
         {effects.isPixelEffect && previewBox.width > 0 && previewBox.height > 0 ? (
           <PixelBackgroundCanvas {...pixelBackgroundProps} />
+        ) : null}
+        {!effects.isPixelEffect && effects.showGradientBackdrop && previewBox.width > 0 && previewBox.height > 0 ? (
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Canvas style={{ flex: 1 }} opaque={false}>
+              <GradientBackdrop
+                key={`gradient-${gradientBackgroundPreset}`}
+                preset={gradientBackgroundPreset as GradientBackdropId}
+                width={previewBox.width}
+                height={previewBox.height}
+              />
+            </Canvas>
+          </View>
         ) : null}
         <BackgroundEffectLayer
           effect={backgroundEdgeEffectAnim}
@@ -335,7 +293,6 @@ export default function PreviewPanel() {
             >
               <MarqueeCanvas
                 {...marqueeCanvasProps}
-                gradientBackgroundPreset={gradientBackgroundPreset}
               />
             </View>
           </View>
@@ -346,7 +303,6 @@ export default function PreviewPanel() {
           >
             <MarqueeCanvas
               {...marqueeCanvasProps}
-              gradientBackgroundPreset={gradientBackgroundPreset}
             />
           </View>
         )}
@@ -464,7 +420,7 @@ export default function PreviewPanel() {
                 lineHeight: CONTENTS_INPUT_LINE_HEIGHT,
                 fontFamily: appFontFamilyForText(
                   font,
-                  fontWeight === "bold" ? "bold" : "normal",
+                  config.appearance.fontWeight === "bold" ? "bold" : "normal",
                   resolvedAppLocale,
                 ),
               },
