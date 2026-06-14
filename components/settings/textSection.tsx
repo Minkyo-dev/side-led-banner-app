@@ -2,6 +2,7 @@
 import { ColorPicker } from "@/components/colorPicker";
 import { btnStyles } from "@/constants/btnStyles";
 import { textColorPalette } from "@/constants/colorPalette";
+import { getDefaultAppearanceFontForLocale } from "@/constants/appFonts";
 import { resolvePixelFontSizeSliderMinPercent } from "@/constants/pixelLed";
 import { resolveDropdownMaxHeight, styles } from "@/constants/styles";
 import { FONT_SIZE_MIN } from "@/utils/textSizing";
@@ -88,6 +89,11 @@ export const TextSection = () => {
     dropShadow,
   } = config.appearance;
   const { textMoveSpeed } = config.motion;
+
+  const displayFontValue = useMemo(() => {
+    if (fontItems.some((item) => item.value === font)) return font;
+    return getDefaultAppearanceFontForLocale(resolvedAppLocale);
+  }, [font, fontItems, resolvedAppLocale]);
   const { effectSelectedItems } = config.appearance;
   const isPixelEffect = effectSelectedItems.includes("Pixel");
   const fontSizeSliderMin = useMemo(
@@ -178,7 +184,7 @@ export const TextSection = () => {
           valueField="value"
           placeholder={textSectionLabel("fontPlaceholder")}
           iconColor="black"
-          value={font}
+          value={displayFontValue}
           onChange={onFontChange}
           maxHeight={fontDropdownMaxHeight}
           showsVerticalScrollIndicator

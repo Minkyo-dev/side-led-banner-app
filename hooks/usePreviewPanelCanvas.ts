@@ -261,9 +261,8 @@ export function usePreviewPanelCanvas({
 
   const marqueePeriodPx = useMemo(() => {
     if (!skiaLineLayouts || skiaLineLayouts.length === 0) return 0;
-    const rawWidth = skiaLineLayouts.reduce((max, row) => Math.max(max, row.width), 0);
-    return drawW > 0 ? Math.max(rawWidth, drawW) : rawWidth;
-  }, [skiaLineLayouts, drawW]);
+    return skiaLineLayouts.reduce((max, row) => Math.max(max, row.width), 0);
+  }, [skiaLineLayouts]);
 
   const skiaGlyphLayout = useMemo(() => {
     if (!skiaFont || !skiaLineLayouts || drawH <= 0) {

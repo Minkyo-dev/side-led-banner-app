@@ -208,9 +208,9 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
       { label: "M PLUS 1p", value: "m_plus_1p" },
     ],
     zhSC: [
+      { label: "Noto Sans SC", value: "noto_sans_sc" },
       { label: "M PLUS Rounded 1c", value: "m_plus_rounded_1c" },
       { label: "ZCOOL QingKe HuangYou", value: "zcool_qingke_huangyou" },
-      { label: "Noto Sans SC", value: "noto_sans_sc" },
       { label: "Long Cang", value: "long_cang" },
       { label: "Noto Serif SC", value: "noto_serif_sc" },
     ],
