@@ -350,8 +350,8 @@ export const rewardAdModalStyles = StyleSheet.create({
   ctaButtonContent: {
     position: "absolute",
     left: "31.39%",
-    top: "25%",
-    bottom: "25%",
+    top: "18%",
+    bottom: "18%",
     right: 0,
     flexDirection: "row",
     alignItems: "center",
@@ -365,6 +365,7 @@ export const rewardAdModalStyles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     flexShrink: 1,
+    includeFontPadding: false,
   },
 });
 
@@ -448,6 +449,59 @@ export const colorPickerStyles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 50,
+  },
+  photoEmpty: {
+    backgroundColor: "#E8E8E8",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#B0B0B0",
+  },
+});
+
+export const colorPickerLockStyles = StyleSheet.create({
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(150,150,150,0.55)",
+    borderRadius: 50,
+  },
+  icon: {
+    position: "absolute",
+    width: 14,
+    height: 14,
+    top: 9,
+    left: 9,
+    resizeMode: "contain",
+  },
+});
+
+export const effectSectionLockStyles = StyleSheet.create({
+  chipOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(160,160,160,0.5)",
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  chipIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: "contain",
+  },
+  cardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(150,150,150,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cardIcon: {
+    width: 28,
+    height: 28,
+    resizeMode: "contain",
   },
 });
 

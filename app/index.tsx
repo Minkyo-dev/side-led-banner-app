@@ -5,16 +5,17 @@ import {
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
 import BannerAdComponent from "@/components/admob/bannerAd";
 import { RewardAdDebugFab } from "@/components/dev/rewardAdDebugFab";
+import { ProDebugFab } from "@/components/dev/proDebugFab";
 import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
 import PreviewPanel from "@/components/previewPanel";
+import { ProActiveBadge } from "@/components/ProActiveBadge";
 import { RewardAdModal } from "@/components/rewardAdModal";
 import { BackgroundSection } from "@/components/settings/backgroundSection";
 import { EffectSection } from "@/components/settings/effectSection";
 import { TextSection } from "@/components/settings/textSection";
 import { btnStyles } from "@/constants/btnStyles";
 import { styles } from "@/constants/styles";
-import { ProActiveBadge } from "@/components/ProActiveBadge";
 import { TabType, useSettings } from "@/contexts/settingsContext";
 import { useRewardedAd } from "@/hooks/useRewardedAd";
 import { Image } from "expo-image";
@@ -28,12 +29,17 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { config, ui, updateConfig, updateUI, textSectionLabel, activatePro } =
+  const { config, ui, updateConfig, updateUI, textSectionLabel, activatePro, isProActive, openRewardAdModal } =
     useSettings();
   const { playOption } = config.content;
-  const { isPlaying, activeTab } = ui;
-  const [rewardAdVisible, setRewardAdVisible] = useState(false);
+  const { isPlaying, activeTab, rewardAdVisible } = ui;
   const { loaded: rewardAdLoaded, show: showRewardedAd } = useRewardedAd(activatePro);
+
+  useEffect(() => {
+    if (!isProActive) {
+      openRewardAdModal();
+    }
+  }, []);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const { height: windowHeight } = useWindowDimensions();
   const baseWindowHeightRef = useRef(windowHeight);
@@ -146,7 +152,7 @@ export default function Index() {
       <BannerAdComponent style={{ height: 50 }} />
       <RewardAdModal
         visible={rewardAdVisible}
-        onClose={() => setRewardAdVisible(false)}
+        onClose={() => updateUI({ rewardAdVisible: false })}
         adReady={rewardAdLoaded}
         onWatchAd={showRewardedAd}
       />
@@ -170,7 +176,8 @@ export default function Index() {
         </TouchableOpacity>
       )}
       <ProActiveBadge />
-      <RewardAdDebugFab onOpen={() => setRewardAdVisible(true)} />
+      <RewardAdDebugFab onOpen={openRewardAdModal} />
+      <ProDebugFab />
       <SheetFetchDebugPanel />
     </View>
   );

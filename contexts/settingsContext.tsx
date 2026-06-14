@@ -311,6 +311,7 @@ export interface UIState {
    */
   appLanguage: AppLanguagePreference;
   proMode: number | null;
+  rewardAdVisible: boolean;
 }
 //여기서 제공할 config 및 업데이트 함수 정의
 interface SettingsContextValue {
@@ -325,6 +326,7 @@ interface SettingsContextValue {
   updateUI: (updates: Partial<UIState>) => void;
   isProActive: boolean;
   activatePro: () => void;
+  openRewardAdModal: () => void;
   handleTextChange: (text: string) => void;
   fontItems: { label: string; value: string }[];
   effectItems: string[];
@@ -395,6 +397,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     activePreset: 0,
     appLanguage: "system",
     proMode: null,
+    rewardAdVisible: false,
   });
 
   const resolvedAppLocale: AppLocaleKey =
@@ -555,6 +558,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setUI((prev) => ({ ...prev, proMode: Date.now() + 2 * 60 * 1000 }));
   }, []);
 
+  const openRewardAdModal = useCallback(() => {
+    setUI((prev) => ({ ...prev, rewardAdVisible: true }));
+  }, []);
+
   useEffect(() => {
     if (ui.proMode === null) return;
     const remaining = ui.proMode - Date.now();
@@ -693,6 +700,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       updateUI,
       isProActive,
       activatePro,
+      openRewardAdModal,
       handleTextChange,
       fontItems,
       effectItems,
@@ -714,6 +722,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       fontItems,
       effectItems,
       loadPreset,
+      openRewardAdModal,
       sheetParseResult,
       sheetStringsLoading,
       sheetStringsError,

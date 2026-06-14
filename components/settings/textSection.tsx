@@ -60,6 +60,8 @@ export const TextSection = () => {
     fontItems,
     textSectionLabel,
     resolvedAppLocale,
+    isProActive,
+    openRewardAdModal,
   } = useSettings();
 
   const fontDropdownMaxHeight = useMemo(
@@ -303,6 +305,8 @@ export const TextSection = () => {
           colorList={textColorPalette}
           selectedColor={textSelectedColor}
           onColorSelect={setTextSelectedColor}
+          lockedCount={isProActive ? 0 : 10}
+          onLockedPress={openRewardAdModal}
         />
       </View>
 
