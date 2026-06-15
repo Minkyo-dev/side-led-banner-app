@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Led Pop",
-    "slug": "side-led-banner-app",
+    "slug": "led-banner-app",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/splash-icon.png",
@@ -25,7 +25,10 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.minkyokim.sideledbannerapp"
+      "package": "com.minkyokim.sideledbannerapp",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -69,8 +72,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "f8c4d515-3a65-40bb-8748-869e651c979f"
+        "projectId": "44a30afd-03aa-4cdd-b798-adc4657af084"
       }
-    }
+    },
+    "owner": "led-banner-app"
   }
 }
