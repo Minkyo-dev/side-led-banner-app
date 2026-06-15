@@ -29,22 +29,17 @@ export default function Index() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { config, ui, updateConfig, updateUI, textSectionLabel, activatePro, isProActive, openRewardAdModal } =
+  const { config, ui, updateConfig, updateUI, textSectionLabel, activatePro, openRewardAdModal } =
     useSettings();
   const { playOption } = config.content;
   const { isPlaying, activeTab, rewardAdVisible } = ui;
   const { loaded: rewardAdLoaded, show: showRewardedAd } = useRewardedAd(activatePro);
 
-  useEffect(() => {
-    if (!isProActive) {
-      openRewardAdModal();
-    }
-  }, []);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const { height: windowHeight } = useWindowDimensions();
   const baseWindowHeightRef = useRef(windowHeight);
   if (keyboardHeight === 0 && windowHeight > 0) {
-    baseWindowHeightRef.current = windowHeight;
+    baseWindowHeightRef.current = Math.max(baseWindowHeightRef.current, windowHeight);
   }
 
   useEffect(() => {
@@ -166,7 +161,7 @@ export default function Index() {
           onPress={() => Keyboard.dismiss()}
           style={[
             kbCloseStyles.button,
-            { bottom: windowHeight < baseWindowHeightRef.current ? 8 : keyboardHeight + 8 },
+            { bottom: windowHeight < baseWindowHeightRef.current - 100 ? 8 : keyboardHeight + 8 },
           ]}
           hitSlop={8}
         >
