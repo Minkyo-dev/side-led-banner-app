@@ -153,6 +153,24 @@ const PRO_LOCKED_BG_EFFECTS = new Set(["heartBgA", "speechBg1", "speechBg2"]);
 const TEXT_COLOR_LOCKED_START = textColorPalette.length - 10;
 const BG_COLOR_LOCKED_START = backgroundColorPalette.length - 10;
 
+function nonProSanitize(cfg: BannerConfig): BannerConfig {
+  const a = { ...cfg.appearance };
+  const bg = { ...cfg.background };
+  a.effectSelectedItems = a.effectSelectedItems.filter(
+    (e) => !PRO_LOCKED_EFFECTS.has(e),
+  );
+  if (PRO_LOCKED_BG_EFFECTS.has(a.backgroundEffectPreset)) {
+    a.backgroundEffectPreset = "none";
+  }
+  if (textColorPalette.indexOf(a.textSelectedColor) >= TEXT_COLOR_LOCKED_START) {
+    a.textSelectedColor = textColorPalette[0]!;
+  }
+  if (backgroundColorPalette.indexOf(bg.backgroundColor) >= BG_COLOR_LOCKED_START) {
+    bg.backgroundColor = backgroundColorPalette[0]!;
+  }
+  return { ...cfg, appearance: a, background: bg };
+}
+
 /** 입력·미리보기 공통 최대 줄 수 */
 export const PREVIEW_TEXT_MAX_LINES = 3;
 const PRESET_AUTOSAVE_DEBOUNCE_MS = 500;
@@ -563,9 +581,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setUI((prev) => ({ ...prev, ...updates }));
   };
 
+  //Preset 불러올 시 pro mode에 따른  적용
   const isProActive = ui.proMode !== null && Date.now() < ui.proMode;
+  const prevIsProActiveRef = useRef(isProActive);
   useEffect(() => {
+    const prev = prevIsProActiveRef.current;
+    prevIsProActiveRef.current = isProActive;
     isProActiveRef.current = isProActive;
+    if (prev && !isProActive) {
+      setConfig((current) => nonProSanitize(current));
+    }
   }, [isProActive]);
 
   const activatePro = useCallback(() => {
@@ -615,27 +640,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       });
     }
     setPresetSlots(slots);
-    //pro 꺼져 있으면 pro mode의 효과들 제거
-    const nextConfig = configFromPreset(chosen, cfg.content.playOption);
-    if (!isProActiveRef.current) {
-      const a = nextConfig.appearance;
-      a.effectSelectedItems = a.effectSelectedItems.filter(
-        (e) => !PRO_LOCKED_EFFECTS.has(e),
-      );
-      if (PRO_LOCKED_BG_EFFECTS.has(a.backgroundEffectPreset)) {
-        a.backgroundEffectPreset = "none";
-      }
-      const textColorIdx = textColorPalette.indexOf(a.textSelectedColor);
-      if (textColorIdx >= TEXT_COLOR_LOCKED_START) {
-        a.textSelectedColor = textColorPalette[0]!;
-      }
-      const bgColorIdx = backgroundColorPalette.indexOf(
-        nextConfig.background.backgroundColor,
-      );
-      if (bgColorIdx >= BG_COLOR_LOCKED_START) {
-        nextConfig.background.backgroundColor = backgroundColorPalette[0]!;
-      }
-    }
+    const raw = configFromPreset(chosen, cfg.content.playOption);
+    const nextConfig = isProActiveRef.current ? raw : nonProSanitize(raw);
     setConfig(nextConfig);
     setUI((u) => ({ ...u, activePreset: slot }));
   }, []);
