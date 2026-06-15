@@ -7,6 +7,10 @@ import {
   normalizeAppearanceFontId,
 } from "@/constants/appFonts";
 import {
+  backgroundColorPalette,
+  textColorPalette,
+} from "@/constants/colorPalette";
+import {
   APP_LOCALE_KEYS,
   type AppLanguagePreference,
   type AppLocaleKey,
@@ -134,7 +138,7 @@ export interface BannerConfig {
   };
 }
 
-/** 프리셋에 저장할 목록록(playOption 제외) */
+/** 프리셋에 저장할 목록(playOption 제외) */
 export type PresetSnapshot = {
   content: Omit<BannerConfig["content"], "playOption">;
   appearance: BannerConfig["appearance"];
@@ -143,6 +147,11 @@ export type PresetSnapshot = {
 };
 
 export const PRESET_SLOT_COUNT = 5;
+
+const PRO_LOCKED_EFFECTS = new Set(["Pixel", "Gradient", "Glow"]);
+const PRO_LOCKED_BG_EFFECTS = new Set(["heartBgA", "speechBg1", "speechBg2"]);
+const TEXT_COLOR_LOCKED_START = textColorPalette.length - 10;
+const BG_COLOR_LOCKED_START = backgroundColorPalette.length - 10;
 
 /** 입력·미리보기 공통 최대 줄 수 */
 export const PREVIEW_TEXT_MAX_LINES = 3;
@@ -450,6 +459,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     activePresetRef.current = ui.activePreset;
   }, [ui.activePreset]);
+  const isProActiveRef = useRef(false);
 
   useEffect(() => {
     if (!presetsStorageReadyRef.current) return;
@@ -554,6 +564,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isProActive = ui.proMode !== null && Date.now() < ui.proMode;
+  useEffect(() => {
+    isProActiveRef.current = isProActive;
+  }, [isProActive]);
 
   const activatePro = useCallback(() => {
     setUI((prev) => ({ ...prev, proMode: Date.now() + 2 * 60 * 1000 }));
@@ -602,7 +615,28 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       });
     }
     setPresetSlots(slots);
-    setConfig(configFromPreset(chosen, cfg.content.playOption));
+    //pro 꺼져 있으면 pro mode의 효과들 제거
+    const nextConfig = configFromPreset(chosen, cfg.content.playOption);
+    if (!isProActiveRef.current) {
+      const a = nextConfig.appearance;
+      a.effectSelectedItems = a.effectSelectedItems.filter(
+        (e) => !PRO_LOCKED_EFFECTS.has(e),
+      );
+      if (PRO_LOCKED_BG_EFFECTS.has(a.backgroundEffectPreset)) {
+        a.backgroundEffectPreset = "none";
+      }
+      const textColorIdx = textColorPalette.indexOf(a.textSelectedColor);
+      if (textColorIdx >= TEXT_COLOR_LOCKED_START) {
+        a.textSelectedColor = textColorPalette[0]!;
+      }
+      const bgColorIdx = backgroundColorPalette.indexOf(
+        nextConfig.background.backgroundColor,
+      );
+      if (bgColorIdx >= BG_COLOR_LOCKED_START) {
+        nextConfig.background.backgroundColor = backgroundColorPalette[0]!;
+      }
+    }
+    setConfig(nextConfig);
     setUI((u) => ({ ...u, activePreset: slot }));
   }, []);
 
@@ -685,11 +719,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   // effect items list
   const effectItems = useMemo(() => {
     const items = ["Bold", "Blink", "Pixel", "Glow", "Gradient"];
-    if (!appearanceFontSupportsBold(config.appearance.font)) {
+    const isPixelMode = config.appearance.effectSelectedItems.includes("Pixel");
+    if (!appearanceFontSupportsBold(config.appearance.font) && !isPixelMode) {
       return items.filter((e) => e !== "Bold");
     }
     return items;
-  }, [config.appearance.font]);
+  }, [config.appearance.font, config.appearance.effectSelectedItems]);
   const value = useMemo(
     () => ({
       config,
