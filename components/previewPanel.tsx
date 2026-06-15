@@ -219,7 +219,6 @@ export default function PreviewPanel() {
   }, [rejectedEnterSelection]);
 
   const handleInputKeyPress = (e: { nativeEvent: { key: string } }) => {
-    if (playOption !== "multi") return;
     if (e.nativeEvent.key !== "Enter") return;
 
     const lineCount = previewText.replace(/\r\n?/g, "\n").split("\n").length;
@@ -405,7 +404,7 @@ export default function PreviewPanel() {
           <TextInput
             editable
             allowFontScaling={false}
-            multiline={playOption === "multi"}
+            multiline={true}
             scrollEnabled={true}
             style={[
               styles.contentsInput,
