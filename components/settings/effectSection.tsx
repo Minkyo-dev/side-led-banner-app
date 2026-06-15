@@ -165,17 +165,21 @@ export const EffectSection = () => {
           >
             {row.map((effect) => {
               const isLocked = !isProActive && PRO_LOCKED_EFFECTS.has(effect);
+              const isPixelActive = effectSelectedItems.includes("Pixel");
+              const isBoldDisabled = effect === "Bold" && isPixelActive;
               return (
                 <TouchableOpacity
                   key={effect}
                   style={[
                     btnStyles.effectItemButton,
                     { alignSelf: "flex-start" },
-                    !isLocked && effectSelectedItems.includes(effect) &&
+                    !isLocked && !isBoldDisabled && effectSelectedItems.includes(effect) &&
                       btnStyles.effectItemButtonActive,
+                    isBoldDisabled && { opacity: 0.35 },
                   ]}
                   onPress={() => {
                     if (isLocked) { openRewardAdModal(); return; }
+                    if (isBoldDisabled) return;
                     const isOn = effectSelectedItems.includes(effect);
                     const next = isOn
                       ? effectSelectedItems.filter((e) => e !== effect)
