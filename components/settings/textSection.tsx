@@ -2,17 +2,18 @@
 import { ColorPicker } from "@/components/colorPicker";
 import { btnStyles } from "@/constants/btnStyles";
 import { textColorPalette } from "@/constants/colorPalette";
+import { getDefaultAppearanceFontForLocale } from "@/constants/appFonts";
 import { resolvePixelFontSizeSliderMinPercent } from "@/constants/pixelLed";
 import { resolveDropdownMaxHeight, styles } from "@/constants/styles";
 import { FONT_SIZE_MIN } from "@/utils/textSizing";
 import { normalizeOneLineJoinMode } from "@/utils/viewMode";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useSettings } from "../../contexts/settingsContext";
@@ -60,6 +61,8 @@ export const TextSection = () => {
     fontItems,
     textSectionLabel,
     resolvedAppLocale,
+    isProActive,
+    openRewardAdModal,
   } = useSettings();
 
   const fontDropdownMaxHeight = useMemo(
@@ -86,6 +89,11 @@ export const TextSection = () => {
     dropShadow,
   } = config.appearance;
   const { textMoveSpeed } = config.motion;
+
+  const displayFontValue = useMemo(() => {
+    if (fontItems.some((item) => item.value === font)) return font;
+    return getDefaultAppearanceFontForLocale(resolvedAppLocale);
+  }, [font, fontItems, resolvedAppLocale]);
   const { effectSelectedItems } = config.appearance;
   const isPixelEffect = effectSelectedItems.includes("Pixel");
   const fontSizeSliderMin = useMemo(
@@ -176,7 +184,7 @@ export const TextSection = () => {
           valueField="value"
           placeholder={textSectionLabel("fontPlaceholder")}
           iconColor="black"
-          value={font}
+          value={displayFontValue}
           onChange={onFontChange}
           maxHeight={fontDropdownMaxHeight}
           showsVerticalScrollIndicator
@@ -204,7 +212,7 @@ export const TextSection = () => {
         label={textSectionLabel("speed")}
         value={textMoveSpeed}
         onChange={setTextMoveSpeed}
-        minimumValue={0}
+        minimumValue={10}
         maximumValue={100}
         step={1}
       />
@@ -303,6 +311,8 @@ export const TextSection = () => {
           colorList={textColorPalette}
           selectedColor={textSelectedColor}
           onColorSelect={setTextSelectedColor}
+          lockedCount={isProActive ? 0 : 10}
+          onLockedPress={openRewardAdModal}
         />
       </View>
 

@@ -193,11 +193,12 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
       { label: "Noto Sans KR", value: "noto_sans_kr" },
     ],
     ja: [
+      { label: "LINE Seed JP", value: "line_seed_jp" },
       { label: "Kaisei", value: "kaisei" },
       { label: "IBM Plex Sans JP", value: "ibm_plex_sans_jp" },
       { label: "Dela Gothic One", value: "dela_gothic_one" },
       { label: "Mochiy Pop One", value: "mochiy_pop_one" },
-      { label: "LINE Seed JP", value: "line_seed_jp" },
+      
     ],
     zhTC: [
       { label: "Noto Sans TC", value: "noto_sans_tc" },
@@ -207,9 +208,9 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
       { label: "M PLUS 1p", value: "m_plus_1p" },
     ],
     zhSC: [
+      { label: "Noto Sans SC", value: "noto_sans_sc" },
       { label: "M PLUS Rounded 1c", value: "m_plus_rounded_1c" },
       { label: "ZCOOL QingKe HuangYou", value: "zcool_qingke_huangyou" },
-      { label: "Noto Sans SC", value: "noto_sans_sc" },
       { label: "Long Cang", value: "long_cang" },
       { label: "Noto Serif SC", value: "noto_serif_sc" },
     ],

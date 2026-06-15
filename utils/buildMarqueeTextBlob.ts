@@ -17,7 +17,7 @@ export function buildMarqueeTextBlob(
   for (const g of positions) {
     if (g.text.length === 0) continue;
     const ids = font.getGlyphIDs(g.text, g.text.length);
-    if (ids.length === 0) continue;
+    if (ids.length === 0 || ids[0] === 0) continue;
     glyphs.push(ids[0]!);
     rsxforms.push(Skia.RSXform(1, 0, g.x, g.y));
   }

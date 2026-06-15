@@ -1,4 +1,5 @@
 import { APP_FONT_ASSETS, APP_THEME_FONT_ASSETS } from "@/constants/appFonts";
+import { SplashLoadingScreen } from "@/components/SplashLoadingScreen";
 import { SettingsProvider } from "@/contexts/settingsContext";
 import {
   DarkTheme,
@@ -24,10 +25,8 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
+    SplashScreen.hideAsync();
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
@@ -49,7 +48,9 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
           </Stack>
-        ) : null}
+        ) : (
+          <SplashLoadingScreen />
+        )}
         <StatusBar style="auto" />
       </SettingsProvider>
     </ThemeProvider>

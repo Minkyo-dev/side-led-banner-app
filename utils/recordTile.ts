@@ -16,8 +16,6 @@ import {
 import type { GlyphLedPanelRect } from "@/utils/glyphLedPanels";
 import { assignGlyphMixColors } from "@/utils/pixelColorMix";
 
-/** Pixel: 글자 패널 배경(셰이더에서 꺼진 LED 영역) */
-const GLYPH_PANEL_MASK_ALPHA = 0.22;
 
 const DROP_SHADOW_RGBA = Skia.Color("rgba(0, 0, 0, 0.5)");
 
@@ -44,6 +42,7 @@ export type RecordMarqueeTileParams = {
   isGlowEffect: boolean;
   glowBlurRadius: number;
   strokeWidthPx: number;
+  strokeColor?: string;
   dropShadow: number;
   dropShadowBlur: number;
   layerMode?: MarqueeTileLayerMode;
@@ -119,6 +118,7 @@ function drawBlobLayer(
   blob: SkTextBlob,
   params: {
     fillColor: string;
+    strokeColor?: string;
     strokeWidthPx: number;
     dropShadowBlur: number;
     dropShadowEnabled: boolean;
@@ -137,7 +137,7 @@ function drawBlobLayer(
     stroke.setAntiAlias(true);
     stroke.setStyle(PaintStyle.Stroke);
     stroke.setStrokeWidth(strokeWidthPx);
-    stroke.setColor(Skia.Color("white"));
+    stroke.setColor(Skia.Color(params.strokeColor ?? "white"));
     if (dropShadowEnabled) {
       setPaintFilters(stroke, blur, withDropShadow(dropShadowBlur));
     } else if (blur) {
@@ -228,7 +228,7 @@ export function recordTile(
         const panelPaint = Skia.Paint();
         panelPaint.setAntiAlias(false);
         panelPaint.setColor(
-          Skia.Color(`rgba(255,255,255,${GLYPH_PANEL_MASK_ALPHA})`),
+          Skia.Color(`rgba(255,255,255,0.22)`),
         );
         for (const panel of panels) {
           canvas.drawRect(
@@ -261,12 +261,16 @@ export function recordTile(
         drawTextBlobs(canvas, blobs, fill);
       }
     } else {
-      drawBlobLayer(canvas, p.blob, {
-        fillColor: p.previewTextColor,
-        strokeWidthPx: p.strokeWidthPx,
-        dropShadowBlur: p.dropShadowBlur,
-        dropShadowEnabled,
-      });
+      const blobs = p.textBlobs && p.textBlobs.length > 0 ? p.textBlobs : [p.blob];
+      for (const blob of blobs) {
+        drawBlobLayer(canvas, blob, {
+          fillColor: p.previewTextColor,
+          strokeColor: p.strokeColor,
+          strokeWidthPx: p.strokeWidthPx,
+          dropShadowBlur: p.dropShadowBlur,
+          dropShadowEnabled,
+        });
+      }
     }
   }
 

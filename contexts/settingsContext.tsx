@@ -1,58 +1,61 @@
 import {
-    appearanceFontSupportsBold,
-    getDefaultAppearanceFontForLocale,
-    getFontItemsForLocale,
-    normalizeAppearanceFontId,
-    GALMURI11_FONT_ID,
-    ZITI_GUANJIA_BODIAN_FONT_ID,
+  appearanceFontSupportsBold,
+  GALMURI11_FONT_ID,
+  getDefaultAppearanceFontForLocale,
+  getFontItemsForLocale,
+  isAppearanceFontHiddenFromPicker,
+  normalizeAppearanceFontId,
 } from "@/constants/appFonts";
 import {
-    isGalmuriPixelMode,
-    isPixelFontBoDianMode,
-    migrateLegacyEffectItems,
-} from "@/constants/pixelLed";
+  backgroundColorPalette,
+  textColorPalette,
+} from "@/constants/colorPalette";
 import {
-    APP_LOCALE_KEYS,
-    type AppLanguagePreference,
-    type AppLocaleKey,
+  APP_LOCALE_KEYS,
+  type AppLanguagePreference,
+  type AppLocaleKey,
 } from "@/constants/language";
+import {
+  hasPixelLedEffect,
+  migrateLegacyEffectItems,
+} from "@/constants/pixelLed";
 import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import {
-    type GoogleSheetLocaleRow,
-    type GoogleSheetParseResult,
-    useGoogleSheets,
+  type GoogleSheetLocaleRow,
+  type GoogleSheetParseResult,
+  useGoogleSheets,
 } from "@/hooks/useGoogleSheets";
 import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
 import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import {
-    effectChipLabel as resolveEffectChipLabel,
-    tEffectSectionLabel,
+  effectChipLabel as resolveEffectChipLabel,
+  tEffectSectionLabel,
 } from "@/language/effectSectionLabels";
 import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { tRewardAdLabel } from "@/language/rewardAdLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
 import {
-    readAppLanguage,
-    writeAppLanguage,
+  readAppLanguage,
+  writeAppLanguage,
 } from "@/utils/appLanguageStorage";
 import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
 import {
-    normalizeOneLineJoinMode,
-    type OneLineJoinMode,
+  normalizeOneLineJoinMode,
+  type OneLineJoinMode,
 } from "@/utils/viewMode";
 import { useLocales } from "expo-localization";
 import React, {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 
 /** 시트 B~F 셀 내용이 바뀌면 같이 바뀌는 정수*/
@@ -135,7 +138,7 @@ export interface BannerConfig {
   };
 }
 
-/** 프리셋에 저장할 목록록(playOption 제외) */
+/** 프리셋에 저장할 목록(playOption 제외) */
 export type PresetSnapshot = {
   content: Omit<BannerConfig["content"], "playOption">;
   appearance: BannerConfig["appearance"];
@@ -144,6 +147,29 @@ export type PresetSnapshot = {
 };
 
 export const PRESET_SLOT_COUNT = 5;
+
+const PRO_LOCKED_EFFECTS = new Set(["Pixel", "Gradient", "Glow"]);
+const PRO_LOCKED_BG_EFFECTS = new Set(["heartBgA", "speechBg1", "speechBg2"]);
+const TEXT_COLOR_LOCKED_START = textColorPalette.length - 10;
+const BG_COLOR_LOCKED_START = backgroundColorPalette.length - 10;
+
+function nonProSanitize(cfg: BannerConfig): BannerConfig {
+  const a = { ...cfg.appearance };
+  const bg = { ...cfg.background };
+  a.effectSelectedItems = a.effectSelectedItems.filter(
+    (e) => !PRO_LOCKED_EFFECTS.has(e),
+  );
+  if (PRO_LOCKED_BG_EFFECTS.has(a.backgroundEffectPreset)) {
+    a.backgroundEffectPreset = "none";
+  }
+  if (textColorPalette.indexOf(a.textSelectedColor) >= TEXT_COLOR_LOCKED_START) {
+    a.textSelectedColor = textColorPalette[0]!;
+  }
+  if (backgroundColorPalette.indexOf(bg.backgroundColor) >= BG_COLOR_LOCKED_START) {
+    bg.backgroundColor = backgroundColorPalette[0]!;
+  }
+  return { ...cfg, appearance: a, background: bg };
+}
 
 /** 입력·미리보기 공통 최대 줄 수 */
 export const PREVIEW_TEXT_MAX_LINES = 3;
@@ -312,6 +338,8 @@ export interface UIState {
    * 설정 화면에서 언어 전환 UI를 붙일 때 `updateUI({ appLanguage: "ko" })` 등으로 갱신해주세요.
    */
   appLanguage: AppLanguagePreference;
+  proMode: number | null;
+  rewardAdVisible: boolean;
 }
 //여기서 제공할 config 및 업데이트 함수 정의
 interface SettingsContextValue {
@@ -324,6 +352,9 @@ interface SettingsContextValue {
     updates: Partial<BannerConfig[K]>,
   ) => void;
   updateUI: (updates: Partial<UIState>) => void;
+  isProActive: boolean;
+  activatePro: () => void;
+  openRewardAdModal: () => void;
   handleTextChange: (text: string) => void;
   fontItems: { label: string; value: string }[];
   effectItems: string[];
@@ -393,6 +424,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     activeTab: "TEXT",
     activePreset: 0,
     appLanguage: "system",
+    proMode: null,
+    rewardAdVisible: false,
   });
 
   const resolvedAppLocale: AppLocaleKey =
@@ -444,6 +477,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     activePresetRef.current = ui.activePreset;
   }, [ui.activePreset]);
+  const isProActiveRef = useRef(false);
 
   useEffect(() => {
     if (!presetsStorageReadyRef.current) return;
@@ -547,6 +581,39 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setUI((prev) => ({ ...prev, ...updates }));
   };
 
+  //Preset 불러올 시 pro mode에 따른  적용
+  const isProActive = ui.proMode !== null && Date.now() < ui.proMode;
+  const prevIsProActiveRef = useRef(isProActive);
+  useEffect(() => {
+    const prev = prevIsProActiveRef.current;
+    prevIsProActiveRef.current = isProActive;
+    isProActiveRef.current = isProActive;
+    if (prev && !isProActive) {
+      setConfig((current) => nonProSanitize(current));
+    }
+  }, [isProActive]);
+
+  const activatePro = useCallback(() => {
+    setUI((prev) => ({ ...prev, proMode: Date.now() + 2 * 60 * 1000 }));
+  }, []);
+
+  const openRewardAdModal = useCallback(() => {
+    setUI((prev) => ({ ...prev, rewardAdVisible: true }));
+  }, []);
+
+  useEffect(() => {
+    if (ui.proMode === null) return;
+    const remaining = ui.proMode - Date.now();
+    if (remaining <= 0) {
+      setUI((prev) => ({ ...prev, proMode: null }));
+      return;
+    }
+    const id = setTimeout(() => {
+      setUI((prev) => ({ ...prev, proMode: null }));
+    }, remaining);
+    return () => clearTimeout(id);
+  }, [ui.proMode]);
+
   const handleTextChange = (text: string) => {
     const next = normalizePreviewTextMaxLines(text);
     if (next === null) return;
@@ -573,30 +640,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       });
     }
     setPresetSlots(slots);
-    setConfig(configFromPreset(chosen, cfg.content.playOption));
+    const raw = configFromPreset(chosen, cfg.content.playOption);
+    const nextConfig = isProActiveRef.current ? raw : nonProSanitize(raw);
+    setConfig(nextConfig);
     setUI((u) => ({ ...u, activePreset: slot }));
   }, []);
 
   useEffect(() => {
-    const localeFonts = getFontItemsForLocale(resolvedAppLocale);
     const normalizedFont = normalizeAppearanceFontId(config.appearance.font);
-    const pixelFontMode = isPixelFontBoDianMode(
-      resolvedAppLocale,
-      config.appearance.effectSelectedItems,
-    );
-    const pixelFontOk =
-      pixelFontMode && normalizedFont === ZITI_GUANJIA_BODIAN_FONT_ID;
-    const pixelGalmuriMode = isGalmuriPixelMode(
-      resolvedAppLocale,
-      config.appearance.effectSelectedItems,
-    );
-    const pixelGalmuriOk =
-      pixelGalmuriMode && normalizedFont === GALMURI11_FONT_ID;
+    const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
+    const pixelGalmuriOk = isPixelActive && normalizedFont === GALMURI11_FONT_ID;
     if (
       normalizedFont &&
-      (localeFonts.some((item) => item.value === normalizedFont) ||
-        pixelFontOk ||
-        pixelGalmuriOk)
+      (!isAppearanceFontHiddenFromPicker(normalizedFont) || pixelGalmuriOk)
     ) {
       if (config.appearance.font !== normalizedFont) {
         setConfig((prev) => ({
@@ -620,37 +676,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     resolvedAppLocale,
   ]);
 
-  /** zhSC픽셀폰트용 */
+  /** 픽셀폰트용 */
   useEffect(() => {
-    if (
-      !isPixelFontBoDianMode(
-        resolvedAppLocale,
-        config.appearance.effectSelectedItems,
-      ) ||
-      config.appearance.font === ZITI_GUANJIA_BODIAN_FONT_ID
-    ) {
-      return;
-    }
-    setConfig((prev) => ({
-      ...prev,
-      appearance: {
-        ...prev.appearance,
-        font: ZITI_GUANJIA_BODIAN_FONT_ID,
-      },
-    }));
-  }, [
-    resolvedAppLocale,
-    config.appearance.effectSelectedItems,
-    config.appearance.font,
-  ]);
-
-  /** Galmuri픽셀폰트용 */
-  useEffect(() => {
-    const galmuriPixel = isGalmuriPixelMode(
-      resolvedAppLocale,
-      config.appearance.effectSelectedItems,
-    );
-    if (!galmuriPixel || config.appearance.font === GALMURI11_FONT_ID) {
+    const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
+    if (!isPixelActive || config.appearance.font === GALMURI11_FONT_ID) {
       return;
     }
     setConfig((prev) => ({
@@ -661,7 +690,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       },
     }));
   }, [
-    resolvedAppLocale,
     config.appearance.effectSelectedItems,
     config.appearance.font,
   ]);
@@ -697,11 +725,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   // effect items list
   const effectItems = useMemo(() => {
     const items = ["Bold", "Blink", "Pixel", "Glow", "Gradient"];
-    if (!appearanceFontSupportsBold(config.appearance.font)) {
+    const isPixelMode = config.appearance.effectSelectedItems.includes("Pixel");
+    if (!appearanceFontSupportsBold(config.appearance.font) && !isPixelMode) {
       return items.filter((e) => e !== "Bold");
     }
     return items;
-  }, [config.appearance.font]);
+  }, [config.appearance.font, config.appearance.effectSelectedItems]);
   const value = useMemo(
     () => ({
       config,
@@ -709,6 +738,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       resolvedAppLocale,
       updateConfig,
       updateUI,
+      isProActive,
+      activatePro,
+      openRewardAdModal,
       handleTextChange,
       fontItems,
       effectItems,
@@ -730,6 +762,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       fontItems,
       effectItems,
       loadPreset,
+      openRewardAdModal,
       sheetParseResult,
       sheetStringsLoading,
       sheetStringsError,

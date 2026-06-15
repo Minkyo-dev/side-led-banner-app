@@ -1,3 +1,4 @@
+import { useSettings } from "@/contexts/settingsContext";
 import { useMemo } from "react";
 
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
@@ -16,15 +17,9 @@ import {
 type SizingPolicy = ReturnType<typeof getSizingPolicy>;
 
 type TextMetricsBase = {
-  text: string;
-  fontSize: number;
-  lineSpacing: number;
-  playOption: "one" | "multi";
   sizingPolicy: SizingPolicy;
   isSpeechBgActive: boolean;
   speechMaxHeight: number;
-  appearanceFont: string;
-  fontWeight: "normal" | "bold";
 };
 
 export type TextMetricsInput =
@@ -65,6 +60,8 @@ function resolveHeightScaledFontSize(params: {
 
 function resolveTextMetrics(
   input: TextMetricsInput,
+  text: string,
+  playOption: "one" | "multi",
   sizePct: number,
   effectiveLineSpacing: number,
   skiaFontProbe: SkiaFontProbe | undefined,
@@ -87,7 +84,7 @@ function resolveTextMetrics(
 
   if (input.mode === "fullscreen" || input.isSpeechBgActive) {
     return getFullscreenTextMetrics({
-      displayText: input.text,
+      displayText: text,
       baseFontSize,
       lineHeightRatio: input.sizingPolicy.fullscreenLineHeightRatio,
       lineSpacingPx: effectiveLineSpacing,
@@ -97,7 +94,7 @@ function resolveTextMetrics(
         : input.sizingPolicy.speechTextHeightPadding,
       clampByMaxHeight: input.sizingPolicy.clampByMaxHeight,
       speechBg: input.isSpeechBgActive,
-      playOption: input.playOption,
+      playOption,
       sizePct,
       skiaFontProbe,
     });
@@ -105,8 +102,8 @@ function resolveTextMetrics(
 
   return getPreviewTextMetrics({
     previewHeight: input.previewHeight,
-    playOption: input.playOption,
-    text: input.text,
+    playOption,
+    text,
     padding: input.sizingPolicy.previewPadding,
     lineHeightRatio: input.sizingPolicy.previewLineHeightRatio,
     lineSpacingPx: effectiveLineSpacing,
@@ -118,9 +115,13 @@ function resolveTextMetrics(
 const SKIA_PROBE_FONT_SIZE = FONT_SIZE_MAX;
 
 export function useTextMetrics(input: TextMetricsInput) {
+  const { config } = useSettings();
+  const { font: appearanceFont, fontWeight, fontSize, lineSpacing } = config.appearance;
+  const { previewText: text, playOption } = config.content;
+
   const probeFont = useSkiaAppearanceFont(
-    input.appearanceFont,
-    input.fontWeight,
+    appearanceFont,
+    fontWeight,
     SKIA_PROBE_FONT_SIZE,
   );
 
@@ -135,41 +136,45 @@ export function useTextMetrics(input: TextMetricsInput) {
   const effectiveLineSpacing = useMemo(
     () =>
       getRelLineSpacing({
-        requestedLineSpacingPx: input.lineSpacing,
-        fontSizePercent: input.fontSize,
+        requestedLineSpacingPx: lineSpacing,
+        fontSizePercent: fontSize,
       }),
-    [input.lineSpacing, input.fontSize],
+    [lineSpacing, fontSize],
   );
 
   const referenceLineSpacing = useMemo(
     () =>
       getRelLineSpacing({
-        requestedLineSpacingPx: input.lineSpacing,
+        requestedLineSpacingPx: lineSpacing,
         fontSizePercent: FONT_SIZE_MAX,
       }),
-    [input.lineSpacing],
+    [lineSpacing],
   );
 
   const metrics = useMemo(
     () =>
       resolveTextMetrics(
         input,
-        input.fontSize,
+        text,
+        playOption,
+        fontSize,
         effectiveLineSpacing,
         skiaFontProbe,
       ),
-    [input, effectiveLineSpacing, skiaFontProbe],
+    [input, text, playOption, fontSize, effectiveLineSpacing, skiaFontProbe],
   );
 
   const referenceMetrics = useMemo(
     () =>
       resolveTextMetrics(
         input,
+        text,
+        playOption,
         FONT_SIZE_MAX,
         referenceLineSpacing,
         skiaFontProbe,
       ),
-    [input, referenceLineSpacing, skiaFontProbe],
+    [input, text, playOption, referenceLineSpacing, skiaFontProbe],
   );
 
   return {

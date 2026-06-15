@@ -19,9 +19,8 @@ export const DOT_MATRIX_TEXT_SOURCE = Skia.RuntimeEffect.Make(`
 
   float ledDotMask(vec2 pos, vec2 cellCenter) {
     float d = distance(pos, cellCenter);
-    float aa = max(dotRadius * dotMaskAaScale, 0.001);
-    float coverage = 1.0 - smoothstep(dotRadius - aa, dotRadius + 0.001, d);
-    return step(0.5, coverage);
+    float aa = max(dotRadius * dotMaskAaScale, 0.5);
+    return 1.0 - smoothstep(dotRadius - aa, dotRadius + aa, d);
   }
 
   float textWeightFromSample(half4 s) {
@@ -127,6 +126,6 @@ export const DOT_MATRIX_TEXT_SOURCE = Skia.RuntimeEffect.Make(`
       return half4(0.0);
     }
 
-    return half4(bestRgb, 1.0);
+    return half4(bestRgb, mask);
   }
 `)!;

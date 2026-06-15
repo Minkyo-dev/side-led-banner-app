@@ -1,17 +1,20 @@
 import { backgroundColorPalette } from "@/constants/colorPalette";
-import { styles as base } from "@/constants/styles";
+import { styles as base, colorPickerStyles as chip, colorPickerLockStyles as bgLock } from "@/constants/styles";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useState } from "react";
 import {
   Alert,
+  Image as RNImage,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+
+const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
+const PRO_LOCKED_COLOR_COUNT = 10;
 import { useSettings } from "../../contexts/settingsContext";
 import { BackgroundPhotoSheet } from "./backgroundPhotoSheet";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
@@ -19,48 +22,10 @@ import { SettingsSliderBlock } from "./settingsSliderBlock";
 const COLS = 9;
 const ROW1_SWATCHES = COLS - 1;
 
-const chip = StyleSheet.create({
-  colorPickerContainer: {
-    gap: 10,
-    marginHorizontal: 15,
-    marginBottom: 5,
-  },
-  colorPickerRow: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  colorPickerItemButton: {
-    position: "relative",
-  },
-  colorPickerItem: {
-    width: 32,
-    height: 32,
-    borderRadius: 50,
-  },
-  colorPickerItemActive: {
-    position: "absolute",
-    top: -4,
-    left: -4,
-    borderWidth: 2.5,
-    borderColor: "black",
-    width: 40,
-    height: 40,
-    borderRadius: 50,
-  },
-  photoEmpty: {
-    backgroundColor: "#E8E8E8",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#B0B0B0",
-  },
-});
 
 export const BackgroundSection = () => {
   const [photoSheet, setPhotoSheet] = useState(false);
-  const { config, updateConfig, textSectionLabel } = useSettings();
+  const { config, updateConfig, textSectionLabel, isProActive, openRewardAdModal } = useSettings();
   const { backgroundColor, backgroundBlur, backgroundImageUri } =
     config.background;
 
@@ -107,6 +72,8 @@ export const BackgroundSection = () => {
     moreRows.push(tail.slice(i, i + COLS));
   }
 
+  const lockedStart = isProActive ? colors.length : colors.length - PRO_LOCKED_COLOR_COUNT;
+
   const hasBgPhoto = backgroundImageUri != null && backgroundImageUri !== "";
 
   return (
@@ -143,38 +110,53 @@ export const BackgroundSection = () => {
               )}
               {hasBgPhoto ? <View style={chip.colorPickerItemActive} /> : null}
             </TouchableOpacity>
-            {row1.map((color, index) => (
-              <TouchableOpacity
-                key={`bg-color-first-${index}`}
-                style={chip.colorPickerItemButton}
-                onPress={() => setBgColor(color)}
-              >
-                {!hasBgPhoto && backgroundColor === color ? (
-                  <View style={chip.colorPickerItemActive} />
-                ) : null}
-                <View
-                  style={[chip.colorPickerItem, { backgroundColor: color }]}
-                />
-              </TouchableOpacity>
-            ))}
+            {row1.map((color, index) => {
+              const isLocked = index >= lockedStart;
+              return (
+                <TouchableOpacity
+                  key={`bg-color-first-${index}`}
+                  style={chip.colorPickerItemButton}
+                  onPress={() => (isLocked ? openRewardAdModal() : setBgColor(color))}
+                >
+                  {!isLocked && !hasBgPhoto && backgroundColor === color ? (
+                    <View style={chip.colorPickerItemActive} />
+                  ) : null}
+                  <View style={[chip.colorPickerItem, { backgroundColor: color }]} />
+                  {isLocked && (
+                    <>
+                      <View style={bgLock.overlay} />
+                      <RNImage source={LOCK_ICON} style={bgLock.icon} />
+                    </>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {moreRows.map((row, rowIndex) => (
             <View key={`bg-color-row-${rowIndex}`} style={chip.colorPickerRow}>
-              {row.map((color, index) => (
-                <TouchableOpacity
-                  key={`bg-color-${rowIndex}-${index}`}
-                  style={chip.colorPickerItemButton}
-                  onPress={() => setBgColor(color)}
-                >
-                  {!hasBgPhoto && backgroundColor === color ? (
-                    <View style={chip.colorPickerItemActive} />
-                  ) : null}
-                  <View
-                    style={[chip.colorPickerItem, { backgroundColor: color }]}
-                  />
-                </TouchableOpacity>
-              ))}
+              {row.map((color, index) => {
+                const colorIndex = ROW1_SWATCHES + rowIndex * COLS + index;
+                const isLocked = colorIndex >= lockedStart;
+                return (
+                  <TouchableOpacity
+                    key={`bg-color-${rowIndex}-${index}`}
+                    style={chip.colorPickerItemButton}
+                    onPress={() => (isLocked ? openRewardAdModal() : setBgColor(color))}
+                  >
+                    {!isLocked && !hasBgPhoto && backgroundColor === color ? (
+                      <View style={chip.colorPickerItemActive} />
+                    ) : null}
+                    <View style={[chip.colorPickerItem, { backgroundColor: color }]} />
+                    {isLocked && (
+                      <>
+                        <View style={bgLock.overlay} />
+                        <RNImage source={LOCK_ICON} style={bgLock.icon} />
+                      </>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           ))}
         </View>
