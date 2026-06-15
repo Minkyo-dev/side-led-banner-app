@@ -56,7 +56,10 @@ export function useEffects(input: EffectsInput = {}) {
   const pixelGlyphPadCells = isPixelCircleGrid
     ? pixelGlyphPanelPadCells(pixelShaderSize)
     : 1;
-  const skiaStrokeWidthPx = Math.round(((outLine / 100) * 24 * 30) / 100);
+  const skiaStrokeWidthPx =
+    outLine > 0
+      ? Math.round(2 + ((outLine - 1) / 99) * 14)
+      : 0;
   const pixelOutlineRings =
     isPixelTextDots && outLine > 0
       ? Math.max(1, Math.min(4, Math.ceil((outLine / 100) * 3)))

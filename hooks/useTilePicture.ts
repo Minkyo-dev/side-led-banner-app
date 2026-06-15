@@ -1,3 +1,5 @@
+import type { MarqueeGlyphPos } from "@/utils/buildMarqueeTextBlob";
+import { computeGlyphLedPanels } from "@/utils/glyphLedPanels";
 import {
   computeEffectSpace,
   computeMarqueeTilePeriod,
@@ -5,8 +7,6 @@ import {
   recordTile,
   resolveMarqueeStripWidth,
 } from "@/utils/recordTile";
-import type { MarqueeGlyphPos } from "@/utils/buildMarqueeTextBlob";
-import { computeGlyphLedPanels } from "@/utils/glyphLedPanels";
 import type { SkFont, SkPaint } from "@shopify/react-native-skia";
 import { FilterMode } from "@shopify/react-native-skia";
 import { useMemo } from "react";
@@ -36,7 +36,7 @@ function isNearWhiteColor(color: string): boolean {
 
 function resolveOutlineStrokeColor(backgroundColor: string, textColor: string): string {
   return isNearWhiteColor(backgroundColor) || isNearWhiteColor(textColor)
-    ? "#cacaca"
+    ? "#000000"
     : "#ffffff";
 }
 
