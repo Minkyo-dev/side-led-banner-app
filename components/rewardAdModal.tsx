@@ -1,14 +1,13 @@
 import { appFontFamilyForText } from "@/constants/appFonts";
-import { APP_EXPO_ICON } from "@/constants/appModalIcon";
 import { rewardAdModalStyles as styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { Ionicons } from "@expo/vector-icons";
 import { Canvas, Group, Path, Rect, Skia } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Modal,
+  BackHandler,
   Pressable,
   StyleSheet,
   Text,
@@ -16,19 +15,22 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import {
+import Animated, {
   cancelAnimation,
   Easing,
+  useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
   withDelay,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 
 const CHECK_ICON = require("../assets/images/Check.png");
-const WATCH_AD_BUTTON = require("../assets/images/Watch_Ad_Button.png");
-const PLAY_BG = require("../assets/images/Play_Bg.png");
+const WATCH_AD_BUTTON = require("../assets/images/Watch Ad Button.png");
+const PLAY_BG = require("../assets/images/Play Bg.png");
+const PRO_BADGE = require("../assets/images/PRO Badge.png");
 
 // FireworksBurst
 const N = 45;
@@ -188,35 +190,73 @@ export function RewardAdModal({
       ? appFontFamilyForText("noto_sans_kr", "bold")
       : undefined;
 
+  const [mounted, setMounted] = useState(visible);
+  const overlayOpacity = useSharedValue(visible ? 1 : 0);
+  const wasVisibleRef = useRef(visible);
+  const pendingAfterCloseRef = useRef<(() => void) | null>(null);
+
+  const handleFullyClosed = useCallback(() => {
+    setMounted(false);
+    const after = pendingAfterCloseRef.current;
+    pendingAfterCloseRef.current = null;
+    after?.();
+  }, []);
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      overlayOpacity.value = withTiming(1, { duration: 180 });
+    } else if (wasVisibleRef.current) {
+      overlayOpacity.value = withTiming(0, { duration: 180 }, (finished) => {
+        if (finished) {
+          scheduleOnRN(handleFullyClosed);
+        }
+      });
+    }
+    wasVisibleRef.current = visible;
+  }, [visible, overlayOpacity, handleFullyClosed]);
+
+  //mount 시, 현재 screen의 뒤로가기 이벤트 리스너 등록
+  useEffect(() => {
+    if (!mounted) return;
+    //true로 마지막에 등록된 handler 호출
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [mounted, onClose]);
+
+  const overlayStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
+
   const handleWatchAd = () => {
-    onWatchAd?.();
+    // 닫힘 애니메이션이 실제로 끝난 뒤(추측 딜레이 아님) 광고를 띄운다.
+    pendingAfterCloseRef.current = onWatchAd ?? null;
     onClose();
   };
 
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
-      <View style={styles.root}>
-        <Pressable
-          style={[styles.dim, { backgroundColor: "rgba(0,0,0,0.45)" }]}
-          onPress={onClose}
-        />
-        <FireworksBurst visible={visible} />
+  if (!mounted) return null;
 
-        <View style={styles.card}>
-          <View style={styles.appIconContainer}>
-            <Image
-              source={APP_EXPO_ICON}
-              style={styles.appIconImage}
-              contentFit="cover"
-              accessibilityIgnoresInvertColors
-            />
-          </View>
+  return (
+    <Animated.View
+      style={[styles.root, overlayStyle]}
+      pointerEvents={visible ? "auto" : "none"}
+    >
+      <Pressable
+        style={[styles.dim, { backgroundColor: "rgba(0,0,0,0.45)" }]}
+        onPress={onClose}
+      />
+      <FireworksBurst visible={visible} />
+
+      <View style={styles.card}>
+        <View style={styles.appIconContainer}>
+          <Image
+            source={PRO_BADGE}
+            style={styles.appIconImage}
+            contentFit="contain"
+            accessibilityIgnoresInvertColors
+          />
+        </View>
 
           <TouchableOpacity
             style={styles.closeButton}
@@ -237,38 +277,52 @@ export function RewardAdModal({
               {rewardAdLabel("rewardHeaderBadge")}
             </Text>
 
-            <View style={styles.benefitContainer}>
-              {BENEFIT_ROWS.map(({ labelKey }) => (
-                <View key={labelKey} style={styles.benefitRow}>
-                  <Image
-                    source={CHECK_ICON}
-                    style={styles.checkIcon}
-                    contentFit="contain"
-                    accessibilityIgnoresInvertColors
-                  />
-                  <Text style={styles.benefitText} allowFontScaling={false}>
-                    {rewardAdLabel(labelKey)}
-                  </Text>
-                </View>
-              ))}
-            </View>
+          <View style={styles.benefitContainer}>
+            {BENEFIT_ROWS.map(({ labelKey }) => (
+              <View key={labelKey} style={styles.benefitRow}>
+                <Image
+                  source={CHECK_ICON}
+                  style={styles.checkIcon}
+                  contentFit="contain"
+                  accessibilityIgnoresInvertColors
+                />
+                <Text style={styles.benefitText} allowFontScaling={false}>
+                  {rewardAdLabel(labelKey)}
+                </Text>
+              </View>
+            ))}
           </View>
+        </View>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={handleWatchAd}
-            disabled={!adReady}
-            accessibilityRole="button"
-            accessibilityLabel={rewardAdLabel("rewardWatchAd")}
-            style={[styles.ctaButton, !adReady && { opacity: 0.4 }]}
-          >
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={handleWatchAd}
+          disabled={!adReady}
+          accessibilityRole="button"
+          accessibilityLabel={rewardAdLabel("rewardWatchAd")}
+          style={[styles.ctaButton, !adReady && { opacity: 0.4 }]}
+        >
+          <Image
+            source={WATCH_AD_BUTTON}
+            style={styles.ctaButtonBg}
+            contentFit="fill"
+            accessibilityIgnoresInvertColors
+          />
+          <View style={styles.ctaButtonContent}>
             <Image
-              source={WATCH_AD_BUTTON}
-              style={styles.ctaButtonBg}
-              contentFit="fill"
+              source={PLAY_BG}
+              style={styles.ctaPlayBg}
+              contentFit="contain"
               accessibilityIgnoresInvertColors
             />
-            <View style={styles.ctaButtonContent}>
+            <View 
+              style={[
+                styles.ctaButtonText,
+                watchAdFontFamily ? { fontFamily: watchAdFontFamily } : undefined,
+              ]}
+               allowFontScaling={false}
+               numberOfLines={1}
+              >
               <Image
                 source={PLAY_BG}
                 style={styles.ctaPlayBg}
@@ -291,6 +345,6 @@ export function RewardAdModal({
           </TouchableOpacity>
         </View>
       </View>
-    </Modal>
+    </Animated.View>
   );
 }

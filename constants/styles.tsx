@@ -1,13 +1,11 @@
 import { uiThemeFontStyle } from "@/constants/appFonts";
-import { PREVIEW_TEXT_MAX_LINES } from "@/contexts/settingsContext";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
-export const CONTENTS_INPUT_FONT_SIZE = 24;
-export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
-  CONTENTS_INPUT_FONT_SIZE * 1.2,
-);
+export const CONTENTS_INPUT_FONT_SIZE = 18;
+export const CONTENTS_INPUT_LINE_HEIGHT =
+  CONTENTS_INPUT_FONT_SIZE;
 export const CONTENTS_INPUT_VIEWPORT_HEIGHT =
-  PREVIEW_TEXT_MAX_LINES * CONTENTS_INPUT_LINE_HEIGHT;
+  3 * CONTENTS_INPUT_LINE_HEIGHT;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export const styles = StyleSheet.create({
@@ -52,7 +50,6 @@ export const styles = StyleSheet.create({
   },
   contentsInput: {
     fontSize: CONTENTS_INPUT_FONT_SIZE,
-    lineHeight: CONTENTS_INPUT_LINE_HEIGHT,
     flex: 0.8,
     color: "white",
     ...Platform.select({
@@ -247,7 +244,12 @@ export const styles = StyleSheet.create({
 
 export const rewardAdModalStyles = StyleSheet.create({
   root: {
-    flex: 1,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10000,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 28,
@@ -273,7 +275,7 @@ export const rewardAdModalStyles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    top: 16,
+    top: 14,
     right: 16,
     width: 32,
     height: 32,
@@ -281,28 +283,20 @@ export const rewardAdModalStyles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
+    zIndex: 1,
   },
   appIconContainer: {
     position: "absolute",
-    top: -40,
+    top: -44,
     alignSelf: "center",
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: "#1A1A1A",
+    width: "100%",
+    aspectRatio: 3,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 6,
   },
   appIconImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 20,
   },
   contentContainer: {
     width: "100%",
@@ -577,6 +571,22 @@ export const ledBannerFullScreenStyles = StyleSheet.create({
   },
   layerPassThrough: {
     ...StyleSheet.absoluteFillObject,
+  },
+});
+
+export const toolbarStyles = StyleSheet.create({
+  cursorNavContainer: {
+    flexDirection: "row",
+    paddingLeft: 8,
+  },
+  cursorNavButton: {
+    width: 44,
+    height: 42,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cursorNavText: {
+    fontSize: 18,
   },
 });
 
