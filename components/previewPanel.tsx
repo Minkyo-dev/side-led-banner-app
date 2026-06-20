@@ -5,6 +5,7 @@ import { btnStyles } from "@/constants/btnStyles";
 import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
 import {
   CONTENTS_INPUT_FONT_SIZE,
+  CONTENTS_INPUT_LINE_HEIGHT,
   styles,
 } from "@/constants/styles";
 import {
@@ -30,6 +31,7 @@ import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
+  InputAccessoryView,
   Keyboard,
   Platform,
   ScrollView,
@@ -38,7 +40,7 @@ import {
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
-  View,
+  View
 } from "react-native";
 import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
 import { buildCanvas } from "./animation/buildCanvas";
@@ -70,9 +72,12 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
   const { activePreset } = ui;
 
   const { previewText, playOption } = config.content;
-  const { font, textSelectedColor, gradientBackgroundPreset, dropShadow } = config.appearance;
-  const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
-  const hasBgPhoto = backgroundImageUri != null && backgroundImageUri.length > 0;
+  const { font, textSelectedColor, gradientBackgroundPreset, dropShadow } =
+    config.appearance;
+  const { backgroundColor, backgroundImageUri, backgroundBlur } =
+    config.background;
+  const hasBgPhoto =
+    backgroundImageUri != null && backgroundImageUri.length > 0;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
 
@@ -103,10 +108,12 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
   const marqueeViewportWidthPx =
     speechBubble.speechBoxPx?.widthPx ?? previewBox.width;
 
-  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation({
-    viewportWidthPx: marqueeViewportWidthPx,
-    effectBleedPx: effects.effectSpacePx,
-  });
+  const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
+    {
+      viewportWidthPx: marqueeViewportWidthPx,
+      effectBleedPx: effects.effectSpacePx,
+    },
+  );
 
   const canvasFallback = useMemo(
     () => resolveSpeechCanvasFallback(speechBubble.speechBoxPx, previewBox),
@@ -255,9 +262,7 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
             justifyContent: "center",
             overflow: "hidden",
             backgroundColor:
-              hasBgPhoto || effects.isPixelEffect
-                ? undefined
-                : backgroundColor,
+              hasBgPhoto || effects.isPixelEffect ? undefined : backgroundColor,
           },
         ]}
         onLayout={onPreviewLayout}
@@ -270,10 +275,15 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
             blurRadius={backgroundBlur / 8}
           />
         ) : null}
-        {effects.isPixelEffect && previewBox.width > 0 && previewBox.height > 0 ? (
+        {effects.isPixelEffect &&
+        previewBox.width > 0 &&
+        previewBox.height > 0 ? (
           <PixelBackgroundCanvas {...pixelBackgroundProps} />
         ) : null}
-        {!effects.isPixelEffect && effects.showGradientBackdrop && previewBox.width > 0 && previewBox.height > 0 ? (
+        {!effects.isPixelEffect &&
+        effects.showGradientBackdrop &&
+        previewBox.width > 0 &&
+        previewBox.height > 0 ? (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <Canvas style={{ flex: 1 }} opaque={false}>
               <GradientBackdrop
@@ -307,9 +317,7 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
               style={speechBubble.textContainerStyle!}
               onLayout={canvas.onSkiaCanvasLayout}
             >
-              <MarqueeCanvas
-                {...marqueeCanvasProps}
-              />
+              <MarqueeCanvas {...marqueeCanvasProps} />
             </View>
           </View>
         ) : (
@@ -317,9 +325,7 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
             style={StyleSheet.absoluteFill}
             onLayout={canvas.onSkiaCanvasLayout}
           >
-            <MarqueeCanvas
-              {...marqueeCanvasProps}
-            />
+            <MarqueeCanvas {...marqueeCanvasProps} />
           </View>
         )}
       </View>
@@ -455,6 +461,17 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
           />
         </ScrollView>
         
+        {Platform.OS === "ios" && (
+          <InputAccessoryView nativeID={inputAccessoryViewID}>
+            <View style={styles.accessoryBar}>
+              <TouchableOpacity onPress={Keyboard.dismiss} hitSlop={8}>
+                <Text allowFontScaling={false} style={styles.accessoryClose}>
+                  ✔
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </InputAccessoryView>
+        )}
         <View
           id="contentsInputResetButtonContainer"
           style={styles.contentsInputResetButtonContainer}

@@ -3,14 +3,8 @@ import { APP_EXPO_ICON } from "@/constants/appModalIcon";
 import { rewardAdModalStyles as styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
-import {
-  Canvas,
-  Group,
-  Path,
-  Rect,
-  Skia,
-} from "@shopify/react-native-skia";
 import { Ionicons } from "@expo/vector-icons";
+import { Canvas, Group, Path, Rect, Skia } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
 import React, { useEffect, useMemo } from "react";
 import {
@@ -19,8 +13,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
   useWindowDimensions,
+  View,
 } from "react-native";
 import {
   cancelAnimation,
@@ -33,8 +27,8 @@ import {
 } from "react-native-reanimated";
 
 const CHECK_ICON = require("../assets/images/Check.png");
-const WATCH_AD_BUTTON = require("../assets/images/Watch Ad Button.png");
-const PLAY_BG = require("../assets/images/Play Bg.png");
+const WATCH_AD_BUTTON = require("../assets/images/Watch_Ad_Button.png");
+const PLAY_BG = require("../assets/images/Play_Bg.png");
 
 // FireworksBurst
 const N = 45;
@@ -62,13 +56,29 @@ const PARTICLE_DATA = Array.from({ length: N }, (_, i) => {
   const maxDistance = 140 + ((i * 73) % 160);
   const size = 10 + ((i * 23) % 14);
   const type = i % 2 === 0 ? "rect" : "star";
-  const colors = ["#FF6B00", "#FF9E00", "#e59e6b", "#e7b22d", "#f3cf8d", "#ecc330"];
+  const colors = [
+    "#FF6B00",
+    "#FF9E00",
+    "#e59e6b",
+    "#e7b22d",
+    "#f3cf8d",
+    "#ecc330",
+  ];
   const color = colors[i % colors.length];
   const baseOpacity = 0.5 + ((i * 7) % 6) * 0.1;
   const rotationSpeed = ((i * 11) % 4) + 4;
   const spinDirection = i % 3 === 0 ? 1 : -1;
 
-  return { angle, maxDistance, size, type, color, baseOpacity, rotationSpeed, spinDirection };
+  return {
+    angle,
+    maxDistance,
+    size,
+    type,
+    color,
+    baseOpacity,
+    rotationSpeed,
+    spinDirection,
+  };
 });
 
 function FireworksBurst({ visible }: { visible: boolean }) {
@@ -80,7 +90,9 @@ function FireworksBurst({ visible }: { visible: boolean }) {
   const alpha = useSharedValue(0);
 
   const starPaths = useMemo(() => {
-    return PARTICLE_DATA.map(p => p.type === "star" ? createStarPath(p.size) : null);
+    return PARTICLE_DATA.map((p) =>
+      p.type === "star" ? createStarPath(p.size) : null,
+    );
   }, []);
 
   useEffect(() => {
@@ -95,7 +107,7 @@ function FireworksBurst({ visible }: { visible: boolean }) {
 
       alpha.value = withSequence(
         withTiming(1, { duration: 50 }),
-        withDelay(700, withTiming(0, { duration: 500 }))
+        withDelay(700, withTiming(0, { duration: 500 })),
       );
     } else {
       cancelAnimation(progress);
@@ -112,16 +124,15 @@ function FireworksBurst({ visible }: { visible: boolean }) {
           const currentDist = particle.maxDistance * progress.value;
           const x = cx + Math.cos(particle.angle) * currentDist;
           const y = cy + Math.sin(particle.angle) * currentDist;
-          const rotation = progress.value * particle.rotationSpeed * particle.spinDirection;
+          const rotation =
+            progress.value * particle.rotationSpeed * particle.spinDirection;
 
-          return [
-            { translateX: x },
-            { translateY: y },
-            { rotate: rotation },
-          ];
+          return [{ translateX: x }, { translateY: y }, { rotate: rotation }];
         });
 
-        const opacity = useDerivedValue(() => alpha.value * particle.baseOpacity);
+        const opacity = useDerivedValue(
+          () => alpha.value * particle.baseOpacity,
+        );
 
         return (
           <Group key={index} transform={transform} opacity={opacity}>
@@ -165,7 +176,12 @@ type Props = {
   onWatchAd?: () => void;
 };
 
-export function RewardAdModal({ visible, onClose, adReady = false, onWatchAd }: Props) {
+export function RewardAdModal({
+  visible,
+  onClose,
+  adReady = false,
+  onWatchAd,
+}: Props) {
   const { rewardAdLabel, resolvedAppLocale } = useSettings();
   const watchAdFontFamily =
     resolvedAppLocale === "ko" || resolvedAppLocale === "en"
@@ -213,7 +229,11 @@ export function RewardAdModal({ visible, onClose, adReady = false, onWatchAd }: 
           </TouchableOpacity>
 
           <View style={styles.contentContainer}>
-            <Text style={styles.headerBadge} allowFontScaling={false} numberOfLines={2}>
+            <Text
+              style={styles.headerBadge}
+              allowFontScaling={false}
+              numberOfLines={2}
+            >
               {rewardAdLabel("rewardHeaderBadge")}
             </Text>
 
@@ -258,7 +278,9 @@ export function RewardAdModal({ visible, onClose, adReady = false, onWatchAd }: 
               <Text
                 style={[
                   styles.ctaButtonText,
-                  watchAdFontFamily ? { fontFamily: watchAdFontFamily } : undefined,
+                  watchAdFontFamily
+                    ? { fontFamily: watchAdFontFamily }
+                    : undefined,
                 ]}
                 allowFontScaling={false}
                 numberOfLines={1}

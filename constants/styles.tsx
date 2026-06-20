@@ -229,6 +229,20 @@ export const styles = StyleSheet.create({
     height: 180,
     aspectRatio: undefined,
   },
+
+  accessoryBar: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    backgroundColor: "#f1f1f1",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  accessoryClose: {
+    fontSize: 16,
+    color: "#007AFF",
+    fontWeight: "600",
+  },
 });
 
 export const rewardAdModalStyles = StyleSheet.create({
