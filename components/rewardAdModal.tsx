@@ -3,13 +3,7 @@ import { rewardAdModalStyles as styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
 import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Canvas,
-  Group,
-  Path,
-  Rect,
-  Skia,
-} from "@shopify/react-native-skia";
+import { Canvas, Group, Path, Rect, Skia } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -64,13 +58,29 @@ const PARTICLE_DATA = Array.from({ length: N }, (_, i) => {
   const maxDistance = 140 + ((i * 73) % 160);
   const size = 10 + ((i * 23) % 14);
   const type = i % 2 === 0 ? "rect" : "star";
-  const colors = ["#FF6B00", "#FF9E00", "#e59e6b", "#e7b22d", "#f3cf8d", "#ecc330"];
+  const colors = [
+    "#FF6B00",
+    "#FF9E00",
+    "#e59e6b",
+    "#e7b22d",
+    "#f3cf8d",
+    "#ecc330",
+  ];
   const color = colors[i % colors.length];
   const baseOpacity = 0.5 + ((i * 7) % 6) * 0.1;
   const rotationSpeed = ((i * 11) % 4) + 4;
   const spinDirection = i % 3 === 0 ? 1 : -1;
 
-  return { angle, maxDistance, size, type, color, baseOpacity, rotationSpeed, spinDirection };
+  return {
+    angle,
+    maxDistance,
+    size,
+    type,
+    color,
+    baseOpacity,
+    rotationSpeed,
+    spinDirection,
+  };
 });
 
 function FireworksBurst({ visible }: { visible: boolean }) {
@@ -82,7 +92,9 @@ function FireworksBurst({ visible }: { visible: boolean }) {
   const alpha = useSharedValue(0);
 
   const starPaths = useMemo(() => {
-    return PARTICLE_DATA.map(p => p.type === "star" ? createStarPath(p.size) : null);
+    return PARTICLE_DATA.map((p) =>
+      p.type === "star" ? createStarPath(p.size) : null,
+    );
   }, []);
 
   useEffect(() => {
@@ -97,7 +109,7 @@ function FireworksBurst({ visible }: { visible: boolean }) {
 
       alpha.value = withSequence(
         withTiming(1, { duration: 50 }),
-        withDelay(700, withTiming(0, { duration: 500 }))
+        withDelay(700, withTiming(0, { duration: 500 })),
       );
     } else {
       cancelAnimation(progress);
@@ -114,16 +126,15 @@ function FireworksBurst({ visible }: { visible: boolean }) {
           const currentDist = particle.maxDistance * progress.value;
           const x = cx + Math.cos(particle.angle) * currentDist;
           const y = cy + Math.sin(particle.angle) * currentDist;
-          const rotation = progress.value * particle.rotationSpeed * particle.spinDirection;
+          const rotation =
+            progress.value * particle.rotationSpeed * particle.spinDirection;
 
-          return [
-            { translateX: x },
-            { translateY: y },
-            { rotate: rotation },
-          ];
+          return [{ translateX: x }, { translateY: y }, { rotate: rotation }];
         });
 
-        const opacity = useDerivedValue(() => alpha.value * particle.baseOpacity);
+        const opacity = useDerivedValue(
+          () => alpha.value * particle.baseOpacity,
+        );
 
         return (
           <Group key={index} transform={transform} opacity={opacity}>
@@ -167,7 +178,12 @@ type Props = {
   onWatchAd?: () => void;
 };
 
-export function RewardAdModal({ visible, onClose, adReady = false, onWatchAd }: Props) {
+export function RewardAdModal({
+  visible,
+  onClose,
+  adReady = false,
+  onWatchAd,
+}: Props) {
   const { rewardAdLabel, resolvedAppLocale } = useSettings();
   const watchAdFontFamily =
     resolvedAppLocale === "ko" || resolvedAppLocale === "en"
@@ -242,20 +258,24 @@ export function RewardAdModal({ visible, onClose, adReady = false, onWatchAd }: 
           />
         </View>
 
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={onClose}
-          hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-        >
-          <Ionicons name="close" size={22} color="#8A8A8A" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
+            <Ionicons name="close" size={22} color="#8A8A8A" />
+          </TouchableOpacity>
 
-        <View style={styles.contentContainer}>
-          <Text style={styles.headerBadge} allowFontScaling={false} numberOfLines={2}>
-            {rewardAdLabel("rewardHeaderBadge")}
-          </Text>
+          <View style={styles.contentContainer}>
+            <Text
+              style={styles.headerBadge}
+              allowFontScaling={false}
+              numberOfLines={2}
+            >
+              {rewardAdLabel("rewardHeaderBadge")}
+            </Text>
 
           <View style={styles.benefitContainer}>
             {BENEFIT_ROWS.map(({ labelKey }) => (
@@ -295,18 +315,35 @@ export function RewardAdModal({ visible, onClose, adReady = false, onWatchAd }: 
               contentFit="contain"
               accessibilityIgnoresInvertColors
             />
-            <Text
+            <View 
               style={[
                 styles.ctaButtonText,
                 watchAdFontFamily ? { fontFamily: watchAdFontFamily } : undefined,
               ]}
-              allowFontScaling={false}
-              numberOfLines={1}
-            >
-              {rewardAdLabel("rewardWatchAd")}
-            </Text>
-          </View>
-        </TouchableOpacity>
+               allowFontScaling={false}
+               numberOfLines={1}
+              >
+              <Image
+                source={PLAY_BG}
+                style={styles.ctaPlayBg}
+                contentFit="contain"
+                accessibilityIgnoresInvertColors
+              />
+              <Text
+                style={[
+                  styles.ctaButtonText,
+                  watchAdFontFamily
+                    ? { fontFamily: watchAdFontFamily }
+                    : undefined,
+                ]}
+                allowFontScaling={false}
+                numberOfLines={1}
+              >
+                {rewardAdLabel("rewardWatchAd")}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     </Animated.View>
   );

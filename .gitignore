@@ -79,6 +79,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+CLAUDE.md
 
 # typescript
 *.tsbuildinfo
