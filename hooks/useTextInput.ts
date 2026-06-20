@@ -1,16 +1,14 @@
 import { appFontFamilyForText } from "@/constants/appFonts";
-import { useSettings } from "@/contexts/settingsContext";
 import {
   CONTENTS_INPUT_FONT_SIZE,
-  CONTENTS_INPUT_LINE_HEIGHT,
   CONTENTS_INPUT_VIEWPORT_HEIGHT,
 } from "@/constants/styles";
 import {
   PRESET_SLOT_COUNT,
-  PREVIEW_TEXT_MAX_LINES,
+  PREVIEW_TEXT_MAX_LINES, useSettings
 } from "@/contexts/settingsContext";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Platform, ScrollView, TextLayoutEvent, useWindowDimensions } from "react-native";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { Platform, ScrollView, TextInput, TextLayoutEvent, useWindowDimensions } from "react-native";
 
 type WrappedLayoutLine = TextLayoutEvent["nativeEvent"]["lines"][number];
 
@@ -21,16 +19,14 @@ const INPUT_WIDTH_CURSOR_PAD = 28;
 /** 커서가 스크롤 뷰포트 안에 남도록 하는 여백 */
 const CURSOR_SCROLL_MARGIN = 28;
 const INPUT_MARGIN = 16;
+/** TextInput 인라인 스타일의 paddingTop + paddingBottom 합산 */
+const TEXT_INPUT_VERTICAL_PADDING = 0;
 
-function snapInputViewportHeightPx(
-  measuredTotalPx: number,
-  logicalLines: number,
-  fallbackPx: number,
-): number {
-  const perLine = Math.max(
-    CONTENTS_INPUT_LINE_HEIGHT,
-    Math.ceil(measuredTotalPx / logicalLines),
-  );
+function computePerLinePx(measuredTotalPx: number, logicalLines: number): number {
+  return measuredTotalPx / logicalLines;
+}
+
+function snapInputViewportHeightPx(perLine: number, logicalLines: number, fallbackPx: number): number {
   return Math.max(fallbackPx, perLine * logicalLines) + INPUT_MARGIN;
 }
 
@@ -110,8 +106,9 @@ function cursorXFromSelection(
 
 export function useTextInput(params: {
   inputScrollViewportW: number;
+  textInputRef: RefObject<TextInput | null>;
 }) {
-  const { inputScrollViewportW } = params;
+  const { inputScrollViewportW, textInputRef } = params;
   const { config, ui, resolvedAppLocale: appLocale } = useSettings();
   const { previewText } = config.content;
   const { font, fontWeight } = config.appearance;
@@ -120,7 +117,7 @@ export function useTextInput(params: {
 
   /** 입력 박스 높이는 one / multi 모두 멀티 최대 줄 수와 동일 */
   const inputViewportLogicalLines = PREVIEW_TEXT_MAX_LINES;
-  const inputViewportFallbackPx = CONTENTS_INPUT_VIEWPORT_HEIGHT;
+  const inputViewportFallbackPx = CONTENTS_INPUT_VIEWPORT_HEIGHT + TEXT_INPUT_VERTICAL_PADDING;
 
   const fontLineProbeText = useMemo(
     () =>
@@ -131,16 +128,18 @@ export function useTextInput(params: {
   const [inputViewportHeightPx, setInputViewportHeightPx] = useState(
     inputViewportFallbackPx,
   );
+  // const [measuredLineHeightPx, setMeasuredLineHeightPx] = useState(CONTENTS_INPUT_LINE_HEIGHT);
   const inputViewportHeightRef = useRef(inputViewportFallbackPx);
   const fontProbeCommittedKeyRef = useRef<string | null>(null);
   const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
   const [pendingSelection, setPendingSelection] = useState<
     { start: number; end: number } | undefined
-  >(undefined);
+  >({ start: 0, end: 0 });
 
   const inputScrollRef = useRef<ScrollView>(null);
   const inputScrollXRef = useRef(0);
   const wrappedLayoutLinesRef = useRef<WrappedLayoutLine[]>([]);
+  const textChangeSignalRef = useRef(false);
 
   /** 세션 동안만 유지 프리셋마다 커서가 마지막으로 가도록 인덱스 설정정 */
   const selectionByPresetRef = useRef<
@@ -211,11 +210,6 @@ export function useTextInput(params: {
     setPendingSelection(next);
   }, [activePreset, displayInputText]);
 
-  useLayoutEffect(() => {
-    if (pendingSelection === undefined) return;
-    const id = requestAnimationFrame(() => setPendingSelection(undefined));
-    return () => cancelAnimationFrame(id);
-  }, [pendingSelection]);
 
   const fontMeasureKey = `${font}|${fontWeight}`;
 
@@ -232,13 +226,11 @@ export function useTextInput(params: {
     const total = lines
       .slice(0, inputViewportLogicalLines)
       .reduce((sum, line) => sum + line.height, 0);
-    const next = snapInputViewportHeightPx(
-      total,
-      inputViewportLogicalLines,
-      inputViewportFallbackPx,
-    );
+    const perLine = computePerLinePx(total, inputViewportLogicalLines);
+    const next = snapInputViewportHeightPx(perLine, inputViewportLogicalLines, inputViewportFallbackPx);
     fontProbeCommittedKeyRef.current = fontMeasureKey;
     inputViewportHeightRef.current = next;
+    // setMeasuredLineHeightPx(perLine);
     setInputViewportHeightPx(next);
   };
 
@@ -261,48 +253,61 @@ export function useTextInput(params: {
     requestAnimationFrame(() => scrollInputToSelection(pos));
   };
 
+  const signalTextChanged = useCallback(() => {
+    textChangeSignalRef.current = true;
+  }, []);
+
+  const handleTextInputContentSizeChange = useCallback(
+    (_w: number, h: number) => {
+      if (!textChangeSignalRef.current) return;
+      textChangeSignalRef.current = false;
+      const next = h + INPUT_MARGIN;
+      if (Math.abs(next - inputViewportHeightRef.current) < 1) return;
+      inputViewportHeightRef.current = next;
+      setInputViewportHeightPx(next);
+    },
+    [],
+  );
+
   const resetInputScroll = useCallback(() => {
     if (inputScrollXRef.current === 0) return;
     inputScrollXRef.current = 0;
     inputScrollRef.current?.scrollTo({ x: 0, animated: false });
   }, []);
 
-  const scrollInputToSelection = useCallback(
-    (selectionStart: number) => {
+  const scrollToCursorX = useCallback(
+    (cursorX: number) => {
       const viewportW = inputScrollViewportWResolved;
       if (viewportW <= 0) return;
-
       if (!needsHorizontalScroll) {
         resetInputScroll();
         return;
       }
-
-      const lines = wrappedLayoutLinesRef.current;
-      const cursorX = cursorXFromSelection(
-        displayInputText,
-        selectionStart,
-        lines,
-      );
       const maxScrollX = Math.max(0, inputHorizontalCanvasWidth - viewportW);
       const margin = CURSOR_SCROLL_MARGIN;
       let scrollX = inputScrollXRef.current;
-
       if (cursorX < scrollX + margin) {
         scrollX = Math.max(0, cursorX - margin);
       } else if (cursorX > scrollX + viewportW - margin) {
         scrollX = Math.min(maxScrollX, cursorX - viewportW + margin);
       }
-
       inputScrollXRef.current = scrollX;
       inputScrollRef.current?.scrollTo({ x: scrollX, animated: false });
     },
-    [
-      displayInputText,
-      inputHorizontalCanvasWidth,
-      inputScrollViewportWResolved,
-      needsHorizontalScroll,
-      resetInputScroll,
-    ],
+    [inputHorizontalCanvasWidth, inputScrollViewportWResolved, needsHorizontalScroll, resetInputScroll],
+  );
+
+  const scrollInputToSelection = useCallback(
+    (selectionStart: number) => {
+      if (!needsHorizontalScroll) {
+        resetInputScroll();
+        return;
+      }
+      const lines = wrappedLayoutLinesRef.current;
+      const cursorX = cursorXFromSelection(displayInputText, selectionStart, lines);
+      scrollToCursorX(cursorX);
+    },
+    [displayInputText, needsHorizontalScroll, resetInputScroll, scrollToCursorX],
   );
 
   useLayoutEffect(() => {
@@ -330,7 +335,6 @@ export function useTextInput(params: {
       left: TEXT_MEASURE_OFFSCREEN_LEFT,
       width: -TEXT_MEASURE_OFFSCREEN_LEFT,
       fontSize: CONTENTS_INPUT_FONT_SIZE,
-      lineHeight: CONTENTS_INPUT_LINE_HEIGHT,
       fontFamily: appFontFamilyForText(
         font,
         fontWeight === "bold" ? "bold" : "normal",
@@ -351,7 +355,10 @@ export function useTextInput(params: {
     if (activePreset >= 0 && activePreset < PRESET_SLOT_COUNT) {
       selectionByPresetRef.current[activePreset] = { start, end };
     }
-    scrollInputToSelection(end);
+    setPendingSelection((prev) =>
+      prev?.start === start && prev?.end === end ? prev : { start, end },
+    );
+    scrollInputToSelection(start);
   };
 
   const onInputScroll = (e: {
@@ -359,6 +366,44 @@ export function useTextInput(params: {
   }) => {
     inputScrollXRef.current = e.nativeEvent.contentOffset.x;
   };
+
+  const moveCursorByLine = useCallback((direction: "up" | "down") => {
+    const saved = selectionByPresetRef.current[activePreset];
+    const pos = saved !== undefined ? saved.start : displayInputText.length;
+
+    const lines = displayInputText.split("\n");
+    let charCount = 0;
+    let currentLine = lines.length - 1;
+    let posInLine = lines[lines.length - 1]?.length ?? 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const lineEnd = charCount + lines[i].length;
+      if (pos <= lineEnd) {
+        currentLine = i;
+        posInLine = pos - charCount;
+        break;
+      }
+      charCount = lineEnd + 1;
+    }
+
+    const targetLine = direction === "up" ? currentLine - 1 : currentLine + 1;
+    if (targetLine < 0 || targetLine >= lines.length) return;
+
+    let newPos = 0;
+    for (let i = 0; i < targetLine; i++) {
+      newPos += lines[i].length + 1;
+    }
+    newPos += Math.min(posInLine, lines[targetLine].length);
+
+    const next = { start: newPos, end: newPos };
+    selectionByPresetRef.current[activePreset] = next;
+    // setNativeProps로 네이티브 selection을 먼저 이동시켜 React 재렌더 시 중복 레이아웃 패스를 방지
+    textInputRef.current?.setNativeProps({ selection: next });
+    setPendingSelection(next);
+  }, [activePreset, displayInputText, textInputRef]);
+
+  const moveCursorUp = useCallback(() => moveCursorByLine("up"), [moveCursorByLine]);
+  const moveCursorDown = useCallback(() => moveCursorByLine("down"), [moveCursorByLine]);
 
   return {
     displayInputText,
@@ -370,10 +415,14 @@ export function useTextInput(params: {
     inputScrollRef,
     handleInputMeasureLayout,
     handleFontLinesProbeLayout,
+    handleTextInputContentSizeChange,
     handleWrappedHeightMeasureLayout,
     measureOffscreenStyle,
     onSelectionChange,
     onInputScroll,
     scrollInputToSelection,
+    signalTextChanged,
+    moveCursorUp,
+    moveCursorDown,
   };
 }

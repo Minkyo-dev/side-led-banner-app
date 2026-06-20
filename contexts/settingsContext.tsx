@@ -617,6 +617,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const handleTextChange = (text: string) => {
     const next = normalizePreviewTextMaxLines(text);
     if (next === null) return;
+    if (next === config.content.previewText) return;
     updateConfig("content", { previewText: next });
   };
 
