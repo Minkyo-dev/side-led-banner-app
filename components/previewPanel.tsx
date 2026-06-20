@@ -29,7 +29,7 @@ import { getSizingPolicy } from "@/utils/textSizing";
 import { Canvas } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
-import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   InputAccessoryView,
   Keyboard,
@@ -52,9 +52,11 @@ type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
 };
 
-const inputAccessoryViewID = "doneAccessory";
+type PreviewPanelProps = {
+  onCursorMovers?: (up: () => void, down: () => void) => void;
+};
 
-export default function PreviewPanel() {
+export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
   const [previewHeight, setPreviewHeight] = useState(0);
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
@@ -183,6 +185,8 @@ export default function PreviewPanel() {
     setPreviewHeight(height);
   };
 
+  const textInputRef = useRef<TextInput>(null);
+
   const {
     displayInputText,
     inputHorizontalCanvasWidth,
@@ -191,47 +195,61 @@ export default function PreviewPanel() {
     inputScrollRef,
     handleInputMeasureLayout,
     handleFontLinesProbeLayout,
+    handleTextInputContentSizeChange,
     handleWrappedHeightMeasureLayout,
     measureOffscreenStyle,
     fontLineProbeText,
     onSelectionChange,
     onInputScroll,
     inputViewportHeightPx,
-  } = useTextInput({ inputScrollViewportW });
+    signalTextChanged,
+    moveCursorUp,
+    moveCursorDown,
+  } = useTextInput({ inputScrollViewportW, textInputRef });
+
+  useEffect(() => {
+    onCursorMovers?.(moveCursorUp, moveCursorDown);
+  }, [onCursorMovers, moveCursorUp, moveCursorDown]);
 
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
-  const dismissKeyboard = () => Keyboard.dismiss();
   const inputSelectionRef = useRef({ start: 0, end: 0 });
-  const [rejectedEnterSelection, setRejectedEnterSelection] = useState<
+  const [rejPasteSelection, setrejPasteSelection] = useState<
     { start: number; end: number } | undefined
   >(undefined);
+
+  const lineCount = previewText.replace(/\r\n?/g, "\n").split("\n").length;
+  const atMaxLines = lineCount >= PREVIEW_TEXT_MAX_LINES;
+
+  //3줄일 시 submit 버튼의 요청을 받지 않는다
+  const [dynamicSubmitActive, setDynamicSubmitActive] = useState(false);
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setDynamicSubmitActive(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setDynamicSubmitActive(false));
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
+
+  // 3줄일 때 onSubmitEditing 무시
+  const handleSubmitEditing = () => { if (atMaxLines) return; };
 
   const onPreviewTextChange = (text: string) => {
     const next = normalizePreviewTextMaxLines(text);
     if (next === null) {
-      setRejectedEnterSelection({ ...inputSelectionRef.current });
+      // 붙여넣기 등으로 3줄 초과 시 되돌리기
+      const revertSelection = { ...inputSelectionRef.current };
+      textInputRef.current?.setNativeProps({ text: displayInputText, selection: revertSelection });
+      setrejPasteSelection(revertSelection);
       return;
     }
+    signalTextChanged();
     handleTextChange(text);
   };
 
   useLayoutEffect(() => {
-    if (rejectedEnterSelection === undefined) return;
-    const id = requestAnimationFrame(() =>
-      setRejectedEnterSelection(undefined),
-    );
+    if (rejPasteSelection === undefined) return;
+    const id = requestAnimationFrame(() => setrejPasteSelection(undefined));
     return () => cancelAnimationFrame(id);
-  }, [rejectedEnterSelection]);
-
-  const handleInputKeyPress = (e: { nativeEvent: { key: string } }) => {
-    if (e.nativeEvent.key !== "Enter") return;
-
-    const lineCount = previewText.replace(/\r\n?/g, "\n").split("\n").length;
-    if (lineCount >= PREVIEW_TEXT_MAX_LINES) {
-      // dismissKeyboard();
-    }
-  };
+  }, [rejPasteSelection]);
 
   return (
     <View style={styles.previewContainer}>
@@ -407,21 +425,19 @@ export default function PreviewPanel() {
           {...(Platform.OS === "android" ? { persistentScrollbar: true } : {})}
         >
           <TextInput
+            ref={textInputRef}
             editable
             allowFontScaling={false}
             multiline={true}
-            scrollEnabled={true}
+            scrollEnabled={false}
             style={[
               styles.contentsInput,
               {
                 flex: 0,
                 width: inputHorizontalCanvasWidth,
-                height: inputViewportHeightPx,
-                maxHeight: inputViewportHeightPx,
-                paddingTop: 0,
-                paddingBottom: 0,
+                paddingTop: 2,
+                paddingBottom: 2,
                 fontSize: CONTENTS_INPUT_FONT_SIZE,
-                lineHeight: CONTENTS_INPUT_LINE_HEIGHT,
                 fontFamily: appFontFamilyForText(
                   font,
                   config.appearance.fontWeight === "bold" ? "bold" : "normal",
@@ -431,20 +447,20 @@ export default function PreviewPanel() {
             ]}
             placeholder="Enter your text here"
             value={displayInputText}
-            selection={rejectedEnterSelection ?? pendingSelection}
+            selection={rejPasteSelection ?? pendingSelection}
+            submitBehavior={dynamicSubmitActive ? (atMaxLines ? "submit" : "newline") : "newline"}
+            onSubmitEditing={handleSubmitEditing}
             onChangeText={onPreviewTextChange}
-            onKeyPress={handleInputKeyPress}
             onSelectionChange={(e) => {
               const { start, end } = e.nativeEvent.selection;
               inputSelectionRef.current = { start, end };
               onSelectionChange(e);
             }}
             textAlignVertical="top"
-            inputAccessoryViewID={
-              Platform.OS === "ios" ? inputAccessoryViewID : undefined
-            }
+            onContentSizeChange={(e) => handleTextInputContentSizeChange(e.nativeEvent.contentSize.width, e.nativeEvent.contentSize.height)}
           />
         </ScrollView>
+        
         {Platform.OS === "ios" && (
           <InputAccessoryView nativeID={inputAccessoryViewID}>
             <View style={styles.accessoryBar}>
