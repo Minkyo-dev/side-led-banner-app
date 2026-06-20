@@ -1,5 +1,5 @@
-import { APP_FONT_ASSETS, APP_THEME_FONT_ASSETS } from "@/constants/appFonts";
 import { SplashLoadingScreen } from "@/components/SplashLoadingScreen";
+import { APP_FONT_ASSETS, APP_THEME_FONT_ASSETS } from "@/constants/appFonts";
 import { SettingsProvider } from "@/contexts/settingsContext";
 import {
   DarkTheme,
@@ -10,7 +10,8 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -23,15 +24,24 @@ export default function RootLayout() {
     ...APP_FONT_ASSETS,
     ...APP_THEME_FONT_ASSETS,
   });
+  //최소 0.75초 스플래쉬 강제
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setMinTimeElapsed(true), 750);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
 
+  const isReady = fontsLoaded && minTimeElapsed;
+
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <SettingsProvider>
-        {fontsLoaded ? (
+        <KeyboardProvider>
+        {isReady ? (
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="settings" options={{ headerShown: false }} />
@@ -51,6 +61,7 @@ export default function RootLayout() {
         ) : (
           <SplashLoadingScreen />
         )}
+        </KeyboardProvider>
         <StatusBar style="auto" />
       </SettingsProvider>
     </ThemeProvider>
