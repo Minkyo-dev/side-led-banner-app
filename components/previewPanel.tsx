@@ -5,8 +5,7 @@ import { btnStyles } from "@/constants/btnStyles";
 import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
 import {
   CONTENTS_INPUT_FONT_SIZE,
-  CONTENTS_INPUT_LINE_HEIGHT,
-  styles,
+  styles
 } from "@/constants/styles";
 import {
   normalizePreviewTextMaxLines,
@@ -39,6 +38,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useColorScheme,
   useWindowDimensions,
   View
 } from "react-native";
@@ -47,6 +47,8 @@ import { buildCanvas } from "./animation/buildCanvas";
 import { buildPixelBackground } from "./animation/buildPixelBackground";
 import { MarqueeCanvas } from "./animation/MarqueeCanvas";
 import { PixelBackgroundCanvas } from "./animation/PixelBackgroundCanvas";
+
+const inputAccessoryViewID = "doneAccessory";
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
@@ -210,6 +212,9 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
   useEffect(() => {
     onCursorMovers?.(moveCursorUp, moveCursorDown);
   }, [onCursorMovers, moveCursorUp, moveCursorDown]);
+
+  const isDark = useColorScheme() === "dark";
+  const toolbarBg = isDark ? "#2c2c2e" : "#f1f1f1";
 
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
@@ -457,13 +462,14 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
               onSelectionChange(e);
             }}
             textAlignVertical="top"
+            inputAccessoryViewID={Platform.OS === "ios" ? inputAccessoryViewID : undefined}
             onContentSizeChange={(e) => handleTextInputContentSizeChange(e.nativeEvent.contentSize.width, e.nativeEvent.contentSize.height)}
           />
         </ScrollView>
         
         {Platform.OS === "ios" && (
           <InputAccessoryView nativeID={inputAccessoryViewID}>
-            <View style={styles.accessoryBar}>
+            <View style={[styles.accessoryBar, { backgroundColor: toolbarBg }]}>
               <TouchableOpacity onPress={Keyboard.dismiss} hitSlop={8}>
                 <Text allowFontScaling={false} style={styles.accessoryClose}>
                   ✔

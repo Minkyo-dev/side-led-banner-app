@@ -28,9 +28,9 @@ import Animated, {
 import { scheduleOnRN } from "react-native-worklets";
 
 const CHECK_ICON = require("../assets/images/Check.png");
-const WATCH_AD_BUTTON = require("../assets/images/Watch Ad Button.png");
-const PLAY_BG = require("../assets/images/Play Bg.png");
-const PRO_BADGE = require("../assets/images/PRO Badge.png");
+const WATCH_AD_BUTTON = require("../assets/images/Watch_Ad_Button.png");
+const PLAY_BG = require("../assets/images/Play_Bg.png");
+const PRO_BADGE = require("../assets/images/PRO_Badge.png");
 
 // FireworksBurst
 const N = 45;
@@ -315,35 +315,18 @@ export function RewardAdModal({
               contentFit="contain"
               accessibilityIgnoresInvertColors
             />
-            <View 
+            <Text
               style={[
                 styles.ctaButtonText,
                 watchAdFontFamily ? { fontFamily: watchAdFontFamily } : undefined,
               ]}
-               allowFontScaling={false}
-               numberOfLines={1}
-              >
-              <Image
-                source={PLAY_BG}
-                style={styles.ctaPlayBg}
-                contentFit="contain"
-                accessibilityIgnoresInvertColors
-              />
-              <Text
-                style={[
-                  styles.ctaButtonText,
-                  watchAdFontFamily
-                    ? { fontFamily: watchAdFontFamily }
-                    : undefined,
-                ]}
-                allowFontScaling={false}
-                numberOfLines={1}
-              >
-                {rewardAdLabel("rewardWatchAd")}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+              allowFontScaling={false}
+              numberOfLines={1}
+            >
+              {rewardAdLabel("rewardWatchAd")}
+            </Text>
+          </View>
+        </TouchableOpacity>
       </View>
     </Animated.View>
   );

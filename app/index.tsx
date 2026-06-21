@@ -23,19 +23,17 @@ import * as NavigationBar from "expo-navigation-bar";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import React, { useCallback, useEffect, useRef } from "react";
-import { Platform, Text, TouchableOpacity, useColorScheme, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { KeyboardAvoidingView, KeyboardToolbar } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
-function CheckButton(props: any) {
+function DismissButton(props: any) {
+  const isDark = useColorScheme() === "dark";
+  const color = isDark ? "#ffffff" : "#2c2c2c";
   return (
     <TouchableOpacity onPress={props.onPress} style={props.style}>
-      <Image
-        source={require("@/assets/images/Check.png")}
-        style={{ width: 28, height: 28 }}
-        contentFit="contain"
-      />
+      <Text allowFontScaling={false} style={[styles.accessoryClose, { color }]}>✔</Text>
     </TouchableOpacity>
   );
 }
@@ -69,8 +67,8 @@ export default function Index() {
 
   const handleTabPress = (tab: TabType) => updateUI({ activeTab: tab });
 
-  const colorScheme = useColorScheme() ?? "light";
-  const arrowColor = colorScheme === "dark" ? "#fafafa" : "#2c2c2c";
+  const isDark = useColorScheme() === "dark";
+  const toolbarBtn = isDark ? "#ffffff" : "#2c2c2c";
 
   const cursorUpRef = useRef<(() => void) | null>(null);
   const cursorDownRef = useRef<(() => void) | null>(null);
@@ -173,13 +171,13 @@ export default function Index() {
       <KeyboardToolbar>
         <KeyboardToolbar.Content>
           <View style={toolbarStyles.cursorNavContainer}>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               onPress={() => cursorUpRef.current?.()}
               style={toolbarStyles.cursorNavButton}
               accessible={false}
               focusable={false}
             >
-              <Text style={[toolbarStyles.cursorNavText, { color: arrowColor }]}>↑</Text>
+              <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn }]}>↑</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => cursorDownRef.current?.()}
@@ -187,11 +185,11 @@ export default function Index() {
               accessible={false}
               focusable={false}
             >
-              <Text style={[toolbarStyles.cursorNavText, { color: arrowColor }]}>↓</Text>
-            </TouchableOpacity>
+              <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn }]}>↓</Text>
+            </TouchableOpacity> */}
           </View>
         </KeyboardToolbar.Content>
-        <KeyboardToolbar.Done button={CheckButton} />
+        <KeyboardToolbar.Done button={DismissButton} />
       </KeyboardToolbar>
     </View>
   );

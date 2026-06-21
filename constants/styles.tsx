@@ -577,7 +577,6 @@ export const ledBannerFullScreenStyles = StyleSheet.create({
 export const toolbarStyles = StyleSheet.create({
   cursorNavContainer: {
     flexDirection: "row",
-    paddingLeft: 8,
   },
   cursorNavButton: {
     width: 44,
