@@ -18,7 +18,7 @@ export default function BannerAdComponent({ style }: any) {
     <View style={[{ alignItems: "center" }, style]}>
       <BannerAd
         unitId={TestIds.BANNER}
-        size={BannerAdSize.FULL_BANNER}
+        size={BannerAdSize.BANNER}
         requestOptions={{
           requestNonPersonalizedAdsOnly: true,
         }}
