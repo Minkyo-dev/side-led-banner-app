@@ -150,8 +150,7 @@ export default function Index() {
           {activeTab === "BACKGROUND" && <BackgroundSection />}
           {activeTab === "EFFECT" && <EffectSection />}
         </View>
-        <View>{/* Banner Ad placeholder */}</View>
-        <BannerAdComponent style={{ height: 50 }} />
+        <BannerAdComponent />
         <RewardAdModal
           visible={rewardAdVisible}
           onClose={() => updateUI({ rewardAdVisible: false })}
