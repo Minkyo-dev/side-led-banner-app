@@ -1,5 +1,5 @@
 import { backgroundColorPalette } from "@/constants/colorPalette";
-import { styles as base, colorPickerStyles as chip, colorPickerLockStyles as bgLock } from "@/constants/styles";
+import { styles as base, colorPickerLockStyles as bgLock, colorPickerStyles as chip } from "@/constants/styles";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -12,12 +12,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
-const PRO_LOCKED_COLOR_COUNT = 10;
 import { useSettings } from "../../contexts/settingsContext";
 import { BackgroundPhotoSheet } from "./backgroundPhotoSheet";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
+
+const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
+const PRO_LOCKED_COLOR_COUNT = 10;
 
 const COLS = 9;
 const ROW1_SWATCHES = COLS - 1;
@@ -111,7 +111,7 @@ export const BackgroundSection = () => {
               {hasBgPhoto ? <View style={chip.colorPickerItemActive} /> : null}
             </TouchableOpacity>
             {row1.map((color, index) => {
-              const isLocked = index >= lockedStart;
+              const isLocked = (index >= 4 && index <=8);
               return (
                 <TouchableOpacity
                   key={`bg-color-first-${index}`}
@@ -137,7 +137,7 @@ export const BackgroundSection = () => {
             <View key={`bg-color-row-${rowIndex}`} style={chip.colorPickerRow}>
               {row.map((color, index) => {
                 const colorIndex = ROW1_SWATCHES + rowIndex * COLS + index;
-                const isLocked = colorIndex >= lockedStart;
+                const isLocked = (colorIndex >= lockedStart+5);
                 return (
                   <TouchableOpacity
                     key={`bg-color-${rowIndex}-${index}`}

@@ -1,5 +1,5 @@
+import { colorPickerLockStyles as lockStyles, colorPickerStyles as styles } from "@/constants/styles";
 import { Image, TouchableOpacity, View } from "react-native";
-import { colorPickerStyles as styles, colorPickerLockStyles as lockStyles } from "@/constants/styles";
 
 const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
 
@@ -24,7 +24,7 @@ export const ColorPicker = ({
         <View key={`color-picker-row-${rowIndex}`} style={styles.colorPickerRow}>
           {colorList.slice(rowIndex * 9, (rowIndex + 1) * 9).map((color, index) => {
             const globalIndex = rowIndex * 9 + index;
-            const isLocked = globalIndex >= lockedStartIndex;
+            const isLocked = (globalIndex >= 5 && globalIndex <=8) || (globalIndex >= 13);
             return (
               <TouchableOpacity
                 key={`color-picker-item-${rowIndex}-${index}`}
