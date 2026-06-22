@@ -1,6 +1,7 @@
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { rewardAdModalStyles as styles } from "@/constants/styles";
 import { useSettings } from "@/contexts/settingsContext";
+import * as amplitude from "@amplitude/analytics-react-native";
 import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { Ionicons } from "@expo/vector-icons";
 import { Canvas, Group, Path, Rect, Skia } from "@shopify/react-native-skia";
@@ -230,6 +231,7 @@ export function RewardAdModal({
   const overlayStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
 
   const handleWatchAd = () => {
+    amplitude.track("WatchAd_clicked");
     // 닫힘 애니메이션이 실제로 끝난 뒤(추측 딜레이 아님) 광고를 띄운다.
     pendingAfterCloseRef.current = onWatchAd ?? null;
     onClose();

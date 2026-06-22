@@ -9,7 +9,6 @@ import { RewardAdDebugFab } from "@/components/dev/rewardAdDebugFab";
 import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
 import { LedBannerFullScreen } from "@/components/ledBannerFullScreen";
 import PreviewPanel from "@/components/previewPanel";
-import { ProActiveBadge } from "@/components/ProActiveBadge";
 import { RewardAdModal } from "@/components/rewardAdModal";
 import { BackgroundSection } from "@/components/settings/backgroundSection";
 import { EffectSection } from "@/components/settings/effectSection";
@@ -18,6 +17,7 @@ import { btnStyles } from "@/constants/btnStyles";
 import { styles, toolbarStyles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
 import { useRewardedAd } from "@/hooks/useRewardedAd";
+import * as amplitude from "@amplitude/analytics-react-native";
 import { Image } from "expo-image";
 import * as NavigationBar from "expo-navigation-bar";
 import { type Href, useRouter } from "expo-router";
@@ -54,6 +54,22 @@ export default function Index() {
   }, []);
 
   const handlePlay = async () => {
+    amplitude.track("Play_clicked", {
+      play_mode: playOption,
+      font: config.appearance.font,
+      fontSize: config.appearance.fontSize,
+      textMoveSpeed: config.motion.textMoveSpeed,
+      letterSpacing: config.appearance.letterSpacing,
+      lineSpacing: config.appearance.lineSpacing,
+      textColor: config.appearance.textSelectedColor,
+      outLine: config.appearance.outLine,
+      dropShadow: config.appearance.dropShadow,
+      backgroundColor: config.background.backgroundColor,
+      backgroundBlur: config.background.backgroundBlur,
+      has_photo: config.background.backgroundImageUri != null,
+      effects: config.appearance.effectSelectedItems.join(","),
+      backgroundEffect: config.appearance.backgroundEffectPreset,
+    });
     await ScreenOrientation.unlockAsync();
     updateUI({ isPlaying: true });
   };
@@ -65,7 +81,35 @@ export default function Index() {
     updateUI({ isPlaying: false });
   };
 
-  const handleTabPress = (tab: TabType) => updateUI({ activeTab: tab });
+  const handleTabPress = (tab: TabType) => {
+    if (tab === "TEXT") {
+      amplitude.track("Text_clicked", {
+        font: config.appearance.font,
+        fontSize: config.appearance.fontSize,
+        textMoveSpeed: config.motion.textMoveSpeed,
+        letterSpacing: config.appearance.letterSpacing,
+        lineSpacing: config.appearance.lineSpacing,
+        textColor: config.appearance.textSelectedColor,
+        outLine: config.appearance.outLine,
+        dropShadow: config.appearance.dropShadow,
+      });
+    } else if (tab === "BACKGROUND") {
+      amplitude.track("BG_clicked", {
+        backgroundColor: config.background.backgroundColor,
+        backgroundBlur: config.background.backgroundBlur,
+        has_photo: config.background.backgroundImageUri != null,
+      });
+    } else if (tab === "EFFECT") {
+      amplitude.track("Effects_clicked", {
+        effects: config.appearance.effectSelectedItems.join(","),
+        backgroundEffect: config.appearance.backgroundEffectPreset,
+        gradientPreset: config.appearance.effectSelectedItems.includes("Gradient")
+          ? config.appearance.gradientBackgroundPreset
+          : null,
+      });
+    }
+    updateUI({ activeTab: tab });
+  };
 
   const isDark = useColorScheme() === "dark";
   const toolbarBtn = isDark ? "#ffffff" : "#2c2c2c";
@@ -86,14 +130,20 @@ export default function Index() {
           {/* one line play button */}
           <TouchableOpacity
             style={btnStyles.playBarSideSlot}
-            onPress={() => updateConfig("content", { playOption: "one" })}
+            onPress={() => {
+              amplitude.track("OneL_clicked");
+              updateConfig("content", { playOption: "one" });
+            }}
           >
             <OneLinePlayButton isActive={playOption === "one"} />
           </TouchableOpacity>
           {/* multiple line play button */}
           <TouchableOpacity
             style={btnStyles.playBarSideSlot}
-            onPress={() => updateConfig("content", { playOption: "multi" })}
+            onPress={() => {
+              amplitude.track("ThreeL_clicked");
+              updateConfig("content", { playOption: "multi" });
+            }}
           >
             <MultipleLinePlayButton isActive={playOption === "multi"} />
           </TouchableOpacity>
@@ -107,7 +157,10 @@ export default function Index() {
           {/* settings button */}
           <TouchableOpacity
             style={btnStyles.playBarSideSlot}
-            onPress={() => router.push("/settings" as Href)}
+            onPress={() => {
+              amplitude.track("Setting_clicked");
+              router.push("/settings" as Href);
+            }}
             accessibilityLabel={textSectionLabel("settingsTitle")}
           >
             <Image
@@ -163,7 +216,6 @@ export default function Index() {
           visible={isPlaying}
           onClose={handleStop}
         />
-        <ProActiveBadge />
         <RewardAdDebugFab onOpen={openRewardAdModal} />
         <ProDebugFab />
         <SheetFetchDebugPanel />

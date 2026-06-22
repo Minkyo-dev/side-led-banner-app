@@ -1,6 +1,7 @@
 import { SplashLoadingScreen } from "@/components/SplashLoadingScreen";
 import { APP_FONT_ASSETS, APP_THEME_FONT_ASSETS } from "@/constants/appFonts";
 import { SettingsProvider } from "@/contexts/settingsContext";
+import * as amplitude from "@amplitude/analytics-react-native";
 import {
   DarkTheme,
   DefaultTheme,
@@ -17,6 +18,8 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 SplashScreen.preventAutoHideAsync();
+const amplitudeApiKey = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
+if (amplitudeApiKey) amplitude.init(amplitudeApiKey);
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
