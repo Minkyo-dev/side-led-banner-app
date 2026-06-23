@@ -63,6 +63,7 @@ export const TextSection = () => {
     resolvedAppLocale,
     isProActive,
     openRewardAdModal,
+    ui,
   } = useSettings();
 
   const fontDropdownMaxHeight = useMemo(
@@ -237,10 +238,10 @@ export const TextSection = () => {
       {playOption === "multi" ? (
         <SettingsSliderBlock
           label={textSectionLabel("lineSpacing")}
-          value={lineSpacing}
+          value={Math.min(lineSpacing, ui.lineSpacingSliderMax)}
           onChange={setLineSpacing}
           minimumValue={0}
-          maximumValue={40}
+          maximumValue={ui.lineSpacingSliderMax}
           step={1}
         />
       ) : null}

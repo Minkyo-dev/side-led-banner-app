@@ -125,10 +125,8 @@ export function getRelLineSpacing(params: {
   const { requestedLineSpacingPx, fontSizePercent } = params;
   const requested = Math.max(0, requestedLineSpacingPx);
   const clampedFontSize = Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, fontSizePercent));
-  const t =
-    (clampedFontSize - FONT_SIZE_MIN) / (FONT_SIZE_MAX - FONT_SIZE_MIN);
-  const scale = 1 - t;
-  return requested * scale;
+  const t = (clampedFontSize - FONT_SIZE_MIN) / (FONT_SIZE_MAX - FONT_SIZE_MIN);
+  return requested * (1 - t);
 }
 
 export function getLineCountForMode(params: {

@@ -47,6 +47,7 @@ import {
   normalizeOneLineJoinMode,
   type OneLineJoinMode,
 } from "@/utils/viewMode";
+import { getRelLineSpacing } from "@/utils/textSizing";
 import { useLocales } from "expo-localization";
 import React, {
   createContext,
@@ -340,6 +341,8 @@ export interface UIState {
   appLanguage: AppLanguagePreference;
   proMode: number | null;
   rewardAdVisible: boolean;
+  /** 현재 폰트 크기 기준으로 설정 가능한 행간 슬라이더 최댓값 */
+  lineSpacingSliderMax: number;
 }
 //여기서 제공할 config 및 업데이트 함수 정의
 interface SettingsContextValue {
@@ -426,6 +429,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     appLanguage: "system",
     proMode: null,
     rewardAdVisible: false,
+    lineSpacingSliderMax: Math.floor(getRelLineSpacing({ requestedLineSpacingPx: 40, fontSizePercent: 100 })),
   });
 
   const resolvedAppLocale: AppLocaleKey =
@@ -477,6 +481,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     activePresetRef.current = ui.activePreset;
   }, [ui.activePreset]);
+
+  useEffect(() => {
+    const max = Math.floor(getRelLineSpacing({ requestedLineSpacingPx: 40, fontSizePercent: config.appearance.fontSize }));
+    setUI((prev) => prev.lineSpacingSliderMax === max ? prev : { ...prev, lineSpacingSliderMax: max });
+  }, [config.appearance.fontSize]);
+
   const isProActiveRef = useRef(false);
 
   useEffect(() => {

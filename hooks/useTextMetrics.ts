@@ -133,13 +133,14 @@ export function useTextMetrics(input: TextMetricsInput) {
     };
   }, [probeFont]);
 
+  const lineSpacingMax = useMemo(
+    () => getRelLineSpacing({ requestedLineSpacingPx: 40, fontSizePercent: fontSize }),
+    [fontSize],
+  );
+
   const effectiveLineSpacing = useMemo(
-    () =>
-      getRelLineSpacing({
-        requestedLineSpacingPx: lineSpacing,
-        fontSizePercent: fontSize,
-      }),
-    [lineSpacing, fontSize],
+    () => Math.min(Math.max(0, lineSpacing), lineSpacingMax),
+    [lineSpacing, lineSpacingMax],
   );
 
   const referenceLineSpacing = useMemo(
