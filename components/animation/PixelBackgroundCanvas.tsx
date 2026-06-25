@@ -1,8 +1,10 @@
 import {
   DOT_MATRIX_BACKGROUND_SOURCE,
   DOT_MATRIX_PHOTO_BACKGROUND_SOURCE,
+  DOT_MATRIX_STATIC_OFF_SOURCE,
+  OFF_LED_UNIFORMS,
   resolveDefaultLedFromBackground,
-} from "@/components/animation/dotMatrixBackgroundShader";
+} from "@/components/animation/backgroundDotShader";
 import { PixelEffect1Background } from "@/components/animation/PixelEffect1Background";
 import { PixelHeartBackground } from "@/components/animation/PixelHeartBackground";
 import { PixelSpeechBubbleFrame } from "@/components/animation/PixelSpeechBubbleFrame";
@@ -90,10 +92,7 @@ export function PixelBackgroundCanvas({
   const isEffect1 = effectId === "effect1";
   const isSpeechBg = isSpeechBubblePreset(effectId);
   const hasPhoto = hasBgPhoto && backgroundImageUri;
-  const isSolidPanelOnly =
-    !isSpeechBg && !isHeartBg && !isEffect1 && !hasPhoto && !showGradientBackdrop;
-
-  const { backgroundShaderLayer, photoBackgroundShaderLayer } =
+  const { backgroundShaderLayer, photoBackgroundShaderLayer, staticOffLayer } =
     usePixelDotShaderLayers(pixelShaderSize, backgroundColor);
 
   const speechBubbleSource = useMemo(
@@ -113,54 +112,43 @@ export function PixelBackgroundCanvas({
     return null;
   }
 
-  const solidPanel = (
-    <Rect x={0} y={0} width={width} height={height} color={backgroundColor} />
-  );
-
-  const photoLayer = hasPhoto ? (
-    <>
-      {solidPanel}
-      <PixelBackgroundImage
-        uri={backgroundImageUri}
-        width={width}
-        height={height}
-      />
-      {showGradientBackdrop ? (
-        <GradientBackdrop
-          key={`gradient-${gradientBackgroundPreset}`}
-          preset={gradientBackgroundPreset as GradientBackdropId}
-          width={width}
-          height={height}
-          opacity={0.4}
-        />
-      ) : null}
-    </>
-  ) : null;
-
-  const presetUnderlay =
-    isHeartBg || isSpeechBg || isEffect1 ? solidPanel : null;
-
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <Canvas style={{ width, height }} opaque={false}>
-        {isSolidPanelOnly
-          ? solidPanel
-          : hasPhoto
-            ? (
-              <Group layer={photoBackgroundShaderLayer}>{photoLayer}</Group>
-            )
-            : showGradientBackdrop
-              ? (
-                <GradientBackdrop
-                  key={`gradient-${gradientBackgroundPreset}`}
-                  preset={gradientBackgroundPreset as GradientBackdropId}
-                  width={width}
-                  height={height}
-                  opacity={1}
-                />
-              )
-              : presetUnderlay}
+        {/* Layer 0: 항상 최하단 — 꺼진 LED 격자 (배경 사진/이펙트 없는 영역에서 보임) */}
+        <Group layer={staticOffLayer}>
+          <Rect x={0} y={0} width={width} height={height} color={backgroundColor} />
+        </Group>
 
+        {/* Layer 1: 배경 사진 (있을 때만, pixel shader 적용) */}
+        {hasPhoto ? (
+          <Group layer={photoBackgroundShaderLayer}>
+            <PixelBackgroundImage
+              uri={backgroundImageUri!}
+              width={width}
+              height={height}
+            />
+            {showGradientBackdrop ? (
+              <GradientBackdrop
+                key={`gradient-${gradientBackgroundPreset}`}
+                preset={gradientBackgroundPreset as GradientBackdropId}
+                width={width}
+                height={height}
+                opacity={0.4}
+              />
+            ) : null}
+          </Group>
+        ) : showGradientBackdrop ? (
+          <GradientBackdrop
+            key={`gradient-${gradientBackgroundPreset}`}
+            preset={gradientBackgroundPreset as GradientBackdropId}
+            width={width}
+            height={height}
+            opacity={1}
+          />
+        ) : null}
+
+        {/* Layer 2: 움직이는 이펙트 (투명 영역은 Layer 0 off-LED 격자가 비침) */}
         {isEffect1 && backgroundEffect.sources != null ? (
           <Group layer={backgroundShaderLayer}>
             <PixelEffect1Background
@@ -207,7 +195,7 @@ function usePixelDotShaderLayers(dotSize: number, backgroundColor: string) {
     () => resolveDefaultLedFromBackground(backgroundColor),
     [backgroundColor],
   );
-  const backgroundShaderLayer = useMemo(
+const backgroundShaderLayer = useMemo(
     () => (
       <Paint>
         <RuntimeShader
@@ -229,5 +217,16 @@ function usePixelDotShaderLayers(dotSize: number, backgroundColor: string) {
     ),
     [pixelDotUniforms],
   );
-  return { backgroundShaderLayer, photoBackgroundShaderLayer };
+  const staticOffLayer = useMemo(
+    () => (
+      <Paint>
+        <RuntimeShader
+          source={DOT_MATRIX_STATIC_OFF_SOURCE}
+          uniforms={{ ...pixelDotUniforms, ...OFF_LED_UNIFORMS }}
+        />
+      </Paint>
+    ),
+    [pixelDotUniforms],
+  );
+  return { backgroundShaderLayer, photoBackgroundShaderLayer, staticOffLayer };
 }

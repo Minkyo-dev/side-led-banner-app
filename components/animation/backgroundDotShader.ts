@@ -77,6 +77,36 @@ export const DOT_MATRIX_PHOTO_BACKGROUND_SOURCE = Skia.RuntimeEffect.Make(`
   }
 `)!;
 
+/** 정적 꺼진 LED 격자: layer 필터로 사용, content는 선언만 하고 무시 */
+export const DOT_MATRIX_STATIC_OFF_SOURCE = Skia.RuntimeEffect.Make(`
+  uniform shader content;
+  uniform float dotSize;
+  uniform float dotRadius;
+  uniform float offLedR;
+  uniform float offLedG;
+  uniform float offLedB;
+
+  ${LED_DOT_MASK_GLSL}
+
+  half4 main(vec2 pos) {
+    vec2 cellOrigin = floor(pos / dotSize) * dotSize;
+    vec2 cellCenter = cellOrigin + dotSize * 0.5;
+    float mask = ledDotMask(pos, cellCenter);
+
+    if (mask <= 0.0) {
+      return half4(0.0, 0.0, 0.0, 1.0);
+    }
+    return half4(offLedR * mask, offLedG * mask, offLedB * mask, mask);
+  }
+`)!;
+
+/** 꺼진 LED 고정 유니폼 — 배경색 무관하게 항상 같은 어두운 회색 소자 */
+export const OFF_LED_UNIFORMS = {
+  offLedR: 0.22,
+  offLedG: 0.22,
+  offLedB: 0.25,
+} as const;
+
 /** Settings > Background 색상에서 default(off) LED 도트 색 유도 */
 export function resolveDefaultLedFromBackground(backgroundColor: string) {
   const raw = backgroundColor.replace("#", "").trim().toLowerCase();
