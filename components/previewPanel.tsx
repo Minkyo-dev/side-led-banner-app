@@ -5,7 +5,8 @@ import { btnStyles } from "@/constants/btnStyles";
 import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
 import {
   CONTENTS_INPUT_FONT_SIZE,
-  styles
+  styles,
+  toolbarStyles,
 } from "@/constants/styles";
 import {
   normalizePreviewTextMaxLines,
@@ -21,6 +22,7 @@ import {
   resolveSpeechCanvasFallback,
   useSpeechBubble,
 } from "@/hooks/useSpeechBubble";
+import { useTextHistory } from "@/hooks/useTextHistory";
 import { useTextInput } from "@/hooks/useTextInput";
 import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { resolveBubbleCanvasOpts } from "@/utils/skiaBubbleTextLayout";
@@ -28,7 +30,7 @@ import { getSizingPolicy } from "@/utils/textSizing";
 import { Canvas } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   InputAccessoryView,
   Keyboard,
@@ -56,9 +58,11 @@ type LayoutEvent = {
 
 type PreviewPanelProps = {
   onCursorMovers?: (up: () => void, down: () => void) => void;
+  onUndoRedoControl?: (undo: () => void, redo: () => void) => void;
+  onUndoRedoStateChange?: (canUndo: boolean, canRedo: boolean) => void;
 };
 
-export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
+export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndoRedoStateChange }: PreviewPanelProps) {
   const [previewHeight, setPreviewHeight] = useState(0);
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
@@ -207,14 +211,44 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
     signalTextChanged,
     moveCursorUp,
     moveCursorDown,
+    forceSelection,
   } = useTextInput({ inputScrollViewportW, textInputRef });
+
+  const history = useTextHistory(previewText);
 
   useEffect(() => {
     onCursorMovers?.(moveCursorUp, moveCursorDown);
   }, [onCursorMovers, moveCursorUp, moveCursorDown]);
 
+  useEffect(() => {
+    onUndoRedoStateChange?.(history.canUndo, history.canRedo);
+  }, [history.canUndo, history.canRedo, onUndoRedoStateChange]);
+
+  const handleUndo = useCallback(() => {
+    const snapshot = history.undo();
+    if (!snapshot) return;
+    updateConfig("content", { previewText: snapshot.text });
+    textInputRef.current?.setNativeProps({ text: snapshot.text });
+    forceSelection(snapshot.sel);
+    signalTextChanged();
+  }, [history, updateConfig, forceSelection, signalTextChanged, textInputRef]);
+
+  const handleRedo = useCallback(() => {
+    const snapshot = history.redo();
+    if (!snapshot) return;
+    updateConfig("content", { previewText: snapshot.text });
+    textInputRef.current?.setNativeProps({ text: snapshot.text });
+    forceSelection(snapshot.sel);
+    signalTextChanged();
+  }, [history, updateConfig, forceSelection, signalTextChanged, textInputRef]);
+
+  useEffect(() => {
+    onUndoRedoControl?.(handleUndo, handleRedo);
+  }, [onUndoRedoControl, handleUndo, handleRedo]);
+
   const isDark = useColorScheme() === "dark";
   const toolbarBg = isDark ? "#2c2c2e" : "#f1f1f1";
+  const toolbarBtn = isDark ? "#ffffff" : "#2c2c2c";
 
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
@@ -248,6 +282,7 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
     }
     signalTextChanged();
     handleTextChange(text);
+    history.onTextChange(text, inputSelectionRef.current);
   };
 
   useLayoutEffect(() => {
@@ -470,6 +505,26 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
         {Platform.OS === "ios" && (
           <InputAccessoryView nativeID={inputAccessoryViewID}>
             <View style={[styles.accessoryBar, { backgroundColor: toolbarBg }]}>
+              <View style={toolbarStyles.cursorNavContainer}>
+                <TouchableOpacity
+                  onPress={handleUndo}
+                  style={toolbarStyles.cursorNavButton}
+                  disabled={!history.canUndo}
+                  accessible={false}
+                  focusable={false}
+                >
+                  <Text allowFontScaling={false} style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: history.canUndo ? 1 : 0.3 }]}>↩</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleRedo}
+                  style={toolbarStyles.cursorNavButton}
+                  disabled={!history.canRedo}
+                  accessible={false}
+                  focusable={false}
+                >
+                  <Text allowFontScaling={false} style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: history.canRedo ? 1 : 0.3 }]}>↪</Text>
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity onPress={Keyboard.dismiss} hitSlop={8}>
                 <Text allowFontScaling={false} style={styles.accessoryClose}>
                   ✔
@@ -483,7 +538,11 @@ export default function PreviewPanel({ onCursorMovers }: PreviewPanelProps) {
           style={styles.contentsInputResetButtonContainer}
         >
           <TouchableOpacity
-            onPress={() => setPreviewText("")}
+            onPress={() => {
+              history.commitSnapshot(previewText, inputSelectionRef.current);
+              setPreviewText("");
+              history.onTextChange("", { start: 0, end: 0 });
+            }}
             style={btnStyles.contentsInputResetButton}
           >
             <DeleteAllButton />

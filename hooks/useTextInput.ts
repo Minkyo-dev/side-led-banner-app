@@ -405,6 +405,17 @@ export function useTextInput(params: {
   const moveCursorUp = useCallback(() => moveCursorByLine("up"), [moveCursorByLine]);
   const moveCursorDown = useCallback(() => moveCursorByLine("down"), [moveCursorByLine]);
 
+  const forceSelection = useCallback(
+    (sel: { start: number; end: number }) => {
+      if (activePreset >= 0 && activePreset < PRESET_SLOT_COUNT) {
+        selectionByPresetRef.current[activePreset] = sel;
+      }
+      textInputRef.current?.setNativeProps({ selection: sel });
+      setPendingSelection(sel);
+    },
+    [activePreset, textInputRef],
+  );
+
   return {
     displayInputText,
     inputHorizontalCanvasWidth,
@@ -424,5 +435,6 @@ export function useTextInput(params: {
     signalTextChanged,
     moveCursorUp,
     moveCursorDown,
+    forceSelection,
   };
 }
