@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 
 export type TextSnapshot = { text: string; sel: { start: number; end: number } };
 
-const DEBOUNCE_MS = 700;
+const DEBOUNCE_MS = 400;
 const MAX_STACK = 50;
 
 export function useTextHistory(initialText: string) {
