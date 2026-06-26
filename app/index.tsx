@@ -22,7 +22,7 @@ import { Image } from "expo-image";
 import * as NavigationBar from "expo-navigation-bar";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { KeyboardAvoidingView, KeyboardToolbar } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -121,10 +121,27 @@ export default function Index() {
     cursorDownRef.current = down;
   }, []);
 
+  const undoRef = useRef<(() => void) | null>(null);
+  const redoRef = useRef<(() => void) | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const onUndoRedoControl = useCallback((undo: () => void, redo: () => void) => {
+    undoRef.current = undo;
+    redoRef.current = redo;
+  }, []);
+  const onUndoRedoStateChange = useCallback((u: boolean, r: boolean) => {
+    setCanUndo(u);
+    setCanRedo(r);
+  }, []);
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-        <PreviewPanel onCursorMovers={onCursorMovers} />
+        <PreviewPanel
+          onCursorMovers={onCursorMovers}
+          onUndoRedoControl={onUndoRedoControl}
+          onUndoRedoStateChange={onUndoRedoStateChange}
+        />
         
         <View id="playBarContainer" style={styles.playBarContainer}>
           {/* one line play button */}
@@ -219,29 +236,33 @@ export default function Index() {
         <ProDebugFab />
         <SheetFetchDebugPanel />
       </KeyboardAvoidingView>
-      <KeyboardToolbar>
-        <KeyboardToolbar.Content>
-          <View style={toolbarStyles.cursorNavContainer}>
-            {/* <TouchableOpacity
-              onPress={() => cursorUpRef.current?.()}
-              style={toolbarStyles.cursorNavButton}
-              accessible={false}
-              focusable={false}
-            >
-              <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn }]}>↑</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => cursorDownRef.current?.()}
-              style={toolbarStyles.cursorNavButton}
-              accessible={false}
-              focusable={false}
-            >
-              <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn }]}>↓</Text>
-            </TouchableOpacity> */}
-          </View>
-        </KeyboardToolbar.Content>
-        <KeyboardToolbar.Done button={DismissButton} />
-      </KeyboardToolbar>
+      {Platform.OS === "android" && (
+        <KeyboardToolbar>
+          <KeyboardToolbar.Content>
+            <View style={toolbarStyles.cursorNavContainer}>
+              <TouchableOpacity
+                onPress={() => undoRef.current?.()}
+                style={toolbarStyles.cursorNavButton}
+                disabled={!canUndo}
+                accessible={false}
+                focusable={false}
+              >
+                <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canUndo ? 1 : 0.3 }]}>↩</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => redoRef.current?.()}
+                style={toolbarStyles.cursorNavButton}
+                disabled={!canRedo}
+                accessible={false}
+                focusable={false}
+              >
+                <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canRedo ? 1 : 0.3 }]}>↪</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardToolbar.Content>
+          <KeyboardToolbar.Done button={DismissButton} />
+        </KeyboardToolbar>
+      )}
     </View>
   );
 }
