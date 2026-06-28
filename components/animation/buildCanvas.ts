@@ -26,6 +26,7 @@ export function buildCanvas(params: {
     pixelMaskDilateRadius: params.effects.pixelMaskDilateRadius,
     pixelMaskErodeRadius: params.effects.pixelMaskErodeRadius,
     pixelGlyphPadCells: params.effects.pixelGlyphPadCells,
+    pixelContentUpscaleFactor: params.effects.pixelContentUpscaleFactor,
     hasBgPhoto: params.hasBgPhoto,
     blinkOpacity: params.blinkOpacity,
     spacer: params.spacer,

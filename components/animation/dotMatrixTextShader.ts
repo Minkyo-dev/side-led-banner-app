@@ -19,23 +19,14 @@ export const DOT_MATRIX_TEXT_SOURCE = Skia.RuntimeEffect.Make(`
 
   float ledDotMask(vec2 pos, vec2 cellCenter) {
     float d = distance(pos, cellCenter);
-    float aa = max(dotRadius * dotMaskAaScale, 0.5);
-    return 1.0 - smoothstep(dotRadius - aa, dotRadius + aa, d);
+    // inner-only fade: d=dotRadius에서 0, d=dotRadius-aa에서 1
+    // dotRadius 바깥으로 번지지 않으므로 셀 크기와 무관하게 갭 보장
+    float aa = max(dotRadius * dotMaskAaScale, dotSize * 0.05);
+    return smoothstep(dotRadius, dotRadius - aa, d);
   }
 
   float textWeightFromSample(half4 s) {
     if (s.a < panelAlphaThreshold) {
-      return 0.0;
-    }
-    half3 rgb = unpremultiply(s);
-    float lum = dot(rgb, vec3(0.299, 0.587, 0.114));
-    if (lum > 0.85) {
-      return 0.0;
-    }
-    float maxC = max(max(rgb.r, rgb.g), rgb.b);
-    float minC = min(min(rgb.r, rgb.g), rgb.b);
-    float sat = maxC > 0.001 ? (maxC - minC) / maxC : 0.0;
-    if (sat < 0.15 && lum > 0.08) {
       return 0.0;
     }
     return s.a;
