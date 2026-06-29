@@ -22,6 +22,7 @@ interface BackgroundEffectLayerProps {
   mode: BackgroundEffectLayerMode;
   /** PixelSkia배경용 */
   suppressPixelManagedBackgrounds?: boolean;
+  blurRadius?: number;
 }
 
 type EffectProps = BackgroundEffectLayerProps & {
@@ -29,6 +30,7 @@ type EffectProps = BackgroundEffectLayerProps & {
   isFullscreen: boolean;
   isFullscreenPortrait: boolean;
   suppressPixelManagedBackgrounds: boolean;
+  blurRadius: number;
 };
 
 type EffectRenderer = (props: EffectProps) => React.ReactNode;
@@ -47,6 +49,7 @@ function renderEffect1({
   effect,
   isFullscreenPortrait,
   suppressPixelManagedBackgrounds,
+  blurRadius,
 }: EffectProps): React.ReactNode {
   if (suppressPixelManagedBackgrounds) {
     return null;
@@ -63,11 +66,13 @@ function renderEffect1({
         source={effect.sources.left}
         style={{ position: "absolute", left: 0, ...effect1EdgeStyle }}
         contentFit="fill"
+        blurRadius={blurRadius}
       />
       <Image
         source={effect.sources.right}
         style={{ position: "absolute", right: 0, ...effect1EdgeStyle }}
         contentFit="fill"
+        blurRadius={blurRadius}
       />
     </View>
   );
@@ -81,6 +86,7 @@ function renderHeartBackground({
   isPortrait,
   translateX,
   suppressPixelManagedBackgrounds,
+  blurRadius,
 }: EffectProps): React.ReactNode {
   if (suppressPixelManagedBackgrounds) {
     return null;
@@ -98,12 +104,13 @@ function renderHeartBackground({
         source={padHeartSource}
         style={StyleSheet.absoluteFill}
         contentFit="contain"
+        blurRadius={blurRadius}
       />
     );
   }
 
   const heartSource = isFullscreenPortrait ? HEART_BG_B_SOURCE : effect.imageSource;
-  return <HeartBackgroundTicker source={heartSource} translateX={translateX} />;
+  return <HeartBackgroundTicker source={heartSource} translateX={translateX} blurRadius={blurRadius} />;
 }
 
 function renderSpeechBubble({
@@ -111,6 +118,7 @@ function renderSpeechBubble({
   isPortrait,
   mode,
   suppressPixelManagedBackgrounds,
+  blurRadius,
 }: EffectProps): React.ReactNode {
   if (suppressPixelManagedBackgrounds) {
     return null;
@@ -137,7 +145,7 @@ function renderSpeechBubble({
         }
       : StyleSheet.absoluteFill;
 
-  return <Image source={source} style={imageStyle} contentFit="fill" />;
+  return <Image source={source} style={imageStyle} contentFit="fill" blurRadius={blurRadius} />;
 }
 
 const effectRenderers: Record<BackgroundEffectId, EffectRenderer> = {
@@ -155,6 +163,7 @@ export function BackgroundEffectLayer({
   isPortrait,
   mode,
   suppressPixelManagedBackgrounds = false,
+  blurRadius = 0,
 }: BackgroundEffectLayerProps) {
   const { width: winW, height: winH } = useWindowDimensions();
   const isTablet = Math.min(winW, winH) >= TABLET_MIN_SHORTEST_SIDE_DP;
@@ -171,5 +180,6 @@ export function BackgroundEffectLayer({
     isFullscreen,
     isFullscreenPortrait,
     suppressPixelManagedBackgrounds,
+    blurRadius,
   });
 }

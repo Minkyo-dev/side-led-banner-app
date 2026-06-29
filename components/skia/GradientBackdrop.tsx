@@ -3,6 +3,7 @@ import {
   LinearGradient,
   RadialGradient,
   Rect,
+  Skia,
   vec,
 } from "@shopify/react-native-skia";
 import React, { useEffect, useMemo } from "react";
@@ -23,6 +24,7 @@ type Props = {
   height: number;
   /** 사진 배경 위에 올릴 때 살짝만 보이게 */
   opacity?: number;
+  blur?: number;
 };
 
 /**
@@ -33,8 +35,16 @@ export function GradientBackdrop({
   width,
   height,
   opacity = 1,
+  blur = 0,
 }: Props) {
   const phase = useSharedValue(0);
+
+  const blurPaint = useMemo(() => {
+    if (blur <= 0) return undefined;
+    const paint = Skia.Paint();
+    paint.setImageFilter(Skia.ImageFilter.MakeBlur(blur, blur, 0, null));
+    return paint;
+  }, [blur]);
 
   const duration = preset === "pulse" ? 2800 : preset === "flow" ? 4500 : 5200;
 
@@ -55,33 +65,29 @@ export function GradientBackdrop({
 
   if (preset === "pulse") {
     return (
-      <PulseGradient
-        w={w}
-        h={h}
-        phase={phase}
-        opacity={opacity}
-      />
+      <Group layer={blurPaint}>
+        <PulseGradient w={w} h={h} phase={phase} opacity={opacity} />
+      </Group>
     );
   }
 
   if (preset === "flow") {
     return (
-      <FlowGradient
+      <Group layer={blurPaint}>
+        <FlowGradient w={w} h={h} phase={phase} opacity={opacity} />
+      </Group>
+    );
+  }
+
+  return (
+    <Group layer={blurPaint}>
+      <WaveGradient
         w={w}
         h={h}
         phase={phase}
         opacity={opacity}
       />
-    );
-  }
-
-  return (
-    <WaveGradient
-      w={w}
-      h={h}
-      phase={phase}
-      opacity={opacity}
-    />
+    </Group>
   );
 }
 
