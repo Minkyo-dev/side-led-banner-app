@@ -27,8 +27,6 @@ export function useTextHistory(initialText: string) {
     (text: string, sel: { start: number; end: number }) => {
       const top = undoStackRef.current[undoStackRef.current.length - 1];
 
-      // 새 편집 세션 시작: committed top의 sel을 편집 직전 커서 위치로 교체
-      // → undo 시 이 상태로 돌아왔을 때 커서가 편집 시작 위치에 오게 됨
       if (top && top.text === liveRef.current.text && top.text !== text) {
         undoStackRef.current[undoStackRef.current.length - 1] = { text: top.text, sel };
       }

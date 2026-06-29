@@ -1,4 +1,10 @@
 import {
+  buildMarqueeTextBlob,
+  type MarqueeGlyphPos,
+} from "@/utils/buildMarqueeTextBlob";
+import type { GlyphLedPanelRect } from "@/utils/glyphLedPanels";
+import { assignGlyphMixColors } from "@/utils/pixelColorMix";
+import {
   FilterMode,
   PaintStyle,
   Skia,
@@ -9,12 +15,6 @@ import {
   type SkPicture,
   type SkTextBlob,
 } from "@shopify/react-native-skia";
-import {
-  buildMarqueeTextBlob,
-  type MarqueeGlyphPos,
-} from "@/utils/buildMarqueeTextBlob";
-import type { GlyphLedPanelRect } from "@/utils/glyphLedPanels";
-import { assignGlyphMixColors } from "@/utils/pixelColorMix";
 
 
 const DROP_SHADOW_RGBA = Skia.Color("rgba(0, 0, 0, 0.5)");
@@ -59,6 +59,8 @@ export type RecordMarqueeTileParams = {
   glyphPositions?: MarqueeGlyphPos[];
   font?: SkFont | null;
   backgroundColor?: string;
+  /** 작은 폰트일 때 N배로 기록해 픽셀 샘플링 정밀도 향상 */
+  upscaleFactor?: number;
 };
 
 function composeFilters(
@@ -189,22 +191,16 @@ function drawGlyphColorMixLayer(
   }
 }
 
-/** 텍스트 1벌 + 간격의 타일을 SkPicture로 기록합니다. */
-export function recordTile(
+type SkiaCanvas = ReturnType<ReturnType<typeof Skia.PictureRecorder>["beginRecording"]>;
+
+function drawAllLayers(
+  canvas: SkiaCanvas,
   p: RecordMarqueeTileParams,
-): SkPicture | null {
-  const periodWidth = Math.max(1, Math.ceil(p.periodWidth));
-  const height = Math.max(1, Math.ceil(p.height));
-  const dropShadowEnabled = p.dropShadow > 0;
-  const mode = p.layerMode ?? "full";
-  const drawGlow =
-    p.isGlowEffect && (mode === "full" || mode === "glowOnly");
-  const drawText = mode === "full" || mode === "textOnly";
-
-  const bounds = Skia.XYWHRect(0, 0, periodWidth, height);
-  const recorder = Skia.PictureRecorder();
-  const canvas = recorder.beginRecording(bounds);
-
+  drawGlow: boolean,
+  drawText: boolean,
+  mode: MarqueeTileLayerMode,
+  dropShadowEnabled: boolean,
+): void {
   if (drawGlow) {
     const glowBlobs =
       p.textBlobs && p.textBlobs.length > 0 ? p.textBlobs : [p.blob];
@@ -223,20 +219,6 @@ export function recordTile(
     if (mode === "textOnly") {
       const dilate = Math.max(0, p.maskDilateRadius ?? 0);
       const erode = Math.max(0, p.maskErodeRadius ?? 0);
-      const panels = p.glyphLedPanels ?? [];
-      if (panels.length > 0) {
-        const panelPaint = Skia.Paint();
-        panelPaint.setAntiAlias(false);
-        panelPaint.setColor(
-          Skia.Color(`rgba(255,255,255,0.22)`),
-        );
-        for (const panel of panels) {
-          canvas.drawRect(
-            Skia.XYWHRect(panel.left, panel.top, panel.width, panel.height),
-            panelPaint,
-          );
-        }
-      }
       const fill = Skia.Paint();
       fill.setAntiAlias(!p.pixelCrispMask);
       fill.setColor(Skia.Color(p.previewTextColor));
@@ -273,6 +255,36 @@ export function recordTile(
       }
     }
   }
+}
+
+/** 텍스트 1벌 + 간격의 타일을 SkPicture로 기록합니다. */
+export function recordTile(
+  p: RecordMarqueeTileParams,
+): SkPicture | null {
+  const periodWidth = Math.max(1, Math.ceil(p.periodWidth));
+  const height = Math.max(1, Math.ceil(p.height));
+  const N = Math.max(1, Math.round(p.upscaleFactor ?? 1));
+  const dropShadowEnabled = p.dropShadow > 0;
+  const mode = p.layerMode ?? "full";
+  const drawGlow =
+    p.isGlowEffect && (mode === "full" || mode === "glowOnly");
+  const drawText = mode === "full" || mode === "textOnly";
+
+  // N > 1이면 N배 큰 캔버스에 기록해 셰이더 샘플링 해상도를 높임
+  const bounds = Skia.XYWHRect(0, 0, periodWidth * N, height * N);
+  const recorder = Skia.PictureRecorder();
+  const canvas = recorder.beginRecording(bounds);
+  if (N > 1) canvas.scale(N, N);
+
+  // 기본 위치(x=0)에 레이어 그리기
+  drawAllLayers(canvas, p, drawGlow, drawText, mode, dropShadowEnabled);
+
+  // periodWidth만큼 이동한 복사본을 그려 첫 글자의 왼쪽 stroke/glow 번짐이
+  // 타일 끝부분 [period-bleed, period]에 기록되도록 함 → 마퀴 이음새에서 잘림 방지
+  canvas.save();
+  canvas.translate(periodWidth, 0);
+  drawAllLayers(canvas, p, drawGlow, drawText, mode, dropShadowEnabled);
+  canvas.restore();
 
   return recorder.finishRecordingAsPicture();
 }
@@ -308,18 +320,27 @@ export function makeMarqueePictureShader(
   tileWidth: number,
   tileHeight: number,
   filterMode: FilterMode = FilterMode.Linear,
+  upscaleFactor = 1,
 ) {
+  const N = Math.max(1, Math.round(upscaleFactor));
   const tileRect = Skia.XYWHRect(
     0,
     0,
-    Math.max(1, tileWidth),
-    Math.max(1, tileHeight),
+    Math.max(1, tileWidth) * N,
+    Math.max(1, tileHeight) * N,
   );
+  // localMatrix scale(1/N): 스크린 좌표 X → 픽처 좌표 X/N
+  // Skia localMatrix는 target→source 역방향이므로 1/N 스케일로 N배 큰 픽처를 1배로 매핑
+  let localMatrix: import("@shopify/react-native-skia").SkMatrix | undefined;
+  if (N > 1) {
+    localMatrix = Skia.Matrix();
+    localMatrix.scale(1 / N, 1 / N);
+  }
   return picture.makeShader(
     TileMode.Repeat,
     TileMode.Clamp,
     filterMode,
-    undefined,
+    localMatrix,
     tileRect,
   );
 }
@@ -329,10 +350,11 @@ export function makeMarqueeStripPaint(
   tileWidth: number,
   tileHeight: number,
   filterMode: FilterMode = FilterMode.Linear,
+  upscaleFactor = 1,
 ): SkPaint {
   const paint = Skia.Paint();
   paint.setShader(
-    makeMarqueePictureShader(picture, tileWidth, tileHeight, filterMode),
+    makeMarqueePictureShader(picture, tileWidth, tileHeight, filterMode, upscaleFactor),
   );
   return paint;
 }

@@ -7,6 +7,7 @@ import {
 import {
   hasPixelLedEffect,
   pixelGlyphPanelPadCells,
+  resolveContentUpscaleFactor,
   resolvePixelBackgroundShaderSizePx,
   resolvePixelFontCircleGridMode,
   resolvePixelShaderSizePx,
@@ -50,8 +51,11 @@ export function useEffects(input: EffectsInput = {}) {
     ? resolvePixelBackgroundShaderSizePx(pixelPlay)
     : 1;
 
-  const pixelTextShaderUniforms = resolvePixelTextShaderUniforms();
-  const pixelMaskDilateRadius = 0;
+  const pixelContentUpscaleFactor = isPixelEffect
+    ? resolveContentUpscaleFactor({ ...pixelPlay, fontSizePx: input.fontSizePx })
+    : 1;
+  const pixelTextShaderUniforms = resolvePixelTextShaderUniforms(pixelShaderSize);
+  const pixelMaskDilateRadius = 1;
   const pixelMaskErodeRadius = 0;
   const pixelGlyphPadCells = isPixelCircleGrid
     ? pixelGlyphPanelPadCells(pixelShaderSize)
@@ -62,7 +66,7 @@ export function useEffects(input: EffectsInput = {}) {
       : 0;
   const pixelOutlineRings =
     isPixelTextDots && outLine > 0
-      ? Math.max(1, Math.min(4, Math.ceil((outLine / 100) * 3)))
+      ? Math.max(1, Math.min(4, Math.floor((outLine - 1) / 25) + 1))
       : 0;
   const isPixelColorMix = isPixelTextDots && isPixelEffect && pixelColorMix;
 
@@ -97,6 +101,7 @@ export function useEffects(input: EffectsInput = {}) {
     pixelMaskDilateRadius,
     pixelMaskErodeRadius,
     pixelGlyphPadCells,
+    pixelContentUpscaleFactor,
     skiaStrokeWidthPx,
     pixelOutlineRings,
     isPixelColorMix,

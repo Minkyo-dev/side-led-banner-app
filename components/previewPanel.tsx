@@ -204,6 +204,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     inputViewportHeightPx,
     moveCursorUp,
     moveCursorDown,
+    forceSelection,
   } = useTextInput({ inputScrollViewportW, textInputRef });
 
   const history = useTextHistory(previewText);
