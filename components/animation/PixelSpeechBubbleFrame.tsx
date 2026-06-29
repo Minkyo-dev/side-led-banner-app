@@ -8,6 +8,7 @@ type Props = {
   height: number;
   previewInset: number;
   pixelShaderSize: number;
+  useWhiteDots?: boolean;
 };
 
 /** 말풍선 PNG — BackgroundEffectLayer와 동일 fill, 어두운 테두리만 도트 레이어 */
@@ -17,6 +18,7 @@ export function PixelSpeechBubbleFrame({
   height,
   previewInset,
   pixelShaderSize,
+  useWhiteDots = false,
 }: Props) {
   const image = useImage(source);
 
@@ -32,6 +34,8 @@ export function PixelSpeechBubbleFrame({
 
   const frameDotSize = resolveFramePixelDotSize(pixelShaderSize);
 
+  const dotColor: [number, number, number] = useWhiteDots ? [1, 1, 1] : [0, 0, 0];
+
   const frameShaderLayer = useMemo(
     () => (
       <Paint>
@@ -41,11 +45,12 @@ export function PixelSpeechBubbleFrame({
             dotSize: frameDotSize,
             dotRadius: frameDotSize * 0.46,
             lineThreshold: 0.42,
+            dotColor,
           }}
         />
       </Paint>
     ),
-    [frameDotSize],
+    [frameDotSize, useWhiteDots],
   );
 
   if (!image) return null;
