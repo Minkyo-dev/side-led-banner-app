@@ -134,7 +134,6 @@ export function bubbleGlyphs(params: {
 
   const inset = Math.max(0, edgeInsetPx);
   const innerW = Math.max(1, frameWidth - inset * 2);
-  const innerH = Math.max(1, frameHeight - inset * 2);
 
   const metrics = font.getMetrics();
   const rowH = metrics.descent - metrics.ascent;
@@ -143,10 +142,7 @@ export function bubbleGlyphs(params: {
 
   const safeW = innerW * safeWRatio;
   const safeLeft = inset + (innerW - safeW) / 2;
-  const blockTop = Math.max(
-    inset,
-    Math.min(inset + (innerH - blockH) / 2, frameHeight - blockH - inset),
-  );
+  const blockTop = Math.max(0, (frameHeight - blockH) / 2);
   const baseY = blockTop - metrics.ascent;
   const rowStep = rowH + gap;
 

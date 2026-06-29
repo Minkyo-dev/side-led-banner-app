@@ -10,7 +10,7 @@ import {
     Skia,
 } from "@shopify/react-native-skia";
 import React, { useMemo } from "react";
-import type { SharedValue } from "react-native-reanimated";
+import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
 export interface MarqueeCanvasProps {
   canvas: ReturnType<typeof usePreviewPanelCanvas>;
@@ -191,6 +191,11 @@ export function MarqueeCanvas({
     pixelContentUpscaleFactor,
   });
 
+  const rectX = useDerivedValue(
+    () => -canvas.marqueeOffsetX.value,
+    [canvas.marqueeOffsetX],
+  );
+
   const canDrawStrip = useMemo(
     () =>
       stripPaint != null && stripWidth > 0 && layout.width > 0 && layout.height > 0,
@@ -276,7 +281,7 @@ export function MarqueeCanvas({
       <Group opacity={blinkOpacity} transform={canvas.skiaMarqueeTransform}>
         {canDrawGlowStrip ? (
           <Rect
-            x={0}
+            x={rectX}
             y={0}
             width={stripWidth}
             height={layout.height}
@@ -286,7 +291,7 @@ export function MarqueeCanvas({
         {isPixelTextDots && canDrawStrip ? (
           <Group layer={textDotShaderLayer}>
             <Rect
-              x={0}
+              x={rectX}
               y={0}
               width={stripWidth}
               height={layout.height}
@@ -296,7 +301,7 @@ export function MarqueeCanvas({
         ) : null}
         {isPixelEffect && !isPixelTextDots && canDrawStrip ? (
           <Rect
-            x={0}
+            x={rectX}
             y={0}
             width={stripWidth}
             height={layout.height}
@@ -306,7 +311,7 @@ export function MarqueeCanvas({
         {canDrawPixelOutlineDots ? (
           <Group layer={outlineDotShaderLayer}>
             <Rect
-              x={0}
+              x={rectX}
               y={0}
               width={stripWidth}
               height={layout.height}
@@ -316,7 +321,7 @@ export function MarqueeCanvas({
         ) : null}
         {!isPixelEffect && canDrawStrip ? (
           <Rect
-            x={0}
+            x={rectX}
             y={0}
             width={stripWidth}
             height={layout.height}
