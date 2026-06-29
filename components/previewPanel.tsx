@@ -316,6 +316,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
                 preset={gradientBackgroundPreset as GradientBackdropId}
                 width={previewBox.width}
                 height={previewBox.height}
+                blur={backgroundBlur / 8}
               />
             </Canvas>
           </View>
@@ -326,6 +327,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
           isPortrait={isPortrait}
           mode="preview"
           suppressPixelManagedBackgrounds={effects.isPixelEffect}
+          blurRadius={backgroundBlur / 8}
         />
         {speechBubble.speechTextBoxConfig ? (
           <View

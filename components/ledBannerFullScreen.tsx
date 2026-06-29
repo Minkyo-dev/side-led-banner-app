@@ -226,6 +226,7 @@ export const LedBannerFullScreen = ({
                     preset={gradientBackgroundPreset as GradientBackdropId}
                     width={stageWidth}
                     height={stageHeight}
+                    blur={backgroundBlur / 8}
                   />
                 </Canvas>
               </View>
@@ -236,6 +237,7 @@ export const LedBannerFullScreen = ({
               isPortrait={isPortrait}
               mode="fullscreen"
               suppressPixelManagedBackgrounds={effects.isPixelEffect}
+              blurRadius={backgroundBlur / 8}
             />
             {speechBubble.isActive ? (
               <View

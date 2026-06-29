@@ -11,6 +11,7 @@ interface HeartBackgroundTickerProps {
   source: number;
   translateX: SharedValue<number>;
   startTrimPx?: number;
+  blurRadius?: number;
 }
 
 const MAX_TILE_COUNT = 12;
@@ -20,6 +21,7 @@ export function HeartBackgroundTicker({
   source,
   translateX,
   startTrimPx = 0,
+  blurRadius = 0,
 }: HeartBackgroundTickerProps) {
   const [size, setSize] = useState({ width: 0, height: 0 });
 
@@ -82,6 +84,7 @@ export function HeartBackgroundTicker({
                 source={source}
                 style={imageStyle}
                 contentFit="fill"
+                blurRadius={blurRadius}
               />
             </View>
           ))}
