@@ -16,15 +16,13 @@ export const ColorPicker = ({
   lockedCount?: number;
   onLockedPress?: () => void;
 }) => {
-  const lockedStartIndex = lockedCount > 0 ? colorList.length - lockedCount : colorList.length;
   const paletteRow = Math.ceil(colorList.length / 9);
   return (
     <View style={styles.colorPickerContainer}>
       {Array.from({ length: paletteRow }).map((_, rowIndex) => (
         <View key={`color-picker-row-${rowIndex}`} style={styles.colorPickerRow}>
           {colorList.slice(rowIndex * 9, (rowIndex + 1) * 9).map((color, index) => {
-            const globalIndex = rowIndex * 9 + index;
-            const isLocked = (globalIndex >= 5 && globalIndex <=8) || (globalIndex >= 13);
+            const isLocked = lockedCount > 0 && index >= 4;
             return (
               <TouchableOpacity
                 key={`color-picker-item-${rowIndex}-${index}`}

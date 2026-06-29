@@ -17,8 +17,6 @@ import { BackgroundPhotoSheet } from "./backgroundPhotoSheet";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
-const PRO_LOCKED_COLOR_COUNT = 10;
-
 const COLS = 9;
 const ROW1_SWATCHES = COLS - 1;
 
@@ -72,7 +70,6 @@ export const BackgroundSection = () => {
     moreRows.push(tail.slice(i, i + COLS));
   }
 
-  const lockedStart = isProActive ? colors.length : colors.length - PRO_LOCKED_COLOR_COUNT;
 
   const hasBgPhoto = backgroundImageUri != null && backgroundImageUri !== "";
 
@@ -111,7 +108,7 @@ export const BackgroundSection = () => {
               {hasBgPhoto ? <View style={chip.colorPickerItemActive} /> : null}
             </TouchableOpacity>
             {row1.map((color, index) => {
-              const isLocked = (index >= 4 && index <=8);
+              const isLocked = !isProActive && index >= 3;
               return (
                 <TouchableOpacity
                   key={`bg-color-first-${index}`}
@@ -136,8 +133,7 @@ export const BackgroundSection = () => {
           {moreRows.map((row, rowIndex) => (
             <View key={`bg-color-row-${rowIndex}`} style={chip.colorPickerRow}>
               {row.map((color, index) => {
-                const colorIndex = ROW1_SWATCHES + rowIndex * COLS + index;
-                const isLocked = (colorIndex >= lockedStart+5);
+                const isLocked = !isProActive && index >= 4;
                 return (
                   <TouchableOpacity
                     key={`bg-color-${rowIndex}-${index}`}

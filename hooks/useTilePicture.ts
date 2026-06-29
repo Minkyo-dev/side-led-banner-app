@@ -56,6 +56,7 @@ export type UseTilePictureParams = {
   pixelMaskDilateRadius?: number;
   pixelMaskErodeRadius?: number;
   pixelGlyphPadCells?: number;
+  pixelContentUpscaleFactor?: number;
   glowBlurRadius: number;
   strokeWidthPx: number;
   dropShadow: number;
@@ -158,8 +159,9 @@ export function useTilePicture(
     return recordTile({
       ...recordBase,
       layerMode: p.isPixelEffect ? "textOnly" : "full",
+      upscaleFactor: p.isPixelEffect ? (p.pixelContentUpscaleFactor ?? 1) : 1,
     });
-  }, [recordBase, p.canvasHeightPx, p.isPixelEffect]);
+  }, [recordBase, p.canvasHeightPx, p.isPixelEffect, p.pixelContentUpscaleFactor]);
 
   const glowTilePicture = useMemo(() => {
     if (!splitGlowFromDots || !recordBase || p.canvasHeightPx <= 0) return null;
@@ -181,8 +183,9 @@ export function useTilePicture(
       periodPx,
       tileHeight,
       p.isPixelEffect ? FilterMode.Nearest : FilterMode.Linear,
+      p.isPixelEffect ? (p.pixelContentUpscaleFactor ?? 1) : 1,
     );
-  }, [tilePicture, periodPx, tileHeight, p.isPixelEffect]);
+  }, [tilePicture, periodPx, tileHeight, p.isPixelEffect, p.pixelContentUpscaleFactor]);
 
   const glowStripPaint = useMemo(() => {
     if (!glowTilePicture) return null;

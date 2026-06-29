@@ -30,6 +30,7 @@ export interface MarqueeCanvasProps {
   pixelMaskDilateRadius: number;
   pixelMaskErodeRadius: number;
   pixelGlyphPadCells: number;
+  pixelContentUpscaleFactor: number;
   hasBgPhoto: boolean;
   blinkOpacity: number | SharedValue<number>;
   spacer: number;
@@ -74,6 +75,7 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
   uniform float outlineRings;
   uniform float dotMaskAaScale;
   uniform float outlineLuminance;
+  uniform float ringDetectThreshold;
 
   float coverageAt(half4 s) {
     return s.a;
@@ -81,11 +83,13 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
 
   float bodyCoverage(vec2 p) {
     vec2 cellOrigin = floor(p / dotSize) * dotSize;
+    float mid = dotSize * 0.5;
+    float last = dotSize - 1.0;
     float m = coverageAt(content.eval(p));
-    m = max(m, coverageAt(content.eval(cellOrigin + vec2(dotSize * 0.2, dotSize * 0.5))));
-    m = max(m, coverageAt(content.eval(cellOrigin + vec2(dotSize * 0.8, dotSize * 0.5))));
-    m = max(m, coverageAt(content.eval(cellOrigin + vec2(dotSize * 0.5, dotSize * 0.2))));
-    m = max(m, coverageAt(content.eval(cellOrigin + vec2(dotSize * 0.5, dotSize * 0.8))));
+    m = max(m, coverageAt(content.eval(cellOrigin + vec2(0.0,  mid))));
+    m = max(m, coverageAt(content.eval(cellOrigin + vec2(last, mid))));
+    m = max(m, coverageAt(content.eval(cellOrigin + vec2(mid,  0.0))));
+    m = max(m, coverageAt(content.eval(cellOrigin + vec2(mid,  last))));
     return m;
   }
 
@@ -112,22 +116,20 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
     }
 
     float rings = clamp(outlineRings, 1.0, 4.0);
-    bool ring1 = maxBodyAtRing(cellCenter, 1.0) >= textThreshold;
-    bool ring2 = rings >= 2.0 && maxBodyAtRing(cellCenter, 2.0) >= textThreshold && !ring1;
-    bool ring3 = rings >= 3.0 && maxBodyAtRing(cellCenter, 3.0) >= textThreshold
-      && maxBodyAtRing(cellCenter, 1.0) < textThreshold
-      && maxBodyAtRing(cellCenter, 2.0) < textThreshold;
-    bool ring4 = rings >= 4.0 && maxBodyAtRing(cellCenter, 4.0) >= textThreshold
-      && maxBodyAtRing(cellCenter, 1.0) < textThreshold
-      && maxBodyAtRing(cellCenter, 2.0) < textThreshold
-      && maxBodyAtRing(cellCenter, 3.0) < textThreshold;
-    if (!(ring1 || ring2 || ring3 || ring4)) {
+    bool blackRing = maxBodyAtRing(cellCenter, 1.0) >= ringDetectThreshold;
+    bool colorRing1 = !blackRing && rings >= 2.0 && maxBodyAtRing(cellCenter, 2.0) >= ringDetectThreshold;
+    bool colorRing2 = !blackRing && !colorRing1 && rings >= 3.0 && maxBodyAtRing(cellCenter, 3.0) >= ringDetectThreshold;
+    bool colorRing3 = !blackRing && !colorRing1 && !colorRing2 && rings >= 4.0 && maxBodyAtRing(cellCenter, 4.0) >= ringDetectThreshold;
+    if (!(blackRing || colorRing1 || colorRing2 || colorRing3)) {
       return half4(0.0);
     }
 
     float d = distance(pos, cellCenter);
-    float aa = max(dotRadius * dotMaskAaScale, 0.5);
-    float mask = 1.0 - smoothstep(dotRadius - aa, dotRadius + aa, d);
+    float aa = max(dotRadius * dotMaskAaScale, dotSize * 0.05);
+    float mask = smoothstep(dotRadius, dotRadius - aa, d);
+    if (blackRing) {
+      return half4(0.0, 0.0, 0.0, mask);
+    }
     return half4(half3(outlineLuminance), mask);
   }
 `)!;
@@ -142,6 +144,7 @@ export function MarqueeCanvas({
   pixelMaskDilateRadius,
   pixelMaskErodeRadius,
   pixelGlyphPadCells,
+  pixelContentUpscaleFactor,
   hasBgPhoto,
   blinkOpacity,
   spacer,
@@ -185,6 +188,7 @@ export function MarqueeCanvas({
     backgroundColor,
     pixelMaskDilateRadius,
     pixelMaskErodeRadius,
+    pixelContentUpscaleFactor,
   });
 
   const canDrawStrip = useMemo(
@@ -249,6 +253,7 @@ export function MarqueeCanvas({
               dotSize: pixelShaderSize,
               dotRadius: pixelDotRadius,
               textThreshold: pixelTextShaderUniforms.textThreshold,
+              ringDetectThreshold: 0.01,
               outlineRings: pixelOutlineRings,
               dotMaskAaScale: pixelTextShaderUniforms.dotMaskAaScale,
               outlineLuminance,
