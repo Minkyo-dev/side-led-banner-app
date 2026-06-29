@@ -22,7 +22,7 @@ import {
   resolveSpeechCanvasFallback,
   useSpeechBubble,
 } from "@/hooks/useSpeechBubble";
-import { useTextHistory } from "@/hooks/useTextHistory";
+import { useTextHistory, type TextSnapshot } from "@/hooks/useTextHistory";
 import { useTextInput } from "@/hooks/useTextInput";
 import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { resolveBubbleCanvasOpts } from "@/utils/skiaBubbleTextLayout";
@@ -30,7 +30,7 @@ import { getSizingPolicy } from "@/utils/textSizing";
 import { Canvas } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   InputAccessoryView,
   Keyboard,
@@ -197,18 +197,11 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     displayInputText,
     inputHorizontalCanvasWidth,
     needsHorizontalScroll,
-    pendingSelection,
     inputScrollRef,
-    handleInputMeasureLayout,
-    handleFontLinesProbeLayout,
-    handleTextInputContentSizeChange,
-    handleWrappedHeightMeasureLayout,
+    handleMeasureLayout,
     measureOffscreenStyle,
-    fontLineProbeText,
-    onSelectionChange,
     onInputScroll,
     inputViewportHeightPx,
-    signalTextChanged,
     moveCursorUp,
     moveCursorDown,
     forceSelection,
@@ -228,19 +221,19 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     const snapshot = history.undo();
     if (!snapshot) return;
     updateConfig("content", { previewText: snapshot.text });
-    textInputRef.current?.setNativeProps({ text: snapshot.text });
-    forceSelection(snapshot.sel);
-    signalTextChanged();
-  }, [history, updateConfig, forceSelection, signalTextChanged, textInputRef]);
+    const safeStart = Math.min(snapshot.sel.start, snapshot.text.length);
+    const safeEnd = Math.min(snapshot.sel.end, snapshot.text.length);
+    setForcedSnapshot({ text: snapshot.text, sel: { start: safeStart, end: safeEnd } });
+  }, [history, updateConfig]);
 
   const handleRedo = useCallback(() => {
     const snapshot = history.redo();
     if (!snapshot) return;
     updateConfig("content", { previewText: snapshot.text });
-    textInputRef.current?.setNativeProps({ text: snapshot.text });
-    forceSelection(snapshot.sel);
-    signalTextChanged();
-  }, [history, updateConfig, forceSelection, signalTextChanged, textInputRef]);
+    const safeStart = Math.min(snapshot.sel.start, snapshot.text.length);
+    const safeEnd = Math.min(snapshot.sel.end, snapshot.text.length);
+    setForcedSnapshot({ text: snapshot.text, sel: { start: safeStart, end: safeEnd } });
+  }, [history, updateConfig]);
 
   useEffect(() => {
     onUndoRedoControl?.(handleUndo, handleRedo);
@@ -253,9 +246,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
   const inputSelectionRef = useRef({ start: 0, end: 0 });
-  const [rejPasteSelection, setrejPasteSelection] = useState<
-    { start: number; end: number } | undefined
-  >(undefined);
+  const [forcedSnapshot, setForcedSnapshot] = useState<TextSnapshot | undefined>(undefined);
 
   const lineCount = previewText.replace(/\r\n?/g, "\n").split("\n").length;
   const atMaxLines = lineCount >= PREVIEW_TEXT_MAX_LINES;
@@ -275,21 +266,15 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     const next = normalizePreviewTextMaxLines(text);
     if (next === null) {
       // 붙여넣기 등으로 3줄 초과 시 되돌리기
-      const revertSelection = { ...inputSelectionRef.current };
-      textInputRef.current?.setNativeProps({ text: displayInputText, selection: revertSelection });
-      setrejPasteSelection(revertSelection);
+      const revertSel = { ...inputSelectionRef.current };
+      textInputRef.current?.setNativeProps({ text: displayInputText, selection: revertSel });
+      setForcedSnapshot({ text: displayInputText, sel: revertSel });
       return;
     }
-    signalTextChanged();
+    setForcedSnapshot(undefined);
     handleTextChange(text);
     history.onTextChange(text, inputSelectionRef.current);
   };
-
-  useLayoutEffect(() => {
-    if (rejPasteSelection === undefined) return;
-    const id = requestAnimationFrame(() => setrejPasteSelection(undefined));
-    return () => cancelAnimationFrame(id);
-  }, [rejPasteSelection]);
 
   return (
     <View style={styles.previewContainer}>
@@ -419,27 +404,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
         <Text
           allowFontScaling={false}
           style={[styles.contentsInput, measureOffscreenStyle]}
-          onTextLayout={handleFontLinesProbeLayout}
-          pointerEvents="none"
-        >
-          {fontLineProbeText}
-        </Text>
-        <Text
-          allowFontScaling={false}
-          style={[styles.contentsInput, measureOffscreenStyle]}
-          onTextLayout={handleInputMeasureLayout}
-          pointerEvents="none"
-        >
-          {displayInputText || " "}
-        </Text>
-        <Text
-          allowFontScaling={false}
-          style={[
-            styles.contentsInput,
-            measureOffscreenStyle,
-            { width: inputHorizontalCanvasWidth },
-          ]}
-          onTextLayout={handleWrappedHeightMeasureLayout}
+          onTextLayout={handleMeasureLayout}
           pointerEvents="none"
         >
           {displayInputText || " "}
@@ -486,19 +451,18 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
               },
             ]}
             placeholder="Enter your text here"
-            value={displayInputText}
-            selection={rejPasteSelection ?? pendingSelection}
+            value={forcedSnapshot?.text ?? displayInputText}
+            selection={forcedSnapshot?.sel}
             submitBehavior={dynamicSubmitActive ? (atMaxLines ? "submit" : "newline") : "newline"}
             onSubmitEditing={handleSubmitEditing}
             onChangeText={onPreviewTextChange}
             onSelectionChange={(e) => {
               const { start, end } = e.nativeEvent.selection;
               inputSelectionRef.current = { start, end };
-              onSelectionChange(e);
+              if (forcedSnapshot !== undefined) setForcedSnapshot(undefined);
             }}
             textAlignVertical="top"
             inputAccessoryViewID={Platform.OS === "ios" ? inputAccessoryViewID : undefined}
-            onContentSizeChange={(e) => handleTextInputContentSizeChange(e.nativeEvent.contentSize.width, e.nativeEvent.contentSize.height)}
           />
         </ScrollView>
         

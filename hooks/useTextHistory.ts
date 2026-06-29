@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 
 export type TextSnapshot = { text: string; sel: { start: number; end: number } };
 
-const DEBOUNCE_MS = 700;
+const DEBOUNCE_MS = 400;
 const MAX_STACK = 50;
 
 export function useTextHistory(initialText: string) {
@@ -25,9 +25,14 @@ export function useTextHistory(initialText: string) {
 
   const onTextChange = useCallback(
     (text: string, sel: { start: number; end: number }) => {
+      const top = undoStackRef.current[undoStackRef.current.length - 1];
+
+      if (top && top.text === liveRef.current.text && top.text !== text) {
+        undoStackRef.current[undoStackRef.current.length - 1] = { text: top.text, sel };
+      }
+
       liveRef.current = { text, sel };
 
-      const top = undoStackRef.current[undoStackRef.current.length - 1];
       if (top?.text !== text) setCanUndo(true);
 
       if (timerRef.current) clearTimeout(timerRef.current);

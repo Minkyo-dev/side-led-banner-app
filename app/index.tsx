@@ -236,34 +236,33 @@ export default function Index() {
         <ProDebugFab />
         <SheetFetchDebugPanel />
       </KeyboardAvoidingView>
-        {Platform.OS === "android" &&(
-      <KeyboardToolbar>
-        <KeyboardToolbar.Content>
-          <View style={toolbarStyles.cursorNavContainer}>
-            <TouchableOpacity
-              onPress={() => undoRef.current?.()}
-              style={toolbarStyles.cursorNavButton}
-              disabled={!canUndo}
-              accessible={false}
-              focusable={false}
-            >
-              <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canUndo ? 1 : 0.3 }]}>↩</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => redoRef.current?.()}
-              style={toolbarStyles.cursorNavButton}
-              disabled={!canRedo}
-              accessible={false}
-              focusable={false}
-            >
-              <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canRedo ? 1 : 0.3 }]}>↪</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardToolbar.Content>
-        <KeyboardToolbar.Done button={DismissButton} />
-      </KeyboardToolbar>
-        )
-        }
+      {Platform.OS === "android" && (
+        <KeyboardToolbar>
+          <KeyboardToolbar.Content>
+            <View style={toolbarStyles.cursorNavContainer}>
+              <TouchableOpacity
+                onPress={() => undoRef.current?.()}
+                style={toolbarStyles.cursorNavButton}
+                disabled={!canUndo}
+                accessible={false}
+                focusable={false}
+              >
+                <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canUndo ? 1 : 0.3 }]}>↩</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => redoRef.current?.()}
+                style={toolbarStyles.cursorNavButton}
+                disabled={!canRedo}
+                accessible={false}
+                focusable={false}
+              >
+                <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canRedo ? 1 : 0.3 }]}>↪</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardToolbar.Content>
+          <KeyboardToolbar.Done button={DismissButton} />
+        </KeyboardToolbar>
+      )}
     </View>
   );
 }
