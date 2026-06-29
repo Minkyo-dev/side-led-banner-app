@@ -18,8 +18,6 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 SplashScreen.preventAutoHideAsync();
-const amplitudeApiKey = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
-if (amplitudeApiKey) amplitude.init(amplitudeApiKey);
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -32,6 +30,11 @@ export default function RootLayout() {
   useEffect(() => {
     const timer = setTimeout(() => setMinTimeElapsed(true), 750);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const key = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
+    if (key) amplitude.init(key);
   }, []);
 
   useEffect(() => {
