@@ -356,6 +356,7 @@ export function usePreviewPanelCanvas({
     skiaTextBlobs: skiaTextBlobs ?? undefined,
     skiaGlyphPositions: skiaGlyphLayout.glyphPositions,
     skiaMarqueeTransform,
+    marqueeOffsetX,
     skiaCanvasLayout: { width: drawW, height: drawH },
     onSkiaCanvasLayout,
   };

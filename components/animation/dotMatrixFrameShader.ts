@@ -6,6 +6,7 @@ export const DOT_MATRIX_FRAME_SOURCE = Skia.RuntimeEffect.Make(`
   uniform float dotSize;
   uniform float dotRadius;
   uniform float lineThreshold;
+  uniform half3 dotColor;
 
   half3 unpremultiply(half4 c) {
     return c.a > 0.001 ? c.rgb / c.a : half3(0.0);
@@ -46,8 +47,7 @@ export const DOT_MATRIX_FRAME_SOURCE = Skia.RuntimeEffect.Make(`
       return half4(0.0);
     }
 
-    // stroke는 어두운 픽셀에서 감지, cellCenter 색은 흰 패널일 수 있음 → 항상 검은 도트
-    return half4(0.0, 0.0, 0.0, mask);
+    return half4(dotColor, mask);
   }
 `)!;
 

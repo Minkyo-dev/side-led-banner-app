@@ -4,7 +4,7 @@ import {
   resolveMarqueeJoinSpacerPx,
 } from "@/utils/viewMode";
 import { useSettings } from "@/contexts/settingsContext";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Easing,
   useSharedValue,
@@ -78,13 +78,16 @@ export function useMarqueeAnimation({
     effectBleedPx,
   ]);
 
-  const onTextLayout = (e: TextLayoutEvent) => {
+  const textWidthRef = useRef(textWidth);
+  textWidthRef.current = textWidth;
+
+  const onTextLayout = useCallback((e: TextLayoutEvent) => {
     const widths = e.nativeEvent.lines.map((l) => l.width);
     const maxLineWidth = widths.length > 0 ? Math.max(...widths) : 0;
-    if (maxLineWidth !== textWidth) {
+    if (maxLineWidth !== textWidthRef.current) {
       setTextWidth(maxLineWidth);
     }
-  };
+  }, []);
 
   return {
     displayText,

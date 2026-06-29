@@ -43,11 +43,12 @@ export const SPEECH_BG_TEXT_LAYOUT = {
   },
   speechBg2: {
     portrait: {
+      /** 852px 말풍선 바디 y=20~759(center=45.7%), textHeight 0.751 기준 중앙정렬 offset = 70/852 */
       textHeightRatio: 389 / 518,
-      topOffsetRatio: null as number | null,
+      topOffsetRatio: 70 / 852 as number | null,
     },
     landscape: {
-      /** 518px 중 텍스트 385px, 위 20px / 아래 ~109px(디자인상 ~90px) */
+      /** 538px 말풍선 바디 y=20~448(height=428), 위 20px / 아래 90px */
       textHeightRatio: 385 / 518,
       topOffsetRatio: 28 / 518,
     },

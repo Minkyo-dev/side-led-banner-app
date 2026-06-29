@@ -139,13 +139,15 @@ export function PixelBackgroundCanvas({
             ) : null}
           </Group>
         ) : showGradientBackdrop ? (
-          <GradientBackdrop
-            key={`gradient-${gradientBackgroundPreset}`}
-            preset={gradientBackgroundPreset as GradientBackdropId}
-            width={width}
-            height={height}
-            opacity={1}
-          />
+          <Group layer={photoBackgroundShaderLayer}>
+            <GradientBackdrop
+              key={`gradient-${gradientBackgroundPreset}`}
+              preset={gradientBackgroundPreset as GradientBackdropId}
+              width={width}
+              height={height}
+              opacity={1}
+            />
+          </Group>
         ) : null}
 
         {/* Layer 2: 움직이는 이펙트 (투명 영역은 Layer 0 off-LED 격자가 비침) */}
@@ -182,6 +184,7 @@ export function PixelBackgroundCanvas({
             height={height}
             previewInset={speechPreviewInset}
             pixelShaderSize={pixelShaderSize}
+            useWhiteDots={!showGradientBackdrop}
           />
         ) : null}
       </Canvas>

@@ -110,6 +110,7 @@ export function useTilePicture(
   const recordBase = useMemo(() => {
     const hasBlobs = p.textBlobs != null && p.textBlobs.length > 0;
     if (!p.blob && !hasBlobs) return null;
+    if (p.textWidthPx <= 0) return null;
     return {
       blob: p.blob ?? p.textBlobs![0]!,
       textBlobs: hasBlobs ? p.textBlobs : undefined,
@@ -135,6 +136,7 @@ export function useTilePicture(
   }, [
     p.blob,
     p.textBlobs,
+    p.textWidthPx,
     periodPx,
     tileHeight,
     p.previewTextColor,

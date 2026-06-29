@@ -43,11 +43,11 @@ import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
+import { getRelLineSpacing } from "@/utils/textSizing";
 import {
   normalizeOneLineJoinMode,
   type OneLineJoinMode,
 } from "@/utils/viewMode";
-import { getRelLineSpacing } from "@/utils/textSizing";
 import { useLocales } from "expo-localization";
 import React, {
   createContext,
@@ -151,8 +151,22 @@ export const PRESET_SLOT_COUNT = 5;
 
 const PRO_LOCKED_EFFECTS = new Set(["Pixel", "Gradient", "Glow"]);
 const PRO_LOCKED_BG_EFFECTS = new Set(["heartBgA", "speechBg1", "speechBg2"]);
-const TEXT_COLOR_LOCKED_START = textColorPalette.length - 10;
-const BG_COLOR_LOCKED_START = backgroundColorPalette.length - 10;
+
+// textColorPalette: 9개 열, 행내 index >= 4 잠금 (colorPicker.tsx 의 isLocked 조건과 동일)
+function isTextColorProLocked(paletteIndex: number): boolean {
+  if (paletteIndex < 0) return false;
+  return paletteIndex % 9 >= 4;
+}
+
+
+const BG_ROW1_COUNT = 8; // COLS(9) - 1(photo button)
+function isBgColorProLocked(paletteIndex: number): boolean {
+  if (paletteIndex < 0) return false;
+  if (paletteIndex < BG_ROW1_COUNT) {
+    return paletteIndex >= 3;
+  }
+  return (paletteIndex - BG_ROW1_COUNT) % 9 >= 4;
+}
 
 function nonProSanitize(cfg: BannerConfig): BannerConfig {
   const a = { ...cfg.appearance };
@@ -163,10 +177,10 @@ function nonProSanitize(cfg: BannerConfig): BannerConfig {
   if (PRO_LOCKED_BG_EFFECTS.has(a.backgroundEffectPreset)) {
     a.backgroundEffectPreset = "none";
   }
-  if (textColorPalette.indexOf(a.textSelectedColor) >= TEXT_COLOR_LOCKED_START) {
+  if (isTextColorProLocked(textColorPalette.indexOf(a.textSelectedColor))) {
     a.textSelectedColor = textColorPalette[0]!;
   }
-  if (backgroundColorPalette.indexOf(bg.backgroundColor) >= BG_COLOR_LOCKED_START) {
+  if (isBgColorProLocked(backgroundColorPalette.indexOf(bg.backgroundColor))) {
     bg.backgroundColor = backgroundColorPalette[0]!;
   }
   return { ...cfg, appearance: a, background: bg };
