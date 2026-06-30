@@ -204,7 +204,6 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     inputViewportHeightPx,
     moveCursorUp,
     moveCursorDown,
-    forceSelection,
   } = useTextInput({ inputScrollViewportW, textInputRef });
 
   const history = useTextHistory(previewText);
@@ -409,7 +408,9 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
           onTextLayout={handleMeasureLayout}
           pointerEvents="none"
         >
-          {displayInputText || " "}
+          {Platform.OS === "ios" && displayInputText.endsWith("\n")
+            ? `${displayInputText} `
+            : displayInputText || " "}
         </Text>
         <ScrollView
           ref={inputScrollRef}

@@ -229,7 +229,7 @@ export const styles = StyleSheet.create({
 
   accessoryBar: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#f1f1f1",
     paddingHorizontal: 12,
