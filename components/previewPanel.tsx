@@ -247,6 +247,10 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
   const inputSelectionRef = useRef({ start: 0, end: 0 });
   const [forcedSnapshot, setForcedSnapshot] = useState<TextSnapshot | undefined>(undefined);
 
+  // onPreviewTextChange 내에서 항상 최신 displayInputText를 참조
+  const displayInputTextRef = useRef(displayInputText);
+  displayInputTextRef.current = displayInputText;
+
   const lineCount = previewText.replace(/\r\n?/g, "\n").split("\n").length;
   const atMaxLines = lineCount >= PREVIEW_TEXT_MAX_LINES;
 
@@ -262,12 +266,16 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
   const handleSubmitEditing = () => { if (atMaxLines) return; };
 
   const onPreviewTextChange = (text: string) => {
+    const currentText = displayInputTextRef.current;
+    // iOS Japanese IME가 커서 이동 시에도 onChangeText를 발화하는 경우 차단
+    // normalize()로 NFC/NFD 유니코드 정규화 차이도 같은 텍스트로 처리
+    if (text.normalize() === currentText.normalize()) return;
     const next = normalizePreviewTextMaxLines(text);
     if (next === null) {
       // 붙여넣기 등으로 3줄 초과 시 되돌리기
       const revertSel = { ...inputSelectionRef.current };
-      textInputRef.current?.setNativeProps({ text: displayInputText, selection: revertSel });
-      setForcedSnapshot({ text: displayInputText, sel: revertSel });
+      textInputRef.current?.setNativeProps({ text: currentText, selection: revertSel });
+      setForcedSnapshot({ text: currentText, sel: revertSel });
       return;
     }
     setForcedSnapshot(undefined);
