@@ -213,7 +213,7 @@ export const TextSection = () => {
         label={textSectionLabel("speed")}
         value={textMoveSpeed}
         onChange={setTextMoveSpeed}
-        minimumValue={10}
+        minimumValue={0}
         maximumValue={100}
         step={1}
       />
