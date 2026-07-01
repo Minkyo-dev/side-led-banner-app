@@ -99,6 +99,15 @@ export const creditsStyles = StyleSheet.create({
     color: "black",
     textAlign: "right",
   },
+  namesTextLeft: {
+    textAlign: "left",
+  },
+  subtitleText: {
+    ...uiThemeFontStyle,
+    fontSize: 13,
+    fontWeight: "400",
+    color: "#9A9A9A",
+  },
 });
 
 const SUNNY_LIST_THUMBNAIL_SIZE = 44;

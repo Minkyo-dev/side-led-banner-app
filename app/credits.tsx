@@ -15,14 +15,18 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-type CreditEntry = { role: string; names: string };
+type CreditEntry = { role: string; names: string; subtitle?: string; leftAlign?: boolean };
 
 const CREDITS: CreditEntry[] = [
   { role: "Producer", names: "R.S." },
   { role: "Programmers", names: "Chanwoo, MinKyo" },
   { role: "UIUX Designer", names: "Jaden" },
   { role: "QA Testers", names: "SJ, JA" },
-  { role: "Special Thanks", names: "Kevin, ASH" },
+  {
+    role: "Special Thanks",
+    names: "Korean developers / UIUX designers / Artists in Toronto, Kevin, ASH",
+    leftAlign: true,
+  },
 ];
 
 export default function CreditsScreen() {
@@ -54,12 +58,17 @@ export default function CreditsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={base.scrollViewContainer}
       >
-        {CREDITS.map(({ role, names }) => (
+        {CREDITS.map(({ role, names, subtitle, leftAlign }) => (
           <View key={role} style={creditsStyles.row}>
             <Text style={creditsStyles.roleText} allowFontScaling={false}>
               {role}
             </Text>
-            <Text style={creditsStyles.namesText} allowFontScaling={false}>
+              <Text style={creditsStyles.namesText} allowFontScaling={false}>
+              </Text>
+            <Text
+              style={[creditsStyles.namesText, leftAlign && creditsStyles.namesTextLeft]}
+              allowFontScaling={false}
+            >
               {names}
             </Text>
           </View>

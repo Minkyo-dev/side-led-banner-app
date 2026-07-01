@@ -3,7 +3,6 @@ import {
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
-import BannerAdComponent from "@/components/admob/bannerAd";
 import { ProDebugFab } from "@/components/dev/proDebugFab";
 import { RewardAdDebugFab } from "@/components/dev/rewardAdDebugFab";
 import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
@@ -19,13 +18,12 @@ import { TabType, useSettings } from "@/contexts/settingsContext";
 import { useRewardedAd } from "@/hooks/useRewardedAd";
 import * as amplitude from "@amplitude/analytics-react-native";
 import { Image } from "expo-image";
-import * as NavigationBar from "expo-navigation-bar";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { Platform, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { KeyboardAvoidingView, KeyboardToolbar } from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { initialWindowMetrics, useSafeAreaInsets } from "react-native-safe-area-context";
 
 
 function DismissButton(props: any) {
@@ -47,11 +45,6 @@ export default function Index() {
   const { playOption } = config.content;
   const { isPlaying, activeTab, rewardAdVisible } = ui;
   const { loaded: rewardAdLoaded, show: showRewardedAd } = useRewardedAd(activatePro);
-
-  useEffect(() => {
-    if (Platform.OS !== "android") return;
-    void NavigationBar.setVisibilityAsync("hidden");
-  }, []);
 
   const handlePlay = async () => {
     amplitude.track("Play_clicked", {
@@ -135,7 +128,7 @@ export default function Index() {
   }, []);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: isPlaying ? 0 : (initialWindowMetrics?.insets.bottom ?? 0) }]}>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <PreviewPanel
           onCursorMovers={onCursorMovers}
@@ -220,7 +213,7 @@ export default function Index() {
           {activeTab === "BACKGROUND" && <BackgroundSection />}
           {activeTab === "EFFECT" && <EffectSection />}
         </View>
-        <BannerAdComponent />
+        
         <RewardAdModal
           visible={rewardAdVisible}
           onClose={() => updateUI({ rewardAdVisible: false })}

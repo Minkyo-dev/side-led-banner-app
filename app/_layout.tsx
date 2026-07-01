@@ -8,10 +8,12 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
+import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
 
@@ -25,6 +27,11 @@ export default function RootLayout() {
     ...APP_FONT_ASSETS,
     ...APP_THEME_FONT_ASSETS,
   });
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    void NavigationBar.setVisibilityAsync("hidden");
+  }, []);
+
   //최소 0.75초 스플래쉬 강제
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   useEffect(() => {
@@ -68,7 +75,7 @@ export default function RootLayout() {
           <SplashLoadingScreen />
         )}
         </KeyboardProvider>
-        <StatusBar style="auto" />
+        <StatusBar hidden />
       </SettingsProvider>
     </ThemeProvider>
   );
