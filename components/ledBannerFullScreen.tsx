@@ -17,9 +17,11 @@ import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { resolveBubbleCanvasOpts } from "@/utils/skiaBubbleTextLayout";
 import { getSizingPolicy } from "@/utils/textSizing";
 import { Image } from "expo-image";
-import React, { useCallback, useMemo, useState } from "react";
+import * as NavigationBar from "expo-navigation-bar";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Modal,
+    Platform,
     Pressable,
     StatusBar,
     StyleSheet,
@@ -44,6 +46,15 @@ export const LedBannerFullScreen = ({
   const { textSelectedColor, gradientBackgroundPreset, dropShadow } = config.appearance;
   const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
   const hasBgPhoto = backgroundImageUri != null && backgroundImageUri.length > 0;
+
+  useEffect(() => {
+    if (!visible || Platform.OS !== "android") return;
+    void NavigationBar.setVisibilityAsync("hidden");
+    const sub = NavigationBar.addVisibilityListener(({ visibility }) => {
+      if (visibility === "visible") void NavigationBar.setVisibilityAsync("hidden");
+    });
+    return () => sub.remove();
+  }, [visible]);
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });

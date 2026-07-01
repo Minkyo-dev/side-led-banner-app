@@ -1,3 +1,4 @@
+import BannerAdComponent from "@/components/admob/bannerAd";
 import type { AppLocaleKey } from "@/constants/language";
 import { settingsStyles } from "@/constants/settingsStyles";
 import { styles as base, resolveDropdownMaxHeight, settingsFooterStyles } from "@/constants/styles";
@@ -183,6 +184,7 @@ export default function SettingsScreen() {
         onTermsPress={() => openUrl(SUNNY_LINKS.terms)}
         onPrivacyPress={() => openUrl(SUNNY_LINKS.privacy)}
       />
+      <BannerAdComponent />
     </View>
   );
 }
@@ -218,9 +220,8 @@ interface SettingsFooterProps {
 }
 
 export function SettingsFooter({ onLogoPress, onTermsPress, onPrivacyPress }: SettingsFooterProps) {
-  const { bottom } = useSafeAreaInsets();
   return (
-    <View style={[settingsFooterStyles.container, { paddingBottom: Math.max(bottom, 24) }]}>
+    <View style={[settingsFooterStyles.container, { paddingBottom: 8 }]}>
       <TouchableOpacity onPress={onLogoPress} activeOpacity={0.7}>
         <Image
           source={require("@/assets/images/SIL_logo_setting_mini_black_text.png")}
@@ -232,7 +233,7 @@ export function SettingsFooter({ onLogoPress, onTermsPress, onPrivacyPress }: Se
       <View style={settingsFooterStyles.linksRow}>
         <TouchableOpacity onPress={onTermsPress}>
           <Text style={settingsFooterStyles.linkText} allowFontScaling={false}>
-            Terms of Service
+            Terms
           </Text>
         </TouchableOpacity>
         
@@ -242,11 +243,13 @@ export function SettingsFooter({ onLogoPress, onTermsPress, onPrivacyPress }: Se
         
         <TouchableOpacity onPress={onPrivacyPress}>
           <Text style={settingsFooterStyles.linkText} allowFontScaling={false}>
-            Privacy Policy
+            Privacy
           </Text>
         </TouchableOpacity>
       </View>
+      
     </View>
+    
   );
 }
 
