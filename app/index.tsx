@@ -28,7 +28,7 @@ import { initialWindowMetrics, useSafeAreaInsets } from "react-native-safe-area-
 
 function DismissButton(props: any) {
   const isDark = useColorScheme() === "dark";
-  const color = isDark ? "#4DA3FF" : "#007AFF";
+  const color = isDark ? "#ffffff" : "#000000";
   return (
     <TouchableOpacity onPress={props.onPress} style={props.style}>
       <Text allowFontScaling={false} style={[styles.accessoryClose, { color }]}>✔</Text>
