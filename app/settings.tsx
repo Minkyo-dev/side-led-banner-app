@@ -61,7 +61,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={[base.container, {paddingTop: insets.top, backgroundColor: "#FFFFFF" }]}>
+    <View style={[base.container, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: "#FFFFFF" }]}>
       <View style={settingsStyles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
