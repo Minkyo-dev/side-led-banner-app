@@ -6,6 +6,7 @@ import {
 import { useSettings } from "@/contexts/settingsContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  cancelAnimation,
   Easing,
   useSharedValue,
   withRepeat,
@@ -50,11 +51,11 @@ export function useMarqueeAnimation({
   });
 
   useEffect(() => {
-    // if (speed === 0 || textWidth === 0) {
-    //   cancelAnimation(translateX);
-    //   translateX.value = 0;
-    //   return;
-    // }
+    if (speed === 0 || textWidth === 0) {
+      cancelAnimation(translateX);
+      translateX.value = 0;
+      return;
+    }
 
     const totalShift = textWidth + spacer + effectBleedPx;
     const duration = (totalShift / (speed * 3)) * 1000;

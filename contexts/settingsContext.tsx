@@ -271,7 +271,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
   background: {
     backgroundColor: "#FFFFFF",
     backgroundImageUri: null,
-    backgroundBlur: 50,
+    backgroundBlur: 0,
   },
   motion: {
     textMoveSpeed: 50,

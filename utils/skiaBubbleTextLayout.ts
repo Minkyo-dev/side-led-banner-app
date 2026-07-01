@@ -78,7 +78,7 @@ export function bubbleRows(params: {
   const { text, maxRows = BUBBLE_MAX_ROWS, playOption = "multi" } = params;
   const manual = splitEnterRows(text);
   if (playOption === "one") {
-    const one = manual.join(" ").trim();
+    const one = manual.join(" ").trimStart();
     return one.length > 0 ? [one] : [];
   }
   return manual.slice(0, maxRows);

@@ -42,6 +42,15 @@ function isCJKChar(ch: string): boolean {
   );
 }
 
+function getSpaceAdvanceWidth(font: SkFont): number {
+  const ids = font.getGlyphIDs(" ", 1);
+  if (ids.length > 0 && ids[0] !== 0) {
+    const widths = font.getGlyphWidths(ids);
+    if (widths.length > 0 && widths[0] != null && widths[0] > 0) return widths[0];
+  }
+  return 0;
+}
+
 function layoutSkiaLine(
   font: SkFont,
   text: string,
@@ -49,16 +58,31 @@ function layoutSkiaLine(
   getCharFont?: (ch: string) => SkFont,
 ): SkiaLineLayout {
   if (text.length === 0) return { width: 0, glyphs: [] };
-  let x = 0;
+
   const glyphs: SkiaLineGlyphLayout[] = [];
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i]!;
-    glyphs.push({ x, text: ch });
-    const charFont = getCharFont ? getCharFont(ch) : font;
-    const adv =
-      charFont.measureText(ch).width + (i < text.length - 1 ? letterSpacing : 0);
-    x += adv;
+  let x = 0;
+
+  if (!getCharFont) {
+    const advances = font.getGlyphWidths(font.getGlyphIDs(text));
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]!;
+      glyphs.push({ x, text: ch });
+      const isSpace = ch === " ";
+      x += (advances[i] ?? 0) + (!isSpace && i < text.length - 1 ? letterSpacing : 0);
+    }
+  } else {
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]!;
+      glyphs.push({ x, text: ch });
+      const charFont = getCharFont(ch);
+      const adv =
+        ch === " "
+          ? getSpaceAdvanceWidth(charFont)
+          : charFont.measureText(ch).width + (i < text.length - 1 ? letterSpacing : 0);
+      x += adv;
+    }
   }
+
   return { width: x, glyphs };
 }
 
@@ -225,11 +249,13 @@ export function usePreviewPanelCanvas({
   const skiaLineLayouts = useMemo((): SkiaLineLayout[] | null => {
     if (!skiaFont) return null;
 
-    const rows = bubbleRows({
-      text: displayText,
-      maxRows: speechBubbleLayout?.maxRows ?? BUBBLE_MAX_ROWS,
-      playOption,
-    });
+    const rows = useBubbleLayout || playOption !== "one"
+      ? bubbleRows({
+          text: displayText,
+          maxRows: speechBubbleLayout?.maxRows ?? BUBBLE_MAX_ROWS,
+          playOption,
+        })
+      : (displayText.length > 0 ? [displayText] : []);
 
     if (useBubbleLayout) {
       return bubbleLayouts(skiaFont, rows, letterSpacing);
