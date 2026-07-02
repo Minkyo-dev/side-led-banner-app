@@ -6,7 +6,8 @@ import {
   TestIds,
 } from "react-native-google-mobile-ads";
 
-// TODO: 스토어 제출 전 아래 주석 해제 후 실제 ID 입력해주세요
+const AD_UNIT_ID = TestIds.REWARDED;
+
 // const AD_UNIT_ID = __DEV__
 //   ? TestIds.REWARDED
 //   : Platform.select({
@@ -14,8 +15,6 @@ import {
 //       android: "ca-app-pub-3506417530430977/XXXXXXXXXX",
 //       default: TestIds.REWARDED,
 //     }) ?? TestIds.REWARDED;
-const AD_UNIT_ID = TestIds.REWARDED;
-
 export function useRewardedAd(onRewardEarned: () => void) {
   const [loaded, setLoaded] = useState(false);
   const onRewardEarnedRef = useRef(onRewardEarned);

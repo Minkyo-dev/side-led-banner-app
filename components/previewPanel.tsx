@@ -62,6 +62,28 @@ type PreviewPanelProps = {
   onUndoRedoStateChange?: (canUndo: boolean, canRedo: boolean) => void;
 };
 
+//  이전/새 텍스트를 비교해 편집이 끝난 위치(캐럿)를 커서 위치로
+function afterEdit(oldText: string, newText: string): number {
+  const maxPrefix = Math.min(oldText.length, newText.length);
+  let prefixLen = 0;
+  while (prefixLen < maxPrefix && oldText[prefixLen] === newText[prefixLen]) {
+    prefixLen++;
+  }
+
+  let oldEnd = oldText.length;
+  let newEnd = newText.length;
+  while (
+    oldEnd > prefixLen &&
+    newEnd > prefixLen &&
+    oldText[oldEnd - 1] === newText[newEnd - 1]
+  ) {
+    oldEnd--;
+    newEnd--;
+  }
+
+  return newEnd;
+}
+
 export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndoRedoStateChange }: PreviewPanelProps) {
   const [previewHeight, setPreviewHeight] = useState(0);
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
@@ -280,7 +302,10 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     }
     setForcedSnapshot(undefined);
     handleTextChange(text);
-    history.onTextChange(text, inputSelectionRef.current);
+    // onChangeText는 onSelectionChange보다 먼저 발화되므로 inputSelectionRef는
+    // 아직 이전 글자 기준 커서 위치를 담고 있음 -> 변경 diff로 커서 위치를 직접 계산
+    const caret = afterEdit(currentText, text);
+    history.onTextChange(text, { start: caret, end: caret });
   };
 
   return (
@@ -462,6 +487,11 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
               },
             ]}
             placeholder="Enter your text here"
+            autoCorrect={false}
+            autoComplete="off"
+            spellCheck={false}
+            textContentType="none"
+            importantForAutofill="no"
             value={forcedSnapshot?.text ?? displayInputText}
             selection={forcedSnapshot?.sel}
             submitBehavior={dynamicSubmitActive ? (atMaxLines ? "submit" : "newline") : "newline"}
