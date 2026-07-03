@@ -618,7 +618,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [isProActive]);
 
   const activatePro = useCallback(() => {
-    setUI((prev) => ({ ...prev, proMode: Date.now() + 2 * 60 * 1000 }));
+    setUI((prev) => ({ ...prev, proMode: Date.now() + 2 * 60 * 60 * 1000 }));
   }, []);
 
   const openRewardAdModal = useCallback(() => {

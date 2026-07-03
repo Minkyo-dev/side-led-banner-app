@@ -357,12 +357,13 @@ export const rewardAdModalStyles = StyleSheet.create({
   },
   ctaButtonContent: {
     position: "absolute",
-    left: "31.39%",
+    left: 0,
     top: "18%",
     bottom: "18%",
     right: 0,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 8,
   },
   ctaPlayBg: {

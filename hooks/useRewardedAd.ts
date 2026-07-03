@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Platform } from "react-native";
 import {
   AdEventType,
   RewardedAd,
@@ -6,15 +7,17 @@ import {
   TestIds,
 } from "react-native-google-mobile-ads";
 
-const AD_UNIT_ID = TestIds.REWARDED;
 
-// const AD_UNIT_ID = __DEV__
-//   ? TestIds.REWARDED
-//   : Platform.select({
-//       ios: "ca-app-pub-3506417530430977/XXXXXXXXXX",
-//       android: "ca-app-pub-3506417530430977/XXXXXXXXXX",
-//       default: TestIds.REWARDED,
-//     }) ?? TestIds.REWARDED;
+const PROD_AD_UNIT_ID = Platform.select({
+  ios: "ca-app-pub-3506417530430977/XXXXXXXXXX",
+  android: "ca-app-pub-3506417530430977/XXXXXXXXXX",
+  default: TestIds.REWARDED,
+});
+
+const isPlaceholderAdUnitId = !PROD_AD_UNIT_ID || PROD_AD_UNIT_ID.includes("XXXXXXXXXX");
+
+const AD_UNIT_ID =
+  __DEV__ || isPlaceholderAdUnitId ? TestIds.REWARDED : PROD_AD_UNIT_ID;
 export function useRewardedAd(onRewardEarned: () => void) {
   const [loaded, setLoaded] = useState(false);
   const onRewardEarnedRef = useRef(onRewardEarned);
