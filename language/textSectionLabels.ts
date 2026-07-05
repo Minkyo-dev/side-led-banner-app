@@ -33,7 +33,6 @@ export type TextSectionLabelKey =
   | "tabEffects"
   /** 설정*/
   | "settingsTitle"
-  | "howToUse"
   | "sunnyGames"
   | "instagram"
   | "twitter"
@@ -202,13 +201,6 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "設定",
     zhTC: "設定",
     zhSC: "设置",
-  },
-  howToUse: {
-    ko: "사용 방법",
-    en: "How To Use",
-    ja: "使い方",
-    zhTC: "使用方法",
-    zhSC: "使用方法",
   },
   sunnyGames: {
     ko: "Sunny의 게임 및 앱",

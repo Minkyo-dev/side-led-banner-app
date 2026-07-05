@@ -1,7 +1,7 @@
 import type { AppLocaleKey } from "@/constants/language";
 
 /** settings폰트키용 */
-export type AppearanceFontId =
+export type FontId =
   | "montserrat"
   | "poppins"
   | "inter"
@@ -36,7 +36,7 @@ export interface FontFaceSet {
 
 export interface FontDropdownItem {
   label: string;
-  value: AppearanceFontId;
+  value: FontId;
 }
 
 function fontFaceSet(regular: number, bold: number): FontFaceSet {
@@ -141,13 +141,13 @@ const galmuri11 = singleFace(
 
 /** zhSC픽셀폰트ID용 */
 export const ZITI_GUANJIA_BODIAN_FONT_ID =
-  "ziti_guanjia_bodian" as const satisfies AppearanceFontId;
+  "ziti_guanjia_bodian" as const satisfies FontId;
 
 /** Galmuri픽셀폰트ID용 */
-export const GALMURI11_FONT_ID = "galmuri11" as const satisfies AppearanceFontId;
+export const GALMURI11_FONT_ID = "galmuri11" as const satisfies FontId;
 
 /** 폰트에셋맵용 */
-export const APP_FONT_FACE_SETS: Record<AppearanceFontId, FontFaceSet> = {
+export const APP_FONT_FACE_SETS: Record<FontId, FontFaceSet> = {
   montserrat,
   poppins,
   inter,
@@ -216,10 +216,10 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
     ],
   };
 
-const DEFAULT_APPEARANCE_FONT: AppearanceFontId = "black_han_sans";
+const DEFAULT_FONT: FontId = "black_han_sans";
 
 /** 삭제폰트매핑용 */
-const LEGACY_APPEARANCE_FONT_IDS: Record<string, AppearanceFontId> = {
+const LEGACY_FONT_IDS: Record<string, FontId> = {
   bebas_neue: "tektur",
   m_plus_1: "kaisei",
   zen_kaku_gothic_new: "ibm_plex_sans_jp",
@@ -238,73 +238,97 @@ const LEGACY_APPEARANCE_FONT_IDS: Record<string, AppearanceFontId> = {
   kslocalbaseballpark: "black_han_sans",
 };
 
-export function normalizeAppearanceFontId(
+export function normalizeFontId(
   value: string,
-): AppearanceFontId | null {
-  if (isAppearanceFontId(value)) return value;
-  return LEGACY_APPEARANCE_FONT_IDS[value] ?? null;
+): FontId | null {
+  if (isFontId(value)) return value;
+  return LEGACY_FONT_IDS[value] ?? null;
 }
 
 /** 픽셀전용폰트용 */
-export const APPEARANCE_FONTS_HIDDEN_FROM_PICKER = new Set<AppearanceFontId>([
+export const FONTS_HIDDEN_FROM_PICKER = new Set<FontId>([
   "ziti_guanjia_bodian",
   "galmuri11",
 ]);
 
-export function isAppearanceFontHiddenFromPicker(
+export function isFontHiddenFromPicker(
   appearanceFont: string,
 ): boolean {
-  const id = normalizeAppearanceFontId(appearanceFont);
-  return id != null && APPEARANCE_FONTS_HIDDEN_FROM_PICKER.has(id);
+  const id = normalizeFontId(appearanceFont);
+  return id != null && FONTS_HIDDEN_FROM_PICKER.has(id);
 }
 
 /** Skia전용폰트용 */
-const SKIA_ONLY_APPEARANCE_FONTS = new Set<AppearanceFontId>([
+const SKIA_ONLY_FONTS = new Set<FontId>([
   "ziti_guanjia_bodian",
   "galmuri11",
 ]);
 
-export function isSkiaOnlyAppearanceFont(appearanceFont: string): boolean {
-  const id = normalizeAppearanceFontId(appearanceFont);
-  return id != null && SKIA_ONLY_APPEARANCE_FONTS.has(id);
+export function isSkiaOnlyFont(appearanceFont: string): boolean {
+  const id = normalizeFontId(appearanceFont);
+  return id != null && SKIA_ONLY_FONTS.has(id);
 }
 
 /** Bold미지원폰트용 */
-const APPEARANCE_FONTS_WITHOUT_BOLD = new Set<AppearanceFontId>([
+const FONTS_WITHOUT_BOLD = new Set<FontId>([
   "dela_gothic_one",
   "mochiy_pop_one",
   "ziti_guanjia_bodian",
   "galmuri11",
 ]);
 
-export function appearanceFontSupportsBold(appearanceFont: string): boolean {
-  const id = normalizeAppearanceFontId(appearanceFont);
+export function supportsBold(appearanceFont: string): boolean {
+  const id = normalizeFontId(appearanceFont);
   if (!id) return true;
-  return !APPEARANCE_FONTS_WITHOUT_BOLD.has(id);
+  return !FONTS_WITHOUT_BOLD.has(id);
 }
 
-export function isAppearanceFontId(value: string): value is AppearanceFontId {
+export function isFontId(value: string): value is FontId {
   return Object.prototype.hasOwnProperty.call(APP_FONT_FACE_SETS, value);
 }
 
 export function getFontItemsForLocale(locale: AppLocaleKey): FontDropdownItem[] {
   return APP_FONT_ITEMS_BY_LOCALE[locale].filter(
-    (item) => !APPEARANCE_FONTS_HIDDEN_FROM_PICKER.has(item.value),
+    (item) => !FONTS_HIDDEN_FROM_PICKER.has(item.value),
   );
 }
 
-export function getDefaultAppearanceFontForLocale(
+export function getDefaultForLocale(
   locale: AppLocaleKey,
-): AppearanceFontId {
-  return APP_FONT_ITEMS_BY_LOCALE[locale][0]?.value ?? DEFAULT_APPEARANCE_FONT;
+): FontId {
+  return APP_FONT_ITEMS_BY_LOCALE[locale][0]?.value ?? DEFAULT_FONT;
 }
 
-export function resolveAppearanceFontFaceSet(appearanceFont: string): FontFaceSet {
-  const id = normalizeAppearanceFontId(appearanceFont);
+const FONT_ID_TO_LOCALES: Partial<Record<FontId, Set<AppLocaleKey>>> = {};
+(Object.keys(APP_FONT_ITEMS_BY_LOCALE) as AppLocaleKey[]).forEach((locale) => {
+  APP_FONT_ITEMS_BY_LOCALE[locale].forEach((item) => {
+    const set = FONT_ID_TO_LOCALES[item.value] ?? new Set<AppLocaleKey>();
+    set.add(locale);
+    FONT_ID_TO_LOCALES[item.value] = set;
+  });
+});
+
+/**
+ * 선택된 폰트가 주어진 locale 에 속하는지 판단.
+ * 앱 UI 언어 와 무관하게, 폰트 자체 기준으로 판단해야 영어 UI에서 한글 폰트를 선택하는 경우에서도 글자별 fallback이 올바르게 동작함.
+ * 일부 폰트(예: ZCOOL QingKe HuangYou)는 zhTC·zhSC 양쪽 목록에 모두 있으므로,
+ * 단일 locale로 단정하지 않고 멤버십으로 판단함.
+ */
+export function fontBelongsToLocale(
+  appearanceFont: string,
+  locale: AppLocaleKey,
+): boolean {
+  const id = normalizeFontId(appearanceFont);
+  if (!id) return false;
+  return FONT_ID_TO_LOCALES[id]?.has(locale) ?? false;
+}
+
+export function resolveFontFaceSet(appearanceFont: string): FontFaceSet {
+  const id = normalizeFontId(appearanceFont);
   if (id) {
     return APP_FONT_FACE_SETS[id];
   }
-  return APP_FONT_FACE_SETS[DEFAULT_APPEARANCE_FONT];
+  return APP_FONT_FACE_SETS[DEFAULT_FONT];
 }
 
 /** RNfontFamily키용 */
@@ -313,21 +337,21 @@ export function appFontFamilyForText(
   fontWeight: "normal" | "bold",
   locale?: AppLocaleKey,
 ): string {
-  if (locale && isSkiaOnlyAppearanceFont(appearanceFont)) {
+  if (locale && isSkiaOnlyFont(appearanceFont)) {
     return appFontFamilyForText(
-      getDefaultAppearanceFontForLocale(locale),
+      getDefaultForLocale(locale),
       fontWeight,
     );
   }
-  const id = normalizeAppearanceFontId(appearanceFont) ?? appearanceFont;
+  const id = normalizeFontId(appearanceFont) ?? appearanceFont;
   const base = `AppFont-${id}`;
   return fontWeight === "bold" ? `${base}-bold` : base;
 }
 
-function buildAppFontAssets(): Record<string, number> {
+function buildFontAssetsForIds(ids: FontId[]): Record<string, number> {
   const out: Record<string, number> = {};
-  (Object.keys(APP_FONT_FACE_SETS) as AppearanceFontId[]).forEach((id) => {
-    if (SKIA_ONLY_APPEARANCE_FONTS.has(id)) return;
+  ids.forEach((id) => {
+    if (SKIA_ONLY_FONTS.has(id)) return;
     const set = APP_FONT_FACE_SETS[id];
     out[appFontFamilyForText(id, "normal")] = set.regular;
     out[appFontFamilyForText(id, "bold")] = set.bold;
@@ -335,8 +359,27 @@ function buildAppFontAssets(): Record<string, number> {
   return out;
 }
 
-/** useFonts일괄로드용 */
-export const APP_FONT_ASSETS: Record<string, number> = buildAppFontAssets();
+export function getEagerFontIdsForLocale(locale: AppLocaleKey): FontId[] {
+  return APP_FONT_ITEMS_BY_LOCALE[locale].map((item) => item.value);
+}
+
+/** 부트 시점에 즉시 로드할 폰트*/
+export function buildEagerFontAssets(
+  locale: AppLocaleKey,
+): Record<string, number> {
+  return buildFontAssetsForIds(getEagerFontIdsForLocale(locale));
+}
+
+/** 나머지 로케일 용 폰트*/
+export function buildLazyFontAssets(
+  locale: AppLocaleKey,
+): Record<string, number> {
+  const eagerIds = new Set(getEagerFontIdsForLocale(locale));
+  const remainingIds = (Object.keys(APP_FONT_FACE_SETS) as FontId[]).filter(
+    (id) => !eagerIds.has(id) && !SKIA_ONLY_FONTS.has(id),
+  );
+  return buildFontAssetsForIds(remainingIds);
+}
 
 export const APP_THEME_FONT_FAMILY = "AppTheme";
 export const APP_THEME_FONT_FAMILY_BOLD = "AppTheme-Bold";

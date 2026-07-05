@@ -1,12 +1,16 @@
 import { uiThemeFontStyle } from "@/constants/appFonts";
+import { moderateScale } from "@/constants/scale";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
-export const CONTENTS_INPUT_FONT_SIZE = 18;
-export const CONTENTS_INPUT_LINE_HEIGHT =
-  CONTENTS_INPUT_FONT_SIZE;
-export const CONTENTS_INPUT_VIEWPORT_HEIGHT =
-  3 * CONTENTS_INPUT_LINE_HEIGHT;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+export const CONTENTS_INPUT_FONT_SIZE = moderateScale(18);
+export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
+  CONTENTS_INPUT_FONT_SIZE * 1.3,
+);
+export const CONTENTS_INPUT_VIEWPORT_MARGIN = moderateScale(16);
+export const CONTENTS_INPUT_VIEWPORT_HEIGHT =
+  3 * CONTENTS_INPUT_LINE_HEIGHT + CONTENTS_INPUT_VIEWPORT_MARGIN;
 
 export const styles = StyleSheet.create({
   container: {
@@ -50,6 +54,7 @@ export const styles = StyleSheet.create({
   },
   contentsInput: {
     fontSize: CONTENTS_INPUT_FONT_SIZE,
+    lineHeight: CONTENTS_INPUT_LINE_HEIGHT,
     flex: 0.8,
     color: "white",
     ...Platform.select({
@@ -77,14 +82,14 @@ export const styles = StyleSheet.create({
   },
 
   tabContainer: {
-    height: 50,
+    height: moderateScale(60),
     flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: "#DDDDDD",
   },
   tab: {
     flex: 1,
-    paddingVertical: 15,
+    paddingVertical: moderateScale(15),
     alignItems: "center",
     borderBottomWidth: 3,
     borderBottomColor: "transparent",
@@ -94,7 +99,7 @@ export const styles = StyleSheet.create({
   },
   tabText: {
     ...uiThemeFontStyle,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: "#787878",
     fontWeight: "600",
   },
@@ -118,7 +123,7 @@ export const styles = StyleSheet.create({
   },
   settingsRowLabel: {
     ...uiThemeFontStyle,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "black",
     fontWeight: "400",
   },
@@ -134,7 +139,7 @@ export const styles = StyleSheet.create({
   },
   settingsRowValue: {
     ...uiThemeFontStyle,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "black",
     fontWeight: "400",
   },
@@ -159,7 +164,7 @@ export const styles = StyleSheet.create({
   dropdownPlaceholderStyle: { ...uiThemeFontStyle },
   dropdownSelectedTextStyle: {
     ...uiThemeFontStyle,
-    fontSize: 17,
+    fontSize: moderateScale(17),
   },
   dropdownIconStyle: {
     width: 30,
@@ -167,14 +172,20 @@ export const styles = StyleSheet.create({
 
   dropdownItemContainerStyle: {
     borderRadius: 0,
+    padding: 0,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
   },
   dropdownItemContent: {
     width: "100%",
   },
   dropdownItemTextStyle: {
     ...uiThemeFontStyle,
-    fontSize: 17,
+    fontSize: moderateScale(17),
     flexShrink: 1,
+  },
+  dropdownItemTextStyleSelected: {
+    fontWeight: "700",
   },
 
   effectContainer: {
@@ -236,7 +247,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   accessoryClose: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "#007AFF",
     fontWeight: "600",
   },
@@ -304,11 +315,11 @@ export const rewardAdModalStyles = StyleSheet.create({
   },
   headerBadge: {
     ...uiThemeFontStyle,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: "bold",
     color: "#1A1A1A",
     textAlign: "center",
-    lineHeight: 26,
+    lineHeight: moderateScale(26),
     marginBottom: 24,
     paddingHorizontal: 10,
   },
@@ -329,10 +340,10 @@ export const rewardAdModalStyles = StyleSheet.create({
   benefitText: {
     ...uiThemeFontStyle,
     flex: 1,
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: "500",
     color: "#333333",
-    lineHeight: 21,
+    lineHeight: moderateScale(21),
   },
   proActiveBadge: {
     alignSelf: "center",
@@ -343,7 +354,7 @@ export const rewardAdModalStyles = StyleSheet.create({
     marginBottom: 16,
   },
   proActiveBadgeText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: "600",
     color: "#fff",
   },
@@ -371,7 +382,7 @@ export const rewardAdModalStyles = StyleSheet.create({
     aspectRatio: 1,
   },
   ctaButtonText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: "600",
     flexShrink: 1,
     includeFontPadding: false,
@@ -399,7 +410,7 @@ export const backgroundPhotoSheetStyles = StyleSheet.create({
   },
   rowText: {
     ...uiThemeFontStyle,
-    fontSize: 17,
+    fontSize: moderateScale(17),
     fontWeight: "400",
   },
   divider: {
@@ -413,7 +424,7 @@ export const backgroundPhotoSheetStyles = StyleSheet.create({
   },
   cancelText: {
     ...uiThemeFontStyle,
-    fontSize: 17,
+    fontSize: moderateScale(17),
     fontWeight: "600",
   },
 });
@@ -586,7 +597,7 @@ export const toolbarStyles = StyleSheet.create({
     alignItems: "center",
   },
   cursorNavText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
   },
 });
 
@@ -613,12 +624,12 @@ export const settingsFooterStyles = StyleSheet.create({
     gap: 8,
   },
   linkText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: "#666666",
     fontWeight: "500",
   },
   separator: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     color: "#CCCCCC",
   },
 });

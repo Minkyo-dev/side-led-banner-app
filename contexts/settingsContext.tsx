@@ -1,10 +1,11 @@
 import {
-  appearanceFontSupportsBold,
+  fontBelongsToLocale,
   GALMURI11_FONT_ID,
-  getDefaultAppearanceFontForLocale,
+  getDefaultForLocale,
   getFontItemsForLocale,
-  isAppearanceFontHiddenFromPicker,
-  normalizeAppearanceFontId,
+  isFontHiddenFromPicker,
+  normalizeFontId,
+  supportsBold,
 } from "@/constants/appFonts";
 import {
   backgroundColorPalette,
@@ -104,6 +105,8 @@ export interface BannerConfig {
   };
   appearance: {
     font: string;
+    /** 스크립트(locale)별 마지막으로 선택된 폰트 — 프리셋마다 독립적으로 저장·복원됨 */
+    fontByLocale: Partial<Record<AppLocaleKey, string>>;
     fontSize: number;
     lineSpacing: number;
     letterSpacing: number;
@@ -208,6 +211,7 @@ function dupAppearance(
     ...appearance,
     effectSelectedItems: [...appearance.effectSelectedItems],
     effectParamValues: { ...(appearance.effectParamValues ?? {}) },
+    fontByLocale: { ...(appearance.fontByLocale ?? {}) },
   };
 }
 
@@ -239,14 +243,14 @@ function configFromPreset(
 
 const DEFAULT_BANNER_CONFIG: BannerConfig = {
   content: {
-    previewText:
-      "Hello, World! asdlfkjas;dlkfja;sldkfja;sldkjfa;slkdjfas;dlkfjasd;flkj",
-    playOption: "one",
+    previewText: "Welcome to LED POP!\nby Sunny",
+    playOption: "multi",
     oneLineJoinMode: "space6",
     blurColor: "",
   },
   appearance: {
     font: "black_han_sans",
+    fontByLocale: {},
     fontSize: 50,
     lineSpacing: 10,
     letterSpacing: 10,
@@ -277,6 +281,14 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     textMoveSpeed: 50,
   },
 };
+
+/** 프리셋 2~5번 초기값: 기본 설정에서 텍스트만 비운 상태 */
+function blankPresetSnapshot(): PresetSnapshot {
+  return {
+    ...presetFromConfig(DEFAULT_BANNER_CONFIG),
+    content: { ...presetFromConfig(DEFAULT_BANNER_CONFIG).content, previewText: "" },
+  };
+}
 
 /** 저장된 JSON과 기본값을 합쳐 필드 추가·누락에도 안전하게 복원 */
 function normalizePresetSlot(raw: unknown): PresetSnapshot {
@@ -320,6 +332,12 @@ function normalizePresetSlot(raw: unknown): PresetSnapshot {
       ...base.appearance.effectParamValues,
       ...appearancePartial.effectParamValues,
     },
+    fontByLocale:
+      appearancePartial.fontByLocale &&
+      typeof appearancePartial.fontByLocale === "object" &&
+      !Array.isArray(appearancePartial.fontByLocale)
+        ? { ...base.appearance.fontByLocale, ...appearancePartial.fontByLocale }
+        : base.appearance.fontByLocale,
   });
 
   const bgPartial =
@@ -391,13 +409,53 @@ interface SettingsContextValue {
    * 게시 CSV 행·셀 내용이 바뀔 때마다 바뀜.
    */
   sheetStringsRevision: number;
+  /** 스크립트(locale)별 마지막으로 선택된 폰트 — 다른 언어 폰트 선택 시 해당 스크립트 문자의 fallback으로 사용 */
+  lastFontByLocale: Partial<Record<AppLocaleKey, string>>;
 }
-const SettingsContext = createContext<SettingsContextValue | null>(null);
-//해당 context 값을 제공하는 provider 컴포넌트
-export const useSettings = () => {
-  const ctx = useContext(SettingsContext);
-  if (!ctx) throw new Error("useSettings must be used within SettingsProvider");
+/** content(타이핑 경로)를 제외한 나머지 — 타이핑 시 재렌더되지 않아야 하는 컴포넌트가 구독 */
+type RestContextValue = Omit<SettingsContextValue, "config"> & {
+  config: Omit<BannerConfig, "content">;
+};
+/** previewText 등 content만 담음 — 타이핑할 때만 값이 바뀜 */
+interface ContentContextValue {
+  content: BannerConfig["content"];
+}
+
+const RestContext = createContext<RestContextValue | null>(null);
+const ContentContext = createContext<ContentContextValue | null>(null);
+
+/**
+ * content(타이핑 경로)를 구독하지 않는 훅.
+ * 배경/이펙트 패널처럼 previewText와 무관한 컴포넌트는 이 훅을 사용해야
+ * 타이핑할 때마다 불필요하게 재렌더되지 않습니다.
+ */
+export const useSettingsRest = () => {
+  const ctx = useContext(RestContext);
+  if (!ctx) throw new Error("useSettingsRest must be used within SettingsProvider");
   return ctx;
+};
+
+/** content만 필요한 컴포넌트가 구독하게 */
+export const useSettingsContent = () => {
+  const ctx = useContext(ContentContext);
+  if (!ctx) throw new Error("useSettingsContent must be used within SettingsProvider");
+  return ctx;
+};
+
+/**
+ * 기존 호환용 통합 훅 — rest + content를 모두 구독하므로, previewText가 바뀔 때도
+ * appearance/background만 바뀔 때도 재렌더됩니다. content가 실제로 필요한 컴포넌트에서만 사용해주세요.
+ */
+export const useSettings = (): SettingsContextValue => {
+  const rest = useContext(RestContext);
+  const contentCtx = useContext(ContentContext);
+  if (!rest || !contentCtx) {
+    throw new Error("useSettings must be used within SettingsProvider");
+  }
+  return useMemo(
+    () => ({ ...rest, config: { ...rest.config, content: contentCtx.content } }),
+    [rest, contentCtx],
+  );
 };
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
@@ -426,8 +484,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [config, setConfig] = useState<BannerConfig>(DEFAULT_BANNER_CONFIG);
 
   const [presetSlots, setPresetSlots] = useState<PresetSnapshot[]>(() =>
-    Array.from({ length: PRESET_SLOT_COUNT }, () =>
-      presetFromConfig(DEFAULT_BANNER_CONFIG),
+    Array.from({ length: PRESET_SLOT_COUNT }, (_, i) =>
+      i === 0 ? presetFromConfig(DEFAULT_BANNER_CONFIG) : blankPresetSnapshot(),
     ),
   );
 
@@ -530,8 +588,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    const blankSlots = Array.from({ length: PRESET_SLOT_COUNT }, () =>
-      presetFromConfig(DEFAULT_BANNER_CONFIG),
+    const blankSlots = Array.from({ length: PRESET_SLOT_COUNT }, (_, i) =>
+      i === 0 ? presetFromConfig(DEFAULT_BANNER_CONFIG) : blankPresetSnapshot(),
     );
     (async () => {
       try {
@@ -591,19 +649,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // config 업데이트 함수
-  const updateConfig = <K extends keyof BannerConfig>(
-    group: K,
-    updates: Partial<BannerConfig[K]>,
-  ) => {
-    setConfig((prev) => ({
-      ...prev,
-      [group]: { ...prev[group], ...updates },
-    }));
-  };
+  const updateConfig = useCallback(
+    <K extends keyof BannerConfig>(group: K, updates: Partial<BannerConfig[K]>) => {
+      setConfig((prev) => ({
+        ...prev,
+        [group]: { ...prev[group], ...updates },
+      }));
+    },
+    [],
+  );
 
-  const updateUI = (updates: Partial<UIState>) => {
+  const updateUI = useCallback((updates: Partial<UIState>) => {
     setUI((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
   //Preset 불러올 시 pro mode에 따른  적용
   const isProActive = ui.proMode !== null && Date.now() < ui.proMode;
@@ -638,12 +696,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(id);
   }, [ui.proMode]);
 
-  const handleTextChange = (text: string) => {
-    const next = normalizePreviewTextMaxLines(text);
-    if (next === null) return;
-    if (next === config.content.previewText) return;
-    updateConfig("content", { previewText: next });
-  };
+  const handleTextChange = useCallback(
+    (text: string) => {
+      const next = normalizePreviewTextMaxLines(text);
+      if (next === null) return;
+      if (next === configRef.current.content.previewText) return;
+      updateConfig("content", { previewText: next });
+    },
+    [updateConfig],
+  );
 
   const loadPreset = useCallback((slot: number) => {
     if (slot < 0 || slot >= PRESET_SLOT_COUNT) return;
@@ -672,12 +733,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const normalizedFont = normalizeAppearanceFontId(config.appearance.font);
+    const normalizedFont = normalizeFontId(config.appearance.font);
     const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
     const pixelGalmuriOk = isPixelActive && normalizedFont === GALMURI11_FONT_ID;
     if (
       normalizedFont &&
-      (!isAppearanceFontHiddenFromPicker(normalizedFont) || pixelGalmuriOk)
+      (!isFontHiddenFromPicker(normalizedFont) || pixelGalmuriOk)
     ) {
       if (config.appearance.font !== normalizedFont) {
         setConfig((prev) => ({
@@ -692,13 +753,46 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       appearance: {
         ...prev.appearance,
-        font: getDefaultAppearanceFontForLocale(resolvedAppLocale),
+        font: getDefaultForLocale(resolvedAppLocale),
       },
     }));
   }, [
     config.appearance.font,
     config.appearance.effectSelectedItems,
     resolvedAppLocale,
+  ]);
+
+  /** locale별 마지막으로 선택한 폰트 저장 */
+  useEffect(() => {
+    if (!fontBelongsToLocale(config.appearance.font, resolvedAppLocale)) return;
+    if (config.appearance.fontByLocale[resolvedAppLocale] === config.appearance.font) return;
+    setConfig((prev) => ({
+      ...prev,
+      appearance: {
+        ...prev.appearance,
+        fontByLocale: { ...prev.appearance.fontByLocale, [resolvedAppLocale]: prev.appearance.font },
+      },
+    }));
+  }, [config.appearance.font, config.appearance.fontByLocale, resolvedAppLocale]);
+
+  /** 앱 언어가 바뀌면, 현재 폰트가 그 언어 폰트가 아닐 시 해당 언어에서 마지막으로 쓰던 폰트(없으면 기본값)로 전환 */
+  useEffect(() => {
+    const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
+    if (isPixelActive) return;
+    if (fontBelongsToLocale(config.appearance.font, resolvedAppLocale)) return;
+    const nextFont =
+      config.appearance.fontByLocale[resolvedAppLocale] ??
+      getDefaultForLocale(resolvedAppLocale);
+    if (nextFont === config.appearance.font) return;
+    setConfig((prev) => ({
+      ...prev,
+      appearance: { ...prev.appearance, font: nextFont },
+    }));
+  }, [
+    resolvedAppLocale,
+    config.appearance.effectSelectedItems,
+    config.appearance.font,
+    config.appearance.fontByLocale,
   ]);
 
   /** 픽셀폰트용 */
@@ -720,7 +814,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   ]);
 
   useEffect(() => {
-    if (appearanceFontSupportsBold(config.appearance.font)) return;
+    if (supportsBold(config.appearance.font)) return;
 
     setConfig((prev) => {
       const needsFontWeight = prev.appearance.fontWeight === "bold";
@@ -751,14 +845,25 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const effectItems = useMemo(() => {
     const items = ["Bold", "Blink", "Pixel", "Glow", "Gradient"];
     const isPixelMode = config.appearance.effectSelectedItems.includes("Pixel");
-    if (!appearanceFontSupportsBold(config.appearance.font) && !isPixelMode) {
+    if (!supportsBold(config.appearance.font) && !isPixelMode) {
       return items.filter((e) => e !== "Bold");
     }
     return items;
   }, [config.appearance.font, config.appearance.effectSelectedItems]);
-  const value = useMemo(
+  // content는 별도 Context로 분리 — previewText 등이 바뀌어도 이쪽(appearance/background/motion/ui)
+  // 구독하는 곳은 재렌더되지 않아야 함 ***성능
+  const restConfig = useMemo(
     () => ({
-      config,
+      appearance: config.appearance,
+      background: config.background,
+      motion: config.motion,
+    }),
+    [config.appearance, config.background, config.motion],
+  );
+
+  const restValue = useMemo(
+    () => ({
+      config: restConfig,
       ui,
       resolvedAppLocale,
       updateConfig,
@@ -779,15 +884,21 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       effectChipLabel,
       rewardAdLabel,
       sheetStringsRevision,
+      lastFontByLocale: restConfig.appearance.fontByLocale,
     }),
     [
-      config,
+      restConfig,
       ui,
       resolvedAppLocale,
+      updateConfig,
+      updateUI,
+      isProActive,
+      activatePro,
+      openRewardAdModal,
+      handleTextChange,
       fontItems,
       effectItems,
       loadPreset,
-      openRewardAdModal,
       sheetParseResult,
       sheetStringsLoading,
       sheetStringsError,
@@ -800,9 +911,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     ],
   );
 
+  const contentValue = useMemo(
+    () => ({ content: config.content }),
+    [config.content],
+  );
+
   return (
-    <SettingsContext.Provider value={value}>
-      {presetsStorageReady ? children : null}
-    </SettingsContext.Provider>
+    <RestContext.Provider value={restValue}>
+      <ContentContext.Provider value={contentValue}>
+        {presetsStorageReady ? children : null}
+      </ContentContext.Provider>
+    </RestContext.Provider>
   );
 }

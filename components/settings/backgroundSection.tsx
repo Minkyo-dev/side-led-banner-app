@@ -3,7 +3,7 @@ import { styles as base, colorPickerLockStyles as bgLock, colorPickerStyles as c
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import {
   Alert,
   Image as RNImage,
@@ -12,8 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSettings } from "../../contexts/settingsContext";
-import { BackgroundPhotoSheet } from "./backgroundPhotoSheet";
+import { useSettingsRest } from "../../contexts/settingsContext";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
@@ -22,8 +21,7 @@ const ROW1_SWATCHES = COLS - 1;
 
 
 export const BackgroundSection = () => {
-  const [photoSheet, setPhotoSheet] = useState(false);
-  const { config, updateConfig, textSectionLabel, isProActive, openRewardAdModal } = useSettings();
+  const { config, updateConfig, textSectionLabel, isProActive, openRewardAdModal } = useSettingsRest();
   const { backgroundColor, backgroundBlur, backgroundImageUri } =
     config.background;
 
@@ -57,11 +55,6 @@ export const BackgroundSection = () => {
     });
   }, [updateConfig]);
 
-  const clearBgPhoto = useCallback(
-    () => updateConfig("background", { backgroundImageUri: null }),
-    [updateConfig],
-  );
-
   const colors = backgroundColorPalette;
   const row1 = colors.slice(0, ROW1_SWATCHES);
   const tail = colors.slice(ROW1_SWATCHES);
@@ -91,7 +84,7 @@ export const BackgroundSection = () => {
           <View style={chip.colorPickerRow}>
             <TouchableOpacity
               style={chip.colorPickerItemButton}
-              onPress={() => setPhotoSheet(true)}
+              onPress={() => void openAlbum()}
               accessibilityLabel="Background photo"
             >
               {hasBgPhoto ? (
@@ -166,12 +159,6 @@ export const BackgroundSection = () => {
           step={1}
         />
       </ScrollView>
-      <BackgroundPhotoSheet
-        visible={photoSheet}
-        onClose={() => setPhotoSheet(false)}
-        onGallery={() => void openAlbum()}
-        onDefault={clearBgPhoto}
-      />
     </>
   );
 };

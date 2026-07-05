@@ -1,5 +1,5 @@
 import { uiThemeFontStyle } from "@/constants/appFonts";
-import { useSettings } from "@/contexts/settingsContext";
+import { useSettingsRest } from "@/contexts/settingsContext";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal,
@@ -29,7 +29,7 @@ function SheetFetchDebugPanelInner() {
     sheetStringsLoading: loading,
     sheetStringsError: error,
     refetchSheetStrings: refetch,
-  } = useSettings();
+  } = useSettingsRest();
 
   useEffect(() => {
     if (loading) return;

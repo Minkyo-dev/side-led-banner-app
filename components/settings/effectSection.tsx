@@ -13,7 +13,7 @@ import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { type BannerConfig, useSettings } from "../../contexts/settingsContext";
+import { type BannerConfig, useSettingsRest } from "../../contexts/settingsContext";
 import {
   SettingsSliderBlock,
   type SettingsSliderBlockProps,
@@ -75,7 +75,7 @@ export const EffectSection = () => {
     resolvedAppLocale,
     isProActive,
     openRewardAdModal,
-  } = useSettings();
+  } = useSettingsRest();
 
   const {
     effectSelectedItems,

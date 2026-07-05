@@ -1,7 +1,7 @@
 import { uiThemeFontStyle } from "@/constants/appFonts";
 import { settingsStyles } from "@/constants/settingsStyles";
 import { styles as base } from "@/constants/styles";
-import { useSettings } from "@/contexts/settingsContext";
+import { useSettingsRest } from "@/contexts/settingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -184,7 +184,7 @@ function pickStoreUrl(entry: SunnyAppEntry): string {
 export default function SunnyListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { textSectionLabel } = useSettings();
+  const { textSectionLabel } = useSettingsRest();
 
   const openStore = (entry: SunnyAppEntry) => {
     void Linking.openURL(pickStoreUrl(entry)).catch(() => {});

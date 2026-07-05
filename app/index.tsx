@@ -20,7 +20,7 @@ import * as amplitude from "@amplitude/analytics-react-native";
 import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Platform, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { KeyboardAvoidingView, KeyboardToolbar } from "react-native-keyboard-controller";
 import { initialWindowMetrics, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -45,6 +45,22 @@ export default function Index() {
   const { playOption } = config.content;
   const { isPlaying, activeTab, rewardAdVisible } = ui;
   const { loaded: rewardAdLoaded, show: showRewardedAd } = useRewardedAd(activatePro);
+
+  // 실측한 플레이바 폭에 비례해 버튼 크기 키우기 (1.6배 제한)
+  const [playBarScale, setPlayBarScale] = useState(1);
+  const onPlayBarLayout = useCallback((e: { nativeEvent: { layout: { width: number } } }) => {
+    const measuredWidth = e.nativeEvent.layout.width;
+    const scale = Math.min(1.6, Math.max(1, measuredWidth / 372));
+    setPlayBarScale(scale);
+  }, []);
+  const playBarSizes = useMemo(
+    () => ({
+      icon: 53 * playBarScale,
+      barHeight: 63 * playBarScale,
+      barRadius: 20 * playBarScale,
+    }),
+    [playBarScale],
+  );
 
   const handlePlay = async () => {
     amplitude.track("Play_clicked", {
@@ -136,37 +152,44 @@ export default function Index() {
           onUndoRedoStateChange={onUndoRedoStateChange}
         />
         
-        <View id="playBarContainer" style={styles.playBarContainer}>
+        <View
+          id="playBarContainer"
+          onLayout={onPlayBarLayout}
+          style={[
+            styles.playBarContainer,
+            { height: playBarSizes.barHeight, borderRadius: playBarSizes.barRadius },
+          ]}
+        >
           {/* one line play button */}
           <TouchableOpacity
-            style={btnStyles.playBarSideSlot}
+            style={[btnStyles.playBarSideSlot, { width: playBarSizes.icon }]}
             onPress={() => {
               amplitude.track("OneL_clicked");
               updateConfig("content", { playOption: "one" });
             }}
           >
-            <OneLinePlayButton isActive={playOption === "one"} />
+            <OneLinePlayButton isActive={playOption === "one"} size={playBarSizes.icon} />
           </TouchableOpacity>
           {/* multiple line play button */}
           <TouchableOpacity
-            style={btnStyles.playBarSideSlot}
+            style={[btnStyles.playBarSideSlot, { width: playBarSizes.icon }]}
             onPress={() => {
               amplitude.track("ThreeL_clicked");
               updateConfig("content", { playOption: "multi" });
             }}
           >
-            <MultipleLinePlayButton isActive={playOption === "multi"} />
+            <MultipleLinePlayButton isActive={playOption === "multi"} size={playBarSizes.icon} />
           </TouchableOpacity>
           {/* stop/resume button */}
           <TouchableOpacity
             style={btnStyles.playResumeButton}
             onPress={handlePlay}
           >
-            <PlayResumeButton isPlaying={isPlaying} />
+            <PlayResumeButton isPlaying={isPlaying} height={playBarSizes.icon} />
           </TouchableOpacity>
           {/* settings button */}
           <TouchableOpacity
-            style={btnStyles.playBarSideSlot}
+            style={[btnStyles.playBarSideSlot, { width: playBarSizes.icon }]}
             onPress={() => {
               amplitude.track("Setting_clicked");
               router.push("/settings" as Href);
@@ -175,7 +198,10 @@ export default function Index() {
           >
             <Image
               source={require("@/assets/images/settings.png")}
-              style={btnStyles.playBarSettingsImage}
+              style={[
+                btnStyles.playBarSettingsImage,
+                { width: playBarSizes.icon, height: playBarSizes.icon },
+              ]}
               contentFit="contain"
             />
           </TouchableOpacity>

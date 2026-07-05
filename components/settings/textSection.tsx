@@ -2,7 +2,7 @@
 import { ColorPicker } from "@/components/colorPicker";
 import { btnStyles } from "@/constants/btnStyles";
 import { textColorPalette } from "@/constants/colorPalette";
-import { getDefaultAppearanceFontForLocale } from "@/constants/appFonts";
+import { getDefaultForLocale } from "@/constants/appFonts";
 import { resolvePixelFontSizeSliderMinPercent } from "@/constants/pixelLed";
 import { resolveDropdownMaxHeight, styles } from "@/constants/styles";
 import { FONT_SIZE_MIN } from "@/utils/textSizing";
@@ -93,7 +93,7 @@ export const TextSection = () => {
 
   const displayFontValue = useMemo(() => {
     if (fontItems.some((item) => item.value === font)) return font;
-    return getDefaultAppearanceFontForLocale(resolvedAppLocale);
+    return getDefaultForLocale(resolvedAppLocale);
   }, [font, fontItems, resolvedAppLocale]);
   const { effectSelectedItems } = config.appearance;
   const isPixelEffect = effectSelectedItems.includes("Pixel");

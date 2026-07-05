@@ -6,9 +6,9 @@ import Svg, {
     Stop
 } from "react-native-svg";
 
-export const PlayResumeButton = ({ isPlaying }: { isPlaying: boolean }) => {
+export const PlayResumeButton = ({ isPlaying, height = 53 }: { isPlaying: boolean; height?: number }) => {
     return (
-            <Svg width="100%" height="53" viewBox="0 0 253 53" fill="none">
+            <Svg width="100%" height={height} viewBox="0 0 253 53" fill="none">
                 {/* <Rect width="253" height="53" rx="15" fill="#EBEBEB" /> */}
                 <Circle cx="127" cy="27" r="22.5" fill="url(#paint0_linear_103_4750)" stroke="url(#paint1_linear_103_4750)" />
                 {isPlaying ? (

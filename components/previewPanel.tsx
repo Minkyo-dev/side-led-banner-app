@@ -1,6 +1,5 @@
 import { DeleteAllButton } from "@/assets/svg/deleteAllButton";
 import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
-import { appFontFamilyForText } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
 import {
@@ -95,12 +94,11 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     updateConfig,
     ui,
     loadPreset,
-    resolvedAppLocale,
   } = useSettings();
   const { activePreset } = ui;
 
   const { previewText, playOption } = config.content;
-  const { font, textSelectedColor, gradientBackgroundPreset, dropShadow } =
+  const { textSelectedColor, gradientBackgroundPreset, dropShadow } =
     config.appearance;
   const { backgroundColor, backgroundImageUri, backgroundBlur } =
     config.background;
@@ -224,6 +222,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     measureOffscreenStyle,
     onInputScroll,
     inputViewportHeightPx,
+    inputFontFamily,
     moveCursorUp,
     moveCursorDown,
   } = useTextInput({ inputScrollViewportW, textInputRef });
@@ -479,11 +478,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
                 paddingTop: 2,
                 paddingBottom: 2,
                 fontSize: CONTENTS_INPUT_FONT_SIZE,
-                fontFamily: appFontFamilyForText(
-                  font,
-                  config.appearance.fontWeight === "bold" ? "bold" : "normal",
-                  resolvedAppLocale,
-                ),
+                fontFamily: inputFontFamily,
               },
             ]}
             placeholder="Enter your text here"

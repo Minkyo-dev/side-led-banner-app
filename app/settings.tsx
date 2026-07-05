@@ -2,11 +2,11 @@ import BannerAdComponent from "@/components/admob/bannerAd";
 import type { AppLocaleKey } from "@/constants/language";
 import { settingsStyles } from "@/constants/settingsStyles";
 import { styles as base, resolveDropdownMaxHeight, settingsFooterStyles } from "@/constants/styles";
-import { useSettings } from "@/contexts/settingsContext";
+import { useSettingsRest } from "@/contexts/settingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { type Href, useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Image,
   Linking,
@@ -33,7 +33,8 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
   const [languageDropdownContentHeight, setLanguageDropdownContentHeight] = useState(0);
-  const { updateUI, textSectionLabel, resolvedAppLocale } = useSettings();
+  const [languageDropdownWidth, setLanguageDropdownWidth] = useState(0);
+  const { updateUI, textSectionLabel, resolvedAppLocale } = useSettingsRest();
 
   const languageDropdownItems = useMemo(
     () => [
@@ -53,6 +54,20 @@ export default function SettingsScreen() {
 
   const onAppLanguageChange = (item: { value: string }) =>
     updateUI({ appLanguage: item.value as AppLocaleKey });
+
+  const renderLanguageItem = useCallback(
+    (item: { label: string; value: string }, selected?: boolean) => (
+      <View style={base.dropdownItemContent}>
+        <Text
+          allowFontScaling={false}
+          style={[base.dropdownItemTextStyle, selected && base.dropdownItemTextStyleSelected]}
+        >
+          {item.label}
+        </Text>
+      </View>
+    ),
+    [],
+  );
 
   const appVersion = useMemo(() => Constants.expoConfig?.version ?? "1.0.0", []);
 
@@ -88,11 +103,6 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[base.scrollViewContainer, { paddingBottom: 40 }]}
       >
-        <NavigationRow
-          label={textSectionLabel("howToUse")}
-          onPress={() => {}}
-        />
-
         <View style={base.settingsRow}>
           <Text style={base.settingsRowLabel} allowFontScaling={false}>
             {textSectionLabel("language")}
@@ -118,28 +128,34 @@ export default function SettingsScreen() {
               ))}
             </View>
           </View>
-          <Dropdown
-            data={languageDropdownItems}
-            labelField="label"
-            valueField="value"
-            value={resolvedAppLocale}
-            onChange={onAppLanguageChange}
-            autoScroll={false}
-            maxHeight={languageDropdownMaxHeight}
-            showsVerticalScrollIndicator
-            style={[base.dropdownContainer, { width: "56%" }]}
-            containerStyle={[
-              base.dropdownContainer,
-              base.dropdownMenuContainer,
-              { width: "56%" },
-            ]}
-            selectedTextStyle={base.dropdownSelectedTextStyle}
-            selectedTextProps={{ allowFontScaling: false }}
-            itemContainerStyle={base.dropdownItemContainerStyle}
-            itemTextStyle={base.dropdownItemTextStyle}
-            iconStyle={base.dropdownIconStyle}
-            iconColor="black"
-          />
+          <View
+            style={{ width: "56%" }}
+            onLayout={(e) => setLanguageDropdownWidth(e.nativeEvent.layout.width)}
+          >
+            <Dropdown
+              data={languageDropdownItems}
+              labelField="label"
+              valueField="value"
+              value={resolvedAppLocale}
+              onChange={onAppLanguageChange}
+              autoScroll={false}
+              maxHeight={languageDropdownMaxHeight}
+              showsVerticalScrollIndicator={false}
+              style={[base.dropdownContainer, { width: "100%" }]}
+              containerStyle={[
+                base.dropdownContainer,
+                base.dropdownMenuContainer,
+                languageDropdownWidth ? { width: languageDropdownWidth } : null,
+              ]}
+              selectedTextStyle={base.dropdownSelectedTextStyle}
+              selectedTextProps={{ allowFontScaling: false }}
+              itemContainerStyle={base.dropdownItemContainerStyle}
+              itemTextStyle={base.dropdownItemTextStyle}
+              renderItem={renderLanguageItem}
+              iconStyle={base.dropdownIconStyle}
+              iconColor="black"
+            />
+          </View>
         </View>
 
         <NavigationRow

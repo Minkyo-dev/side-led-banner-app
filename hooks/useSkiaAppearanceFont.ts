@@ -1,4 +1,4 @@
-import { resolveAppearanceFontFaceSet } from "@/constants/appFonts";
+import { resolveFontFaceSet } from "@/constants/appFonts";
 import type { SkFont } from "@shopify/react-native-skia";
 import { useFont } from "@shopify/react-native-skia";
 import { useMemo } from "react";
@@ -18,7 +18,7 @@ export function useSkiaAppearanceFont(
   size: number,
 ): SkFont | null {
   const { regular: regularSrc, bold: boldSrc } = useMemo(
-    () => resolveAppearanceFontFaceSet(appearanceFont),
+    () => resolveFontFaceSet(appearanceFont),
     [appearanceFont],
   );
 

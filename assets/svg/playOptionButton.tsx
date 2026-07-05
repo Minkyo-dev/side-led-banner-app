@@ -5,10 +5,10 @@ import Svg, {
 } from "react-native-svg";
 
 
-export const MultipleLinePlayButton = ({ isActive }: { isActive: boolean }) => {
+export const MultipleLinePlayButton = ({ isActive, size = 53 }: { isActive: boolean; size?: number }) => {
     if (isActive) {
         return (
-            <Svg width="53" height="53" viewBox="0 0 53 53" fill="none">
+            <Svg width={size} height={size} viewBox="0 0 53 53" fill="none">
                 <Rect width="53" height="53" rx="15" fill="#EBEBEB" />
                 <Circle cx="26.5" cy="26.5" r="23" fill="url(#paint0_linear_103_4805)" stroke="url(#paint1_linear_103_4805)" />
                 <Line x1="19" y1="23" x2="35" y2="23" stroke="#787878" strokeWidth="2" strokeLinecap="round" />
@@ -28,7 +28,7 @@ export const MultipleLinePlayButton = ({ isActive }: { isActive: boolean }) => {
         )
     } else {
         return (
-            <Svg width="53" height="53" viewBox="0 0 53 53" fill="none">
+            <Svg width={size} height={size} viewBox="0 0 53 53" fill="none">
                 <Rect width="53" height="53" rx="15" fill="#EBEBEB" />
                 <Circle cx="26.5" cy="26.5" r="23" fill="url(#paint0_linear_193_892)" stroke="url(#paint1_linear_193_892)" />
                 <Line x1="19" y1="23" x2="35" y2="23" stroke="#787878" strokeWidth="2" strokeLinecap="round" />
@@ -48,9 +48,9 @@ export const MultipleLinePlayButton = ({ isActive }: { isActive: boolean }) => {
         )
     }
 }
-export const OneLinePlayButton = ({ isActive }: { isActive: boolean }) => {
+export const OneLinePlayButton = ({ isActive, size = 53 }: { isActive: boolean; size?: number }) => {
     if (isActive) {
-        return (<Svg width="53" height="53" viewBox="0 0 53 53" fill="none">
+        return (<Svg width={size} height={size} viewBox="0 0 53 53" fill="none">
             <Rect width="53" height="53" rx="15" fill="#EBEBEB" />
             <Circle cx="26.5" cy="26.5" r="23" fill="url(#paint0_linear_103_4795)" stroke="url(#paint1_linear_103_4795)" />
             <Line x1="19" y1="27" x2="35" y2="27" stroke="#787878" strokeWidth="2" strokeLinecap="round" />
@@ -67,7 +67,7 @@ export const OneLinePlayButton = ({ isActive }: { isActive: boolean }) => {
         </Svg>);
     } else {
         return (
-            <Svg width="53" height="53" viewBox="0 0 53 53" fill="none">
+            <Svg width={size} height={size} viewBox="0 0 53 53" fill="none">
                 <Rect width="53" height="53" rx="15" fill="#EBEBEB" />
                 <Circle cx="26.5" cy="26.5" r="23" fill="url(#paint0_linear_193_1120)" stroke="url(#paint1_linear_193_1120)" />
                 <Line x1="19" y1="27" x2="35" y2="27" stroke="#787878" strokeWidth="2" strokeLinecap="round" />
