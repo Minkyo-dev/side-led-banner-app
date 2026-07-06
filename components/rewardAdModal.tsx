@@ -274,7 +274,6 @@ export function RewardAdModal({
             <Text
               style={styles.headerBadge}
               allowFontScaling={false}
-              numberOfLines={2}
             >
               {rewardAdLabel("rewardHeaderBadge")}
             </Text>

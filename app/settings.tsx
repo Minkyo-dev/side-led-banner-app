@@ -206,7 +206,7 @@ export default function SettingsScreen() {
         onTermsPress={() => openUrl(SUNNY_LINKS.terms)}
         onPrivacyPress={() => openUrl(SUNNY_LINKS.privacy)}
       />
-      <BannerAdComponent />
+      <BannerAdComponent style={{ marginBottom: 12 }} />
     </View>
   );
 }
@@ -243,7 +243,7 @@ interface SettingsFooterProps {
 
 export function SettingsFooter({ onLogoPress, onTermsPress, onPrivacyPress }: SettingsFooterProps) {
   return (
-    <View style={[settingsFooterStyles.container, { paddingBottom: 8 }]}>
+    <View style={[settingsFooterStyles.container, { paddingBottom: 10 }]}>
       <TouchableOpacity onPress={onLogoPress} activeOpacity={0.7}>
         <Image
           source={require("@/assets/images/SIL_logo_setting_mini_black_text.png")}
