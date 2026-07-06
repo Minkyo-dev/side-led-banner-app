@@ -67,6 +67,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "言語",
     zhTC: "語言",
     zhSC: "语言",
+    fr: "Langue",
+    es: "Idioma",
   },
   langFollowDevice: {
     ko: "기기 설정 따름",
@@ -74,6 +76,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "端末の設定に従う",
     zhTC: "跟隨裝置",
     zhSC: "跟随系统",
+    fr: "Suivre l'appareil",
+    es: "Seguir dispositivo",
   },
   font: {
     ko: "글꼴",
@@ -81,6 +85,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "フォント",
     zhTC: "字體",
     zhSC: "字体",
+    fr: "Police",
+    es: "Fuente",
   },
   fontPlaceholder: {
     ko: "글꼴 선택",
@@ -88,6 +94,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "フォントを選択",
     zhTC: "選擇字體",
     zhSC: "选择字体",
+    fr: "Sélectionner une police",
+    es: "Seleccionar fuente",
   },
   color: {
     ko: "색상",
@@ -95,6 +103,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "カラー",
     zhTC: "顏色",
     zhSC: "颜色",
+    fr: "Couleur",
+    es: "Color",
   },
   backgroundColor: {
     ko: "색상",
@@ -102,6 +112,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "カラー",
     zhTC: "顏色",
     zhSC: "颜色",
+    fr: "Couleur",
+    es: "Color",
   },
   blur: {
     ko: "흐림",
@@ -109,6 +121,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "ぼかし",
     zhTC: "模糊",
     zhSC: "模糊",
+    fr: "Flou",
+    es: "Desenfoque",
   },
   speed: {
     ko: "속도",
@@ -116,6 +130,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "速度",
     zhTC: "速度",
     zhSC: "速度",
+    fr: "Vitesse",
+    es: "Velocidad",
   },
   size: {
     ko: "크기",
@@ -123,6 +139,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "サイズ",
     zhTC: "大小",
     zhSC: "大小",
+    fr: "Taille",
+    es: "Tamaño",
   },
   lineSpacing: {
     ko: "행간",
@@ -130,6 +148,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "行間",
     zhTC: "行間距",
     zhSC: "行间距",
+    fr: "Espacement des lignes",
+    es: "Espaciado de líneas",
   },
   letterSpacing: {
     ko: "자간",
@@ -137,6 +157,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "文字間隔",
     zhTC: "字間距",
     zhSC: "字距",
+    fr: "Espacement des lettres",
+    es: "Espaciado de letras",
   },
   viewMode: {
     ko: "보기 모드",
@@ -144,6 +166,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "表示モード",
     zhTC: "檢視模式",
     zhSC: "查看模式",
+    fr: "Mode d'affichage",
+    es: "Modo de vista",
   },
   outline: {
     ko: "외곽선",
@@ -151,6 +175,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "縁取り",
     zhTC: "輪廓",
     zhSC: "轮廓",
+    fr: "Contour",
+    es: "Contorno",
   },
   dropShadow: {
     ko: "그림자",
@@ -158,6 +184,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "ドロップシャドウ",
     zhTC: "陰影",
     zhSC: "投影",
+    fr: "Ombre portée",
+    es: "Sombra paralela",
   },
   viewModeReset: {
     ko: "스타일 A",
@@ -165,6 +193,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "スタイル A",
     zhTC: "樣式 A",
     zhSC: "样式 A",
+    fr: "Style A",
+    es: "Estilo A",
   },
   viewModeContinuous: {
     ko: "스타일 B",
@@ -172,6 +202,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "スタイル B",
     zhTC: "樣式 B",
     zhSC: "样式 B",
+    fr: "Style B",
+    es: "Estilo B",
   },
   /** Settings Tab*/
   tabText: {
@@ -180,6 +212,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "テキスト",
     zhTC: "文字",
     zhSC: "文本",
+    fr: "Texte",
+    es: "Texto",
   },
   tabBackground: {
     ko: "배경",
@@ -187,6 +221,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "背景",
     zhTC: "背景",
     zhSC: "背景",
+    fr: "Arrière-plan",
+    es: "Fondo",
   },
   tabEffects: {
     ko: "효과",
@@ -194,6 +230,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "エフェクト",
     zhTC: "特效",
     zhSC: "特效",
+    fr: "Effets",
+    es: "Efectos",
   },
   settingsTitle: {
     ko: "설정",
@@ -201,6 +239,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "設定",
     zhTC: "設定",
     zhSC: "设置",
+    fr: "Paramètres",
+    es: "Ajustes",
   },
   sunnyGames: {
     ko: "Sunny의 게임 및 앱",
@@ -208,6 +248,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "Sunny のゲームとアプリ",
     zhTC: "Sunny 的遊戲與應用",
     zhSC: "Sunny 的游戏与应用",
+    fr: "Jeux et applications de Sunny",
+    es: "Juegos y aplicaciones de Sunny",
   },
   instagram: {
     ko: "Instagram",
@@ -215,6 +257,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "Instagram",
     zhTC: "Instagram",
     zhSC: "Instagram",
+    fr: "Instagram",
+    es: "Instagram",
   },
   twitter: {
     ko: "X (Twitter)",
@@ -222,6 +266,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "X (Twitter)",
     zhTC: "X (Twitter)",
     zhSC: "X (Twitter)",
+    fr: "X (Twitter)",
+    es: "X (Twitter)",
   },
   link: {
     ko: "링크",
@@ -229,6 +275,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "リンク",
     zhTC: "連結",
     zhSC: "链接",
+    fr: "Lien",
+    es: "Enlace",
   },
   credits: {
     ko: "크레딧",
@@ -236,6 +284,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "クレジット",
     zhTC: "製作群",
     zhSC: "制作团队",
+    fr: "Crédits",
+    es: "Créditos",
   },
   openSourceInfo: {
     ko: "오픈 소스 정보",
@@ -243,6 +293,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "オープンソース情報",
     zhTC: "開源資訊",
     zhSC: "开源信息",
+    fr: "Infos open source",
+    es: "Información de código abierto",
   },
   appVersion: {
     ko: "앱 버전",
@@ -250,6 +302,8 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "アプリのバージョン",
     zhTC: "應用程式版本",
     zhSC: "应用版本",
+    fr: "Version de l'application",
+    es: "Versión de la app",
   },
 };
 

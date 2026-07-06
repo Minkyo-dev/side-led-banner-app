@@ -25,6 +25,8 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
     ja: "LED Pop Proを無料で利用",
     zhTC: "免費使用 LED Pop Pro",
     zhSC: "免费使用 LED Pop Pro",
+    fr: "Utilisez LED Pop Pro gratuitement",
+    es: "Usa LED Pop Pro gratis",
   },
   rewardBenefitColors: {
     ko: "모든 텍스트와 배경 색상 사용 가능",
@@ -32,6 +34,8 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
     ja: "すべてのテキストと背景色を利用可能",
     zhTC: "可使用所有文字和背景顏色",
     zhSC: "可使用所有文本和背景颜色",
+    fr: "Toutes les couleurs de texte et d'arrière-plan disponibles",
+    es: "Todos los colores de texto y fondo disponibles",
   },
   rewardBenefitEffects: {
     ko: "모든 효과 사용 가능",
@@ -39,6 +43,8 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
     ja: "すべてのエフェクトを利用可能",
     zhTC: "可使用所有特效",
     zhSC: "可使用所有特效",
+    fr: "Accès à tous les effets",
+    es: "Acceso a todos los efectos",
   },
   rewardBenefitFavorites: {
     ko: "모든 즐겨찾기 사용 가능",
@@ -46,6 +52,8 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
     ja: "すべてのお気に入りを利用可能",
     zhTC: "可使用所有收藏",
     zhSC: "可使用所有收藏",
+    fr: "Tous les favoris disponibles",
+    es: "Todos los favoritos disponibles",
   },
   rewardBenefitOutlineShadow: {
     ko: "외곽선과 그림자 사용 가능",
@@ -53,6 +61,8 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
     ja: "縁取りと影を利用可能",
     zhTC: "可使用輪廓和陰影",
     zhSC: "可使用轮廓和阴影",
+    fr: "Contours et ombres disponibles",
+    es: "Contornos y sombras disponibles",
   },
   rewardDescription: {
     ko: "광고 1회 시청 후 6시간 동안 동영상 광고 없이 Pro 버전을 사용할 수 있습니다.",
@@ -60,6 +70,8 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
     ja: "広告を視聴すると、6時間動画広告なしでPro版を利用できます。",
     zhTC: "觀看一次廣告後，即可在6小時內免影片廣告並使用Pro版",
     zhSC: "观看一次广告后，即可在6小时内免视频广告并使用Pro版",
+    fr: "Regardez une publicité et utilisez la version Pro sans publicité vidéo pendant 6 heures.",
+    es: "Mira un anuncio y usa la versión Pro sin anuncios de video durante 6 horas.",
   },
   rewardWatchAd: {
     ko: "광고 보기",
@@ -67,6 +79,8 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
     ja: "広告を見る",
     zhTC: "觀看廣告",
     zhSC: "观看广告",
+    fr: "Regarder la pub",
+    es: "Ver anuncio",
   },
 };
 

@@ -25,6 +25,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "エフェクト",
     zhTC: "特效",
     zhSC: "特效",
+    fr: "Effets",
+    es: "Efectos",
   },
   backgroundEffectHeading: {
     ko: "배경 효과",
@@ -32,6 +34,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "背景エフェクト",
     zhTC: "背景特效",
     zhSC: "背景特效",
+    fr: "Effet d'arrière-plan",
+    es: "Efecto de fondo",
   },
   gradientBackgroundHeading: {
     ko: "그라데이션 배경",
@@ -39,6 +43,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "グラデーション背景",
     zhTC: "漸層背景",
     zhSC: "渐变背景",
+    fr: "Arrière-plan dégradé",
+    es: "Fondo degradado",
   },
   noEffect: {
     ko: "효과 없음",
@@ -46,6 +52,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "なし",
     zhTC: "無效果",
     zhSC: "无效果",
+    fr: "Aucun effet",
+    es: "Sin efecto",
   },
   effectGlowIntensity: {
     ko: "글로우 강도",
@@ -53,6 +61,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "グロー強度",
     zhTC: "發光強度",
     zhSC: "发光强度",
+    fr: "Intensité de la lueur",
+    es: "Intensidad de brillo",
   },
   effectBlinkFrequency: {
     ko: "깜빡임 빈도",
@@ -60,6 +70,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "点滅",
     zhTC: "閃爍頻率",
     zhSC: "闪烁频率",
+    fr: "Fréquence de clignotement",
+    es: "Frecuencia de parpadeo",
   },
   effectPixelationHeading: {
     ko: "Pixelation",
@@ -67,6 +79,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "Pixelation",
     zhTC: "Pixelation",
     zhSC: "Pixelation",
+    fr: "Pixelation",
+    es: "Pixelation",
   },
   effectMix: {
     ko: "mix",
@@ -74,6 +88,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "mix",
     zhTC: "mix",
     zhSC: "mix",
+    fr: "mix",
+    es: "mix",
   },
   effectPixelColorMix: {
     ko: "픽셀 색상 혼합",
@@ -81,6 +97,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "ピクセル色ミックス",
     zhTC: "像素色彩混合",
     zhSC: "像素颜色混合",
+    fr: "Mélange de couleurs de pixels",
+    es: "Mezcla de color de píxeles",
   },
   effectBold: {
     ko: "굵게",
@@ -88,6 +106,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "太字",
     zhTC: "粗體",
     zhSC: "加粗",
+    fr: "Gras",
+    es: "Negrita",
   },
   effectBlink: {
     ko: "깜빡임",
@@ -95,6 +115,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "点滅",
     zhTC: "閃爍",
     zhSC: "闪烁",
+    fr: "Clignotement",
+    es: "Parpadeo",
   },
   effectPixel: {
     ko: "픽셀",
@@ -102,6 +124,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "ピクセル",
     zhTC: "像素",
     zhSC: "像素",
+    fr: "Pixel",
+    es: "Píxel",
   },
   effectGlow: {
     ko: "글로우",
@@ -109,6 +133,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "グロー",
     zhTC: "發光",
     zhSC: "发光",
+    fr: "Lueur",
+    es: "Brillo",
   },
   effectGradient: {
     ko: "그라데이션",
@@ -116,6 +142,8 @@ const LABELS: Record<EffectSectionLabelKey, Record<AppLocaleKey, string>> = {
     ja: "グラデーション",
     zhTC: "漸層",
     zhSC: "渐变",
+    fr: "Dégradé",
+    es: "Degradado",
   },
 };
 
