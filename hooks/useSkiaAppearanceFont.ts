@@ -1,6 +1,6 @@
 import { resolveFontFaceSet } from "@/constants/appFonts";
+import { useCachedSkiaFont } from "@/hooks/useCachedSkiaFont";
 import type { SkFont } from "@shopify/react-native-skia";
-import { useFont } from "@shopify/react-native-skia";
 import { useMemo } from "react";
 
 function normalizeWeight(w: string | number): "normal" | "bold" {
@@ -27,5 +27,5 @@ export function useSkiaAppearanceFont(
       ? boldSrc
       : regularSrc;
 
-  return useFont(src, size);
+  return useCachedSkiaFont(src, size);
 }
