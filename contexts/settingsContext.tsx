@@ -1,8 +1,8 @@
 import {
   fontBelongsToLocale,
-  GALMURI11_FONT_ID,
   getDefaultForLocale,
   getFontItemsForLocale,
+  getPixelFontIdForLocale,
   isFontHiddenFromPicker,
   normalizeFontId,
   supportsBold,
@@ -593,14 +593,22 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     );
     (async () => {
       try {
-        const [raw, storedAppLanguage] = await Promise.all([
+        const [raw, storedAppLanguage, storedProModeExpiry] = await Promise.all([
           readPresetSlotsJson(),
           readAppLanguage(),
+          readProModeExpiry(),
         ]);
         if (cancelled) return;
 
         if (storedAppLanguage) {
           setUI((prev) => ({ ...prev, appLanguage: storedAppLanguage }));
+        }
+        if (storedProModeExpiry !== null) {
+          if (Date.now() < storedProModeExpiry) {
+            setUI((prev) => ({ ...prev, proMode: storedProModeExpiry }));
+          } else {
+            void writeProModeExpiry(null).catch(() => {});
+          }
         }
         let slots = blankSlots;
         if (raw) {
@@ -735,10 +743,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const normalizedFont = normalizeFontId(config.appearance.font);
     const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
-    const pixelGalmuriOk = isPixelActive && normalizedFont === GALMURI11_FONT_ID;
+    const pixelFontOk =
+      isPixelActive && normalizedFont === getPixelFontIdForLocale(resolvedAppLocale);
     if (
       normalizedFont &&
-      (!isFontHiddenFromPicker(normalizedFont) || pixelGalmuriOk)
+      (!isFontHiddenFromPicker(normalizedFont) || pixelFontOk)
     ) {
       if (config.appearance.font !== normalizedFont) {
         setConfig((prev) => ({

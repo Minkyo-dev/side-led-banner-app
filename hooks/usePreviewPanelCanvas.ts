@@ -1,16 +1,17 @@
 import type { SkFont, SkTextBlob } from "@shopify/react-native-skia";
-import { useFont } from "@shopify/react-native-skia";
 import { useEffect, useMemo, useState } from "react";
 import { LayoutChangeEvent } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import { useDerivedValue, useSharedValue } from "react-native-reanimated";
 
 import {
+  APP_FONT_FACE_SETS,
   fontBelongsToLocale,
   getDefaultForLocale,
   resolveFontFaceSet,
 } from "@/constants/appFonts";
 import { useSettings } from "@/contexts/settingsContext";
+import { useCachedSkiaFont } from "@/hooks/useCachedSkiaFont";
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
 import {
   buildMarqueeTextBlob,
@@ -139,8 +140,8 @@ export interface UsePreviewPanelCanvasParams {
   isPixelMode?: boolean;
 }
 
-const ARK_PIXEL_CN_ASSET = require("@/assets/fonts/ark_pixel_16px/ArkPixel16px-zhHans.ttf");
-const ARK_PIXEL_TW_ASSET = require("@/assets/fonts/ark_pixel_16px/ArkPixel16px-zhHant.ttf");
+const PIXEL_ZH_HANS_ASSET = APP_FONT_FACE_SETS.fusion_pixel_zh_hans.regular;
+const PIXEL_ZH_HANT_ASSET = APP_FONT_FACE_SETS.fusion_pixel_zh_hant.regular;
 
 function isHangulChar(ch: string): boolean {
   const code = ch.codePointAt(0) ?? 0;
@@ -202,8 +203,8 @@ export function usePreviewPanelCanvas({
     fontWeight,
     previewFontSize,
   );
-  const arkPixelCNFont = useFont(isPixelMode ? ARK_PIXEL_CN_ASSET : null, previewFontSize);
-  const arkPixelTWFont = useFont(isPixelMode ? ARK_PIXEL_TW_ASSET : null, previewFontSize);
+  const pixelZhHansFont = useCachedSkiaFont(isPixelMode ? PIXEL_ZH_HANS_ASSET : null, previewFontSize);
+  const pixelZhHantFont = useCachedSkiaFont(isPixelMode ? PIXEL_ZH_HANT_ASSET : null, previewFontSize);
 
   /**
    * 선택된 폰트 자체가 원래 어떤 스크립트용인지로 판단(=앱 UI 언어가 아니라).
@@ -235,10 +236,10 @@ export function usePreviewPanelCanvas({
   ).regular;
 
   // 픽셀 모드 아닐 때 로케일 폴백 폰트 — 선택 폰트가 해당 스크립트가 아닐 때만 로드
-  const jaFallbackFont = useFont(!isPixelMode && !selectedFontIsJa ? jaFallbackAsset : null, previewFontSize);
-  const koFallbackFont = useFont(!isPixelMode && !selectedFontIsKo ? koFallbackAsset : null, previewFontSize);
-  const tcFallbackFont = useFont(!isPixelMode && !selectedFontIsZhTC ? tcFallbackAsset : null, previewFontSize);
-  const scFallbackFont = useFont(!isPixelMode && !selectedFontIsZhSC ? scFallbackAsset : null, previewFontSize);
+  const jaFallbackFont = useCachedSkiaFont(!isPixelMode && !selectedFontIsJa ? jaFallbackAsset : null, previewFontSize);
+  const koFallbackFont = useCachedSkiaFont(!isPixelMode && !selectedFontIsKo ? koFallbackAsset : null, previewFontSize);
+  const tcFallbackFont = useCachedSkiaFont(!isPixelMode && !selectedFontIsZhTC ? tcFallbackAsset : null, previewFontSize);
+  const scFallbackFont = useCachedSkiaFont(!isPixelMode && !selectedFontIsZhSC ? scFallbackAsset : null, previewFontSize);
 
   // 문자별 폰트 선택기: 선택 폰트는 자기 스크립트 문자에만 적용하고, 나머지는 해당 스크립트의 폴백 폰트를 사용
   const localeCharFontPicker = useMemo((): ((ch: string) => SkFont) | null => {
@@ -305,8 +306,8 @@ export function usePreviewPanelCanvas({
     }
 
     const getCharFont: ((ch: string) => SkFont) | undefined =
-      isPixelMode && (arkPixelCNFont || arkPixelTWFont)
-        ? (ch) => pickBestCJKFont(ch, arkPixelCNFont, arkPixelTWFont, skiaFont)
+      isPixelMode && (pixelZhHansFont || pixelZhHantFont)
+        ? (ch) => pickBestCJKFont(ch, pixelZhHansFont, pixelZhHantFont, skiaFont)
         : (localeCharFontPicker ?? undefined);
 
     return rows.map((line) => layoutSkiaLine(skiaFont, line, letterSpacing, getCharFont));
@@ -318,8 +319,8 @@ export function usePreviewPanelCanvas({
     speechBubbleLayout,
     playOption,
     isPixelMode,
-    arkPixelCNFont,
-    arkPixelTWFont,
+    pixelZhHansFont,
+    pixelZhHantFont,
     localeCharFontPicker,
   ]);
 
@@ -390,7 +391,7 @@ export function usePreviewPanelCanvas({
     if (isPixelMode) {
       const blobs = buildMarqueeTextBlobs(
         skiaGlyphLayout.glyphPositions,
-        (ch) => pickBestCJKFont(ch, arkPixelCNFont, arkPixelTWFont, skiaFont),
+        (ch) => pickBestCJKFont(ch, pixelZhHansFont, pixelZhHantFont, skiaFont),
       );
       return blobs.length > 0 ? blobs : null;
     }
@@ -400,7 +401,7 @@ export function usePreviewPanelCanvas({
     }
     const blob = buildMarqueeTextBlob(skiaFont, skiaGlyphLayout.glyphPositions);
     return blob ? [blob] : null;
-  }, [skiaFont, skiaGlyphLayout.glyphPositions, isPixelMode, arkPixelCNFont, arkPixelTWFont, localeCharFontPicker]);
+  }, [skiaFont, skiaGlyphLayout.glyphPositions, isPixelMode, pixelZhHansFont, pixelZhHantFont, localeCharFontPicker]);
 
   const skiaMarqueeTransform = useDerivedValue(() => [
     { translateX: translateX.value + marqueeOffsetX.value },
