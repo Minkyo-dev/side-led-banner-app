@@ -637,11 +637,12 @@ export const settingsFooterStyles = StyleSheet.create({
 export function resolveDropdownMaxHeight(
   contentHeightPx: number,
   windowHeight: number,
-  options?: { capPx?: number; menuPaddingPx?: number },
+  options?: { capPx?: number; menuPaddingPx?: number; windowHeightRatio?: number },
 ): number {
   const capPx = options?.capPx ?? 220;
   const menuPaddingPx = options?.menuPaddingPx ?? 6;
-  const cap = Math.min(capPx, Math.floor(windowHeight * 0.32));
+  const windowHeightRatio = options?.windowHeightRatio ?? 0.32;
+  const cap = Math.min(capPx, Math.floor(windowHeight * windowHeightRatio));
   if (contentHeightPx <= 0) {
     return cap;
   }

@@ -10,7 +10,7 @@ const MIX_COLOR_FALLBACK = "#FF6E00";
 
 const MIX_PALETTE = Array.from(
   new Set([...textColorPalette, ...backgroundColorPalette].map(normalizeHex)),
-);
+).filter((color) => color !== "#000000");
 
 function normalizeHex(hex: string): string {
   const raw = hex.replace("#", "").trim().toUpperCase();
