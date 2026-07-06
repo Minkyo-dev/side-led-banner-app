@@ -1,8 +1,8 @@
 import {
   fontBelongsToLocale,
-  GALMURI11_FONT_ID,
   getDefaultForLocale,
   getFontItemsForLocale,
+  getPixelFontIdForLocale,
   isFontHiddenFromPicker,
   normalizeFontId,
   supportsBold,
@@ -735,10 +735,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const normalizedFont = normalizeFontId(config.appearance.font);
     const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
-    const pixelGalmuriOk = isPixelActive && normalizedFont === GALMURI11_FONT_ID;
+    const pixelFontOk =
+      isPixelActive && normalizedFont === getPixelFontIdForLocale(resolvedAppLocale);
     if (
       normalizedFont &&
-      (!isFontHiddenFromPicker(normalizedFont) || pixelGalmuriOk)
+      (!isFontHiddenFromPicker(normalizedFont) || pixelFontOk)
     ) {
       if (config.appearance.font !== normalizedFont) {
         setConfig((prev) => ({
@@ -798,19 +799,21 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   /** 픽셀폰트용 */
   useEffect(() => {
     const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
-    if (!isPixelActive || config.appearance.font === GALMURI11_FONT_ID) {
+    const pixelFontId = getPixelFontIdForLocale(resolvedAppLocale);
+    if (!isPixelActive || config.appearance.font === pixelFontId) {
       return;
     }
     setConfig((prev) => ({
       ...prev,
       appearance: {
         ...prev.appearance,
-        font: GALMURI11_FONT_ID,
+        font: pixelFontId,
       },
     }));
   }, [
     config.appearance.effectSelectedItems,
     config.appearance.font,
+    resolvedAppLocale,
   ]);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { hasPixelLedEffect } from "@/constants/pixelLed";
 import {
   uiThemeFontStyle,
-  GALMURI11_FONT_ID,
+  getPixelFontIdForLocale,
 } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import {
@@ -201,7 +201,7 @@ export const EffectSection = () => {
                           gradientBackgroundPreset ??
                           DEFAULT_GRADIENT_BACKGROUND_PRESET_ID;
                       } else if (effect === "Pixel") {
-                        patch.font = GALMURI11_FONT_ID;
+                        patch.font = getPixelFontIdForLocale(resolvedAppLocale);
                       }
                       updateConfig("appearance", patch);
                     }
