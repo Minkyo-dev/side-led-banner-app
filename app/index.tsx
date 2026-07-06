@@ -20,7 +20,7 @@ import * as amplitude from "@amplitude/analytics-react-native";
 import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 import { KeyboardAvoidingView, KeyboardToolbar } from "react-native-keyboard-controller";
 import { initialWindowMetrics, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -61,6 +61,12 @@ export default function Index() {
     }),
     [playBarScale],
   );
+
+  useEffect(() => {
+    if (!isPlaying) {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    }
+  }, []);
 
   const handlePlay = async () => {
     amplitude.track("Play_clicked", {
