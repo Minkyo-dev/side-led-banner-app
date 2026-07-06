@@ -44,6 +44,10 @@ import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
+import {
+  readProModeExpiry,
+  writeProModeExpiry,
+} from "@/utils/proModeStorage";
 import { getRelLineSpacing } from "@/utils/textSizing";
 import {
   normalizeOneLineJoinMode,
@@ -587,6 +591,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [ui.appLanguage]);
 
   useEffect(() => {
+    if (!presetsStorageReadyRef.current) return;
+    void writeProModeExpiry(ui.proMode).catch((err) => {
+      if (__DEV__) console.warn("[settings] proMode persist failed", err);
+    });
+  }, [ui.proMode]);
+
+  useEffect(() => {
     let cancelled = false;
     const blankSlots = Array.from({ length: PRESET_SLOT_COUNT }, (_, i) =>
       i === 0 ? presetFromConfig(DEFAULT_BANNER_CONFIG) : blankPresetSnapshot(),
@@ -807,19 +818,21 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   /** 픽셀폰트용 */
   useEffect(() => {
     const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
-    if (!isPixelActive || config.appearance.font === GALMURI11_FONT_ID) {
+    const pixelFontId = getPixelFontIdForLocale(resolvedAppLocale);
+    if (!isPixelActive || config.appearance.font === pixelFontId) {
       return;
     }
     setConfig((prev) => ({
       ...prev,
       appearance: {
         ...prev.appearance,
-        font: GALMURI11_FONT_ID,
+        font: pixelFontId,
       },
     }));
   }, [
     config.appearance.effectSelectedItems,
     config.appearance.font,
+    resolvedAppLocale,
   ]);
 
   useEffect(() => {
