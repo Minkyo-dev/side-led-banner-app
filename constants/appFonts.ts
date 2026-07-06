@@ -131,11 +131,13 @@ const ibmPlexSansJp = fontFaceSet(
   require("@/assets/fonts/IBM_Plex_Sans_JP/IBMPlexSansJP_300Light.ttf"),
   require("@/assets/fonts/IBM_Plex_Sans_JP/IBMPlexSansJP_700Bold.ttf"),
 );
-const delaGothicOne = singleFace(
-  require("@/assets/fonts/Dela_Gothic_One/DelaGothicOne_400Regular.ttf"),
+const delaGothicOne = fontFaceSet(
+  require("@/assets/fonts/Zen_Kaku_Gothic_New/static/ZenKakuGothicNew-Regular.ttf"),
+  require("@/assets/fonts/Zen_Kaku_Gothic_New/static/ZenKakuGothicNew-Bold.ttf"),
 );
-const mochiyPopOne = singleFace(
-  require("@/assets/fonts/Mochiy_Pop_One/MochiyPopOne-Regular.ttf"),
+const mochiyPopOne = fontFaceSet(
+  require("@/assets/fonts/M_PLUS_Rounded_1c/static/MPLUSRounded1c-Regular.ttf"),
+  require("@/assets/fonts/M_PLUS_Rounded_1c/static/MPLUSRounded1c-Bold.ttf"),
 );
 const lineSeedJp = fontFaceSet(
   require("@/assets/fonts/LINE_Seed_JP/LINESeedJP_400Regular.ttf"),
@@ -236,8 +238,8 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
       { label: "LINE Seed JP", value: "line_seed_jp" },
       { label: "Kaisei", value: "kaisei" },
       { label: "IBM Plex Sans JP", value: "ibm_plex_sans_jp" },
-      { label: "Dela Gothic One", value: "dela_gothic_one" },
-      { label: "Mochiy Pop One", value: "mochiy_pop_one" },
+      { label: "Zen Kaku Gothic New", value: "dela_gothic_one" },
+      { label: "M PLUS Rounded 1c", value: "mochiy_pop_one" },
       
     ],
     zhTC: [
@@ -332,8 +334,6 @@ export function isSkiaOnlyFont(appearanceFont: string): boolean {
 
 /** Bold미지원폰트용 */
 const FONTS_WITHOUT_BOLD = new Set<FontId>([
-  "dela_gothic_one",
-  "mochiy_pop_one",
   "galmuri11",
   "fusion_pixel_zh_hans",
   "fusion_pixel_zh_hant",

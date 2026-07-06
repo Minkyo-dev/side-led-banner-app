@@ -44,6 +44,10 @@ import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
+import {
+  readProModeExpiry,
+  writeProModeExpiry,
+} from "@/utils/proModeStorage";
 import { getRelLineSpacing } from "@/utils/textSizing";
 import {
   normalizeOneLineJoinMode,
@@ -587,20 +591,35 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [ui.appLanguage]);
 
   useEffect(() => {
+    if (!presetsStorageReadyRef.current) return;
+    void writeProModeExpiry(ui.proMode).catch((err) => {
+      if (__DEV__) console.warn("[settings] proMode persist failed", err);
+    });
+  }, [ui.proMode]);
+
+  useEffect(() => {
     let cancelled = false;
     const blankSlots = Array.from({ length: PRESET_SLOT_COUNT }, (_, i) =>
       i === 0 ? presetFromConfig(DEFAULT_BANNER_CONFIG) : blankPresetSnapshot(),
     );
     (async () => {
       try {
-        const [raw, storedAppLanguage] = await Promise.all([
+        const [raw, storedAppLanguage, storedProModeExpiry] = await Promise.all([
           readPresetSlotsJson(),
           readAppLanguage(),
+          readProModeExpiry(),
         ]);
         if (cancelled) return;
 
         if (storedAppLanguage) {
           setUI((prev) => ({ ...prev, appLanguage: storedAppLanguage }));
+        }
+        if (storedProModeExpiry !== null) {
+          if (Date.now() < storedProModeExpiry) {
+            setUI((prev) => ({ ...prev, proMode: storedProModeExpiry }));
+          } else {
+            void writeProModeExpiry(null).catch(() => {});
+          }
         }
         let slots = blankSlots;
         if (raw) {
