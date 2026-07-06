@@ -1,4 +1,5 @@
 import { uiThemeFontStyle } from "@/constants/appFonts";
+import { moderateScale } from "@/constants/scale";
 import { StyleSheet } from "react-native";
 
 // const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -11,7 +12,7 @@ export const btnStyles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    height: 28,
+    height: moderateScale(28),
   },
   presetButton: {
     flex: 1,
@@ -20,7 +21,7 @@ export const btnStyles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    height: 28,
+    height: moderateScale(28),
   },
   presetButtonGradient: {
     flex: 1,
@@ -54,17 +55,16 @@ export const btnStyles = StyleSheet.create({
   contentsInputResetButtonText: {
     ...uiThemeFontStyle,
     color: "white",
-    fontSize: 25,
+    fontSize: moderateScale(25),
   },
   playResumeButton: {
-    flex: 0.55, // Setting 없으면 0.75
+    flex: 1, // 나머지 3개 슬롯이 고정폭이므로 남는 공간을 전부 채움 (여백 없음)
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#EBEBEB",
     borderRadius: 15,
   },
   playBarSideSlot: {
-    flex: 0.15,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -94,7 +94,7 @@ export const btnStyles = StyleSheet.create({
   },
   effectItemButtonText: {
     ...uiThemeFontStyle,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "black",
     fontWeight: "400",
   },

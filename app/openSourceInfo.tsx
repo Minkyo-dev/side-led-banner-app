@@ -3,7 +3,7 @@ import {
   settingsStyles,
 } from "@/constants/settingsStyles";
 import { styles as base } from "@/constants/styles";
-import { useSettings } from "@/contexts/settingsContext";
+import { useSettingsRest } from "@/contexts/settingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
@@ -26,7 +26,7 @@ type OssEntry = { name: string; version: string };
 export default function OpenSourceInfoScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { textSectionLabel } = useSettings();
+  const { textSectionLabel } = useSettingsRest();
 
   const entries = useMemo<OssEntry[]>(() => {
     const deps = (pkg as { dependencies?: Record<string, string> })

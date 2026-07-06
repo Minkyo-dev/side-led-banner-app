@@ -1,15 +1,17 @@
-import { appFontFamilyForText } from "@/constants/appFonts";
+import {
+  appFontFamilyForText,
+  getDefaultForLocale,
+} from "@/constants/appFonts";
 import {
   CONTENTS_INPUT_FONT_SIZE,
   CONTENTS_INPUT_VIEWPORT_HEIGHT,
 } from "@/constants/styles";
-import { PREVIEW_TEXT_MAX_LINES, useSettings } from "@/contexts/settingsContext";
+import { useSettings } from "@/contexts/settingsContext";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Platform, ScrollView, TextInput, TextLayoutEvent, useWindowDimensions } from "react-native";
 
 const TEXT_MEASURE_OFFSCREEN_LEFT = -100_000;
 const INPUT_WIDTH_CURSOR_PAD = 28;
-const INPUT_MARGIN = 16;
 const TEXT_INPUT_VERTICAL_PADDING = 0;
 
 function stripLegacyInputMarkers(text: string): string {
@@ -23,14 +25,16 @@ export function useTextInput(params: {
   const { inputScrollViewportW } = params;
   const { config, resolvedAppLocale: appLocale } = useSettings();
   const { previewText } = config.content;
-  const { font, fontWeight } = config.appearance;
   const { width: windowWidth } = useWindowDimensions();
 
-  const inputViewportLogicalLines = PREVIEW_TEXT_MAX_LINES;
-  const inputViewportFallbackPx = CONTENTS_INPUT_VIEWPORT_HEIGHT + TEXT_INPUT_VERTICAL_PADDING;
+  // 텍스트인풋은 항상 언어별 기본 폰트로만 표시 + 3줄
+  const inputFontFamily = appFontFamilyForText(
+    getDefaultForLocale(appLocale),
+    "normal",
+    appLocale,
+  );
+  const inputViewportHeightPx = CONTENTS_INPUT_VIEWPORT_HEIGHT + TEXT_INPUT_VERTICAL_PADDING;
 
-  const [inputViewportHeightPx, setInputViewportHeightPx] = useState(inputViewportFallbackPx);
-  const inputViewportHeightRef = useRef(inputViewportFallbackPx);
   const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
 
   const inputScrollRef = useRef<ScrollView>(null);
@@ -75,26 +79,12 @@ export function useTextInput(params: {
     [inputContentWidth, inputScrollViewportWResolved],
   );
 
-  const fontMeasureKey = `${font}|${fontWeight}`;
-
-  useLayoutEffect(() => {
-    inputViewportHeightRef.current = inputViewportFallbackPx;
-    setInputViewportHeightPx(inputViewportFallbackPx);
-  }, [fontMeasureKey, inputViewportFallbackPx]);
-
   const handleMeasureLayout = (e: TextLayoutEvent) => {
     const lines = e.nativeEvent.lines;
     if (lines.length === 0) return;
 
     const maxWidth = lines.reduce((widest, line) => Math.max(widest, line.width), 0);
     setMeasuredTextMaxW(maxWidth);
-
-    const perLine = lines[0].height;
-    const visibleLines = Math.min(lines.length, inputViewportLogicalLines);
-    const next = Math.max(inputViewportFallbackPx, perLine * visibleLines) + INPUT_MARGIN;
-    if (Math.abs(next - inputViewportHeightRef.current) < 1) return;
-    inputViewportHeightRef.current = next;
-    setInputViewportHeightPx(next);
   };
 
   const resetInputScroll = useCallback(() => {
@@ -116,17 +106,13 @@ export function useTextInput(params: {
       left: TEXT_MEASURE_OFFSCREEN_LEFT,
       width: -TEXT_MEASURE_OFFSCREEN_LEFT,
       fontSize: CONTENTS_INPUT_FONT_SIZE,
-      fontFamily: appFontFamilyForText(
-        font,
-        fontWeight === "bold" ? "bold" : "normal",
-        appLocale,
-      ),
+      fontFamily: inputFontFamily,
       ...Platform.select({
         android: { includeFontPadding: false as const },
         default: {},
       }),
     }),
-    [font, fontWeight, appLocale],
+    [inputFontFamily],
   );
 
   const onInputScroll = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
@@ -141,6 +127,7 @@ export function useTextInput(params: {
     inputHorizontalCanvasWidth,
     needsHorizontalScroll,
     inputViewportHeightPx,
+    inputFontFamily,
     inputScrollRef,
     handleMeasureLayout,
     measureOffscreenStyle,

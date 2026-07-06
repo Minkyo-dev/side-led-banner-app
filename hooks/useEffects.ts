@@ -1,4 +1,4 @@
-import { GALMURI11_FONT_ID } from "@/constants/appFonts";
+import { getPixelFontIdForLocale } from "@/constants/appFonts";
 import { glowColorToSkiaRgba } from "@/constants/colorPalette";
 import {
   GRADIENT_BACKDROP_IDS,
@@ -92,7 +92,9 @@ export function useEffects(input: EffectsInput = {}) {
   return {
     isPixelEffect,
     isPixelTextDots,
-    pixelSkiaFontOverride: isPixelEffect ? GALMURI11_FONT_ID : null,
+    pixelSkiaFontOverride: isPixelEffect
+      ? getPixelFontIdForLocale(resolvedAppLocale)
+      : null,
     isGlowEffect,
     showGradientBackdrop,
     pixelShaderSize,

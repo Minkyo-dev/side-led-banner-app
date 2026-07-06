@@ -18,37 +18,44 @@ const isPlaceholderAdUnitId = !PROD_AD_UNIT_ID || PROD_AD_UNIT_ID.includes("XXXX
 
 const AD_UNIT_ID =
   __DEV__ || isPlaceholderAdUnitId ? TestIds.REWARDED : PROD_AD_UNIT_ID;
+
+const AD_RETRY_DELAY_MS = 10000;
+
+const sharedAd = RewardedAd.createForAdRequest(AD_UNIT_ID, {
+  requestNonPersonalizedAdsOnly: true,
+});
+sharedAd.load();
+
 export function useRewardedAd(onRewardEarned: () => void) {
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(sharedAd.loaded);
   const onRewardEarnedRef = useRef(onRewardEarned);
   onRewardEarnedRef.current = onRewardEarned;
 
-  const adRef = useRef<RewardedAd | null>(null);
-
   useEffect(() => {
-    const ad = RewardedAd.createForAdRequest(AD_UNIT_ID, {
-      requestNonPersonalizedAdsOnly: true,
-    });
-    adRef.current = ad;
+    if (sharedAd.loaded) setLoaded(true);
 
     const unsubs = [
-      ad.addAdEventListener(RewardedAdEventType.LOADED, () => setLoaded(true)),
-      ad.addAdEventListener(AdEventType.CLOSED, () => {
+      sharedAd.addAdEventListener(RewardedAdEventType.LOADED, () =>
+        setLoaded(true),
+      ),
+      sharedAd.addAdEventListener(AdEventType.CLOSED, () => {
         setLoaded(false);
-        ad.load();
+        sharedAd.load();
       }),
-      ad.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+      sharedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
         onRewardEarnedRef.current();
       }),
+      sharedAd.addAdEventListener(AdEventType.ERROR, () => {
+        setLoaded(false);
+        setTimeout(() => sharedAd.load(), AD_RETRY_DELAY_MS);
+      }),
     ];
-
-    ad.load();
 
     return () => unsubs.forEach((u) => u());
   }, []);
 
   const show = useCallback(() => {
-    adRef.current?.show();
+    sharedAd.show();
   }, []);
 
   return { loaded, show };

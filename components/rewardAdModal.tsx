@@ -1,6 +1,6 @@
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { rewardAdModalStyles as styles } from "@/constants/styles";
-import { useSettings } from "@/contexts/settingsContext";
+import { useSettingsRest } from "@/contexts/settingsContext";
 import * as amplitude from "@amplitude/analytics-react-native";
 import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { Ionicons } from "@expo/vector-icons";
@@ -185,7 +185,7 @@ export function RewardAdModal({
   adReady = false,
   onWatchAd,
 }: Props) {
-  const { rewardAdLabel, resolvedAppLocale } = useSettings();
+  const { rewardAdLabel, resolvedAppLocale } = useSettingsRest();
   const watchAdFontFamily =
     resolvedAppLocale === "ko" || resolvedAppLocale === "en"
       ? appFontFamilyForText("noto_sans_kr", "bold")

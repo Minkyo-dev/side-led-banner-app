@@ -1,7 +1,7 @@
 import type { AppLocaleKey } from "@/constants/language";
 
 /** settings폰트키용 */
-export type AppearanceFontId =
+export type FontId =
   | "montserrat"
   | "poppins"
   | "inter"
@@ -19,15 +19,21 @@ export type AppearanceFontId =
   | "line_seed_jp"
   | "noto_sans_tc"
   | "zcool_qingke_huangyou"
-  | "m_plus_rounded_1c"
-  | "chen_yu_luo_yan"
-  | "zcool_kuaile"
-  | "m_plus_1p"
   | "noto_sans_sc"
   | "long_cang"
   | "noto_serif_sc"
-  | "ziti_guanjia_bodian"
-  | "galmuri11";
+  | "galmuri11"
+  | "fusion_pixel_zh_hans"
+  | "fusion_pixel_zh_hant"
+  | "montserrat_medium"
+  | "poppins_medium"
+  | "syne"
+  | "orbitron"
+  | "roboto_slab"
+  | "noto_serif_tc"
+  | "chiron_goround_tc"
+  | "lxgw_wenkai_tc"
+  | "wdxl_lubrifont_sc";
 
 export interface FontFaceSet {
   regular: number;
@@ -36,7 +42,7 @@ export interface FontFaceSet {
 
 export interface FontDropdownItem {
   label: string;
-  value: AppearanceFontId;
+  value: FontId;
 }
 
 function fontFaceSet(regular: number, bold: number): FontFaceSet {
@@ -62,6 +68,41 @@ const inter = fontFaceSet(
 const rubikOne = fontFaceSet(
   require("@/assets/fonts/Rubik/Rubik_400Regular.ttf"),
   require("@/assets/fonts/Rubik/Rubik_700Bold.ttf"),
+);
+const montserratMedium = fontFaceSet(
+  require("@/assets/fonts/Montserrat/static/Montserrat-Medium.ttf"),
+  require("@/assets/fonts/Montserrat/static/Montserrat-Black.ttf"),
+);
+const poppinsMedium = fontFaceSet(
+  require("@/assets/fonts/Poppins/Poppins-Medium.ttf"),
+  require("@/assets/fonts/Poppins/Poppins-Black.ttf"),
+);
+const syne = fontFaceSet(
+  require("@/assets/fonts/Syne/static/Syne-Medium.ttf"),
+  require("@/assets/fonts/Syne/static/Syne-ExtraBold.ttf"),
+);
+const orbitron = fontFaceSet(
+  require("@/assets/fonts/Orbitron/static/Orbitron-Medium.ttf"),
+  require("@/assets/fonts/Orbitron/static/Orbitron-ExtraBold.ttf"),
+);
+const robotoSlab = fontFaceSet(
+  require("@/assets/fonts/Roboto_Slab/static/RobotoSlab-Medium.ttf"),
+  require("@/assets/fonts/Roboto_Slab/static/RobotoSlab-ExtraBold.ttf"),
+);
+const notoSerifTc = fontFaceSet(
+  require("@/assets/fonts/Noto_Serif_TC/NotoSerifTC-Medium.ttf"),
+  require("@/assets/fonts/Noto_Serif_TC/NotoSerifTC-Bold.ttf"),
+);
+const chironGoRoundTc = fontFaceSet(
+  require("@/assets/fonts/Chiron_GoRound_TC/ChironGoRoundTC-Medium.ttf"),
+  require("@/assets/fonts/Chiron_GoRound_TC/ChironGoRoundTC-Bold.ttf"),
+);
+const lxgwWenKaiTc = fontFaceSet(
+  require("@/assets/fonts/LXGW_WenKai_TC/LXGWWenKaiTC-Regular.ttf"),
+  require("@/assets/fonts/LXGW_WenKai_TC/LXGWWenKaiTC-Bold.ttf"),
+);
+const wdxlLubrifontSc = singleFace(
+  require("@/assets/fonts/WDXL_Lubrifont_SC/WDXLLubrifontSC-Regular.ttf"),
 );
 const tektur = fontFaceSet(
   require("@/assets/fonts/Tektur/static/Tektur-Regular.ttf"),
@@ -90,11 +131,13 @@ const ibmPlexSansJp = fontFaceSet(
   require("@/assets/fonts/IBM_Plex_Sans_JP/IBMPlexSansJP_300Light.ttf"),
   require("@/assets/fonts/IBM_Plex_Sans_JP/IBMPlexSansJP_700Bold.ttf"),
 );
-const delaGothicOne = singleFace(
-  require("@/assets/fonts/Dela_Gothic_One/DelaGothicOne_400Regular.ttf"),
+const delaGothicOne = fontFaceSet(
+  require("@/assets/fonts/Zen_Kaku_Gothic_New/static/ZenKakuGothicNew-Regular.ttf"),
+  require("@/assets/fonts/Zen_Kaku_Gothic_New/static/ZenKakuGothicNew-Bold.ttf"),
 );
-const mochiyPopOne = singleFace(
-  require("@/assets/fonts/Mochiy_Pop_One/MochiyPopOne-Regular.ttf"),
+const mochiyPopOne = fontFaceSet(
+  require("@/assets/fonts/M_PLUS_Rounded_1c/static/MPLUSRounded1c-Regular.ttf"),
+  require("@/assets/fonts/M_PLUS_Rounded_1c/static/MPLUSRounded1c-Bold.ttf"),
 );
 const lineSeedJp = fontFaceSet(
   require("@/assets/fonts/LINE_Seed_JP/LINESeedJP_400Regular.ttf"),
@@ -107,20 +150,6 @@ const notoSansTc = fontFaceSet(
 const zcoolQingKeHuangYou = singleFace(
   require("@/assets/fonts/ZCOOL_QingKe_HuangYou/ZCOOLQingKeHuangYou-Regular.ttf"),
 );
-const mPlusRounded1c = fontFaceSet(
-  require("@/assets/fonts/M_PLUS_Rounded_1c/MPLUSRounded1c-Regular.ttf"),
-  require("@/assets/fonts/M_PLUS_Rounded_1c/MPLUSRounded1c-Bold.ttf"),
-);
-const chenYuLuoYan = singleFace(
-  require("@/assets/fonts/Chen_Yu_Luo_Yan/ChenYuluoyan-2.0-Thin.ttf"),
-);
-const zcoolKuaiLe = singleFace(
-  require("@/assets/fonts/ZCOOL_KuaiLe/ZCOOLKuaiLe-Regular.ttf"),
-);
-const mPlus1p = fontFaceSet(
-  require("@/assets/fonts/M_PLUS_1p/MPLUS1p-Regular.ttf"),
-  require("@/assets/fonts/M_PLUS_1p/MPLUS1p-Bold.ttf"),
-);
 const notoSansSc = fontFaceSet(
   require("@/assets/fonts/Noto_Sans_SC/static/NotoSansSC-Regular.ttf"),
   require("@/assets/fonts/Noto_Sans_SC/static/NotoSansSC-Bold.ttf"),
@@ -132,27 +161,39 @@ const notoSerifSc = fontFaceSet(
   require("@/assets/fonts/Noto_Serif_SC/NotoSerifSC_400Regular.ttf"),
   require("@/assets/fonts/Noto_Serif_SC/NotoSerifSC_700Bold.ttf"),
 );
-const zitiGuanjiaBodian = singleFace(
-  require("@/assets/fonts/ZiTiGuanJiaBoDian/ZiTiGuanJiaBoDian-2.ttf"),
-);
 const galmuri11 = singleFace(
   require("@/assets/fonts/galmuri11/Galmuri11.ttf"),
 );
+const fusionPixelZhHans = singleFace(
+  require("@/assets/fonts/FusionPixel/FusionPixel-ZhHans.ttf"),
+);
+const fusionPixelZhHant = singleFace(
+  require("@/assets/fonts/FusionPixel/FusionPixel-ZhHant.ttf"),
+);
 
-/** zhSC픽셀폰트ID용 */
-export const ZITI_GUANJIA_BODIAN_FONT_ID =
-  "ziti_guanjia_bodian" as const satisfies AppearanceFontId;
+/** Galmuri픽셀폰트ID용 (ko/en/ja/fr/es) */
+export const GALMURI11_FONT_ID = "galmuri11" as const satisfies FontId;
 
-/** Galmuri픽셀폰트ID용 */
-export const GALMURI11_FONT_ID = "galmuri11" as const satisfies AppearanceFontId;
+/** zhSC 픽셀폰트ID용 — Galmuri11과 동일한 12px 그리드(upm 1200) */
+export const FUSION_PIXEL_ZH_HANS_FONT_ID =
+  "fusion_pixel_zh_hans" as const satisfies FontId;
+
+/** zhTC 픽셀폰트ID용 — Galmuri11과 동일한 12px 그리드(upm 1200) */
+export const FUSION_PIXEL_ZH_HANT_FONT_ID =
+  "fusion_pixel_zh_hant" as const satisfies FontId;
 
 /** 폰트에셋맵용 */
-export const APP_FONT_FACE_SETS: Record<AppearanceFontId, FontFaceSet> = {
+export const APP_FONT_FACE_SETS: Record<FontId, FontFaceSet> = {
   montserrat,
   poppins,
   inter,
   rubik_one: rubikOne,
   tektur,
+  montserrat_medium: montserratMedium,
+  poppins_medium: poppinsMedium,
+  syne,
+  orbitron,
+  roboto_slab: robotoSlab,
   black_han_sans: blackHanSans,
   do_hyeon: doHyeon,
   jua,
@@ -165,15 +206,16 @@ export const APP_FONT_FACE_SETS: Record<AppearanceFontId, FontFaceSet> = {
   line_seed_jp: lineSeedJp,
   noto_sans_tc: notoSansTc,
   zcool_qingke_huangyou: zcoolQingKeHuangYou,
-  m_plus_rounded_1c: mPlusRounded1c,
-  chen_yu_luo_yan: chenYuLuoYan,
-  zcool_kuaile: zcoolKuaiLe,
-  m_plus_1p: mPlus1p,
   noto_sans_sc: notoSansSc,
   long_cang: longCang,
   noto_serif_sc: notoSerifSc,
-  ziti_guanjia_bodian: zitiGuanjiaBodian,
   galmuri11,
+  fusion_pixel_zh_hans: fusionPixelZhHans,
+  fusion_pixel_zh_hant: fusionPixelZhHant,
+  noto_serif_tc: notoSerifTc,
+  chiron_goround_tc: chironGoRoundTc,
+  lxgw_wenkai_tc: lxgwWenKaiTc,
+  wdxl_lubrifont_sc: wdxlLubrifontSc,
 };
 
 export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> =
@@ -196,30 +238,44 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
       { label: "LINE Seed JP", value: "line_seed_jp" },
       { label: "Kaisei", value: "kaisei" },
       { label: "IBM Plex Sans JP", value: "ibm_plex_sans_jp" },
-      { label: "Dela Gothic One", value: "dela_gothic_one" },
-      { label: "Mochiy Pop One", value: "mochiy_pop_one" },
+      { label: "Zen Kaku Gothic New", value: "dela_gothic_one" },
+      { label: "M PLUS Rounded 1c", value: "mochiy_pop_one" },
       
     ],
     zhTC: [
       { label: "Noto Sans TC", value: "noto_sans_tc" },
+      { label: "Noto Serif TC", value: "noto_serif_tc" },
+      { label: "Chiron GoRound TC", value: "chiron_goround_tc" },
+      { label: "LXGW WenKai TC", value: "lxgw_wenkai_tc" },
       { label: "ZCOOL QingKe HuangYou", value: "zcool_qingke_huangyou" },
-      { label: "M PLUS Rounded 1c", value: "m_plus_rounded_1c" },
-      { label: "Chen Yu Luo Yan", value: "chen_yu_luo_yan" },
-      { label: "M PLUS 1p", value: "m_plus_1p" },
     ],
     zhSC: [
       { label: "Noto Sans SC", value: "noto_sans_sc" },
-      { label: "M PLUS Rounded 1c", value: "m_plus_rounded_1c" },
+      { label: "Noto Serif SC", value: "noto_serif_sc" },
       { label: "ZCOOL QingKe HuangYou", value: "zcool_qingke_huangyou" },
       { label: "Long Cang", value: "long_cang" },
-      { label: "Noto Serif SC", value: "noto_serif_sc" },
+      { label: "WDXL Lubrifont SC", value: "wdxl_lubrifont_sc" },
+    ],
+    fr: [
+      { label: "Montserrat", value: "montserrat_medium" },
+      { label: "Syne", value: "syne" },
+      { label: "Orbitron", value: "orbitron" },
+      { label: "Roboto Slab", value: "roboto_slab" },
+      { label: "Poppins", value: "poppins_medium" },
+    ],
+    es: [
+      { label: "Montserrat", value: "montserrat_medium" },
+      { label: "Syne", value: "syne" },
+      { label: "Orbitron", value: "orbitron" },
+      { label: "Roboto Slab", value: "roboto_slab" },
+      { label: "Poppins", value: "poppins_medium" },
     ],
   };
 
-const DEFAULT_APPEARANCE_FONT: AppearanceFontId = "black_han_sans";
+const DEFAULT_FONT: FontId = "black_han_sans";
 
 /** 삭제폰트매핑용 */
-const LEGACY_APPEARANCE_FONT_IDS: Record<string, AppearanceFontId> = {
+const LEGACY_FONT_IDS: Record<string, FontId> = {
   bebas_neue: "tektur",
   m_plus_1: "kaisei",
   zen_kaku_gothic_new: "ibm_plex_sans_jp",
@@ -236,75 +292,121 @@ const LEGACY_APPEARANCE_FONT_IDS: Record<string, AppearanceFontId> = {
   zcool_xiaowei: "noto_sans_tc",
   ma_shan_zheng: "noto_sans_sc",
   kslocalbaseballpark: "black_han_sans",
+  m_plus_rounded_1c: "noto_sans_sc",
+  chen_yu_luo_yan: "noto_sans_tc",
+  zcool_kuaile: "noto_sans_sc",
+  m_plus_1p: "noto_sans_sc",
+  ziti_guanjia_bodian: "noto_sans_sc",
 };
 
-export function normalizeAppearanceFontId(
+export function normalizeFontId(
   value: string,
-): AppearanceFontId | null {
-  if (isAppearanceFontId(value)) return value;
-  return LEGACY_APPEARANCE_FONT_IDS[value] ?? null;
+): FontId | null {
+  if (isFontId(value)) return value;
+  return LEGACY_FONT_IDS[value] ?? null;
 }
 
 /** 픽셀전용폰트용 */
-export const APPEARANCE_FONTS_HIDDEN_FROM_PICKER = new Set<AppearanceFontId>([
-  "ziti_guanjia_bodian",
+export const FONTS_HIDDEN_FROM_PICKER = new Set<FontId>([
   "galmuri11",
+  "fusion_pixel_zh_hans",
+  "fusion_pixel_zh_hant",
 ]);
 
-export function isAppearanceFontHiddenFromPicker(
+export function isFontHiddenFromPicker(
   appearanceFont: string,
 ): boolean {
-  const id = normalizeAppearanceFontId(appearanceFont);
-  return id != null && APPEARANCE_FONTS_HIDDEN_FROM_PICKER.has(id);
+  const id = normalizeFontId(appearanceFont);
+  return id != null && FONTS_HIDDEN_FROM_PICKER.has(id);
 }
 
 /** Skia전용폰트용 */
-const SKIA_ONLY_APPEARANCE_FONTS = new Set<AppearanceFontId>([
-  "ziti_guanjia_bodian",
+const SKIA_ONLY_FONTS = new Set<FontId>([
   "galmuri11",
+  "fusion_pixel_zh_hans",
+  "fusion_pixel_zh_hant",
 ]);
 
-export function isSkiaOnlyAppearanceFont(appearanceFont: string): boolean {
-  const id = normalizeAppearanceFontId(appearanceFont);
-  return id != null && SKIA_ONLY_APPEARANCE_FONTS.has(id);
+export function isSkiaOnlyFont(appearanceFont: string): boolean {
+  const id = normalizeFontId(appearanceFont);
+  return id != null && SKIA_ONLY_FONTS.has(id);
 }
 
 /** Bold미지원폰트용 */
-const APPEARANCE_FONTS_WITHOUT_BOLD = new Set<AppearanceFontId>([
-  "dela_gothic_one",
-  "mochiy_pop_one",
-  "ziti_guanjia_bodian",
+const FONTS_WITHOUT_BOLD = new Set<FontId>([
   "galmuri11",
+  "fusion_pixel_zh_hans",
+  "fusion_pixel_zh_hant",
 ]);
 
-export function appearanceFontSupportsBold(appearanceFont: string): boolean {
-  const id = normalizeAppearanceFontId(appearanceFont);
+export function supportsBold(appearanceFont: string): boolean {
+  const id = normalizeFontId(appearanceFont);
   if (!id) return true;
-  return !APPEARANCE_FONTS_WITHOUT_BOLD.has(id);
+  return !FONTS_WITHOUT_BOLD.has(id);
 }
 
-export function isAppearanceFontId(value: string): value is AppearanceFontId {
+export function isFontId(value: string): value is FontId {
   return Object.prototype.hasOwnProperty.call(APP_FONT_FACE_SETS, value);
 }
 
 export function getFontItemsForLocale(locale: AppLocaleKey): FontDropdownItem[] {
   return APP_FONT_ITEMS_BY_LOCALE[locale].filter(
-    (item) => !APPEARANCE_FONTS_HIDDEN_FROM_PICKER.has(item.value),
+    (item) => !FONTS_HIDDEN_FROM_PICKER.has(item.value),
   );
 }
 
-export function getDefaultAppearanceFontForLocale(
+export function getDefaultForLocale(
   locale: AppLocaleKey,
-): AppearanceFontId {
-  return APP_FONT_ITEMS_BY_LOCALE[locale][0]?.value ?? DEFAULT_APPEARANCE_FONT;
+): FontId {
+  return APP_FONT_ITEMS_BY_LOCALE[locale][0]?.value ?? DEFAULT_FONT;
 }
 
-export function resolveAppearanceFontFaceSet(appearanceFont: string): FontFaceSet {
-  const id = normalizeAppearanceFontId(appearanceFont);
+/** locale별 Pixel 그리드용 (Galmuri11과 동일한 12px 그리드) */
+const PIXEL_FONT_ID_BY_LOCALE: Record<AppLocaleKey, FontId> = {
+  ko: GALMURI11_FONT_ID,
+  en: GALMURI11_FONT_ID,
+  ja: GALMURI11_FONT_ID,
+  fr: GALMURI11_FONT_ID,
+  es: GALMURI11_FONT_ID,
+  zhTC: FUSION_PIXEL_ZH_HANT_FONT_ID,
+  zhSC: FUSION_PIXEL_ZH_HANS_FONT_ID,
+};
+
+/** Pixel 이펙트 활성 시 locale에 맞는 픽셀 폰트 반환 */
+export function getPixelFontIdForLocale(locale: AppLocaleKey): FontId {
+  return PIXEL_FONT_ID_BY_LOCALE[locale] ?? GALMURI11_FONT_ID;
+}
+
+const FONT_ID_TO_LOCALES: Partial<Record<FontId, Set<AppLocaleKey>>> = {};
+(Object.keys(APP_FONT_ITEMS_BY_LOCALE) as AppLocaleKey[]).forEach((locale) => {
+  APP_FONT_ITEMS_BY_LOCALE[locale].forEach((item) => {
+    const set = FONT_ID_TO_LOCALES[item.value] ?? new Set<AppLocaleKey>();
+    set.add(locale);
+    FONT_ID_TO_LOCALES[item.value] = set;
+  });
+});
+
+/**
+ * 선택된 폰트가 주어진 locale 에 속하는지 판단.
+ * 앱 UI 언어 와 무관하게, 폰트 자체 기준으로 판단해야 영어 UI에서 한글 폰트를 선택하는 경우에서도 글자별 fallback이 올바르게 동작함.
+ * 일부 폰트(예: ZCOOL QingKe HuangYou)는 zhTC·zhSC 양쪽 목록에 모두 있으므로,
+ * 단일 locale로 단정하지 않고 멤버십으로 판단함.
+ */
+export function fontBelongsToLocale(
+  appearanceFont: string,
+  locale: AppLocaleKey,
+): boolean {
+  const id = normalizeFontId(appearanceFont);
+  if (!id) return false;
+  return FONT_ID_TO_LOCALES[id]?.has(locale) ?? false;
+}
+
+export function resolveFontFaceSet(appearanceFont: string): FontFaceSet {
+  const id = normalizeFontId(appearanceFont);
   if (id) {
     return APP_FONT_FACE_SETS[id];
   }
-  return APP_FONT_FACE_SETS[DEFAULT_APPEARANCE_FONT];
+  return APP_FONT_FACE_SETS[DEFAULT_FONT];
 }
 
 /** RNfontFamily키용 */
@@ -313,21 +415,21 @@ export function appFontFamilyForText(
   fontWeight: "normal" | "bold",
   locale?: AppLocaleKey,
 ): string {
-  if (locale && isSkiaOnlyAppearanceFont(appearanceFont)) {
+  if (locale && isSkiaOnlyFont(appearanceFont)) {
     return appFontFamilyForText(
-      getDefaultAppearanceFontForLocale(locale),
+      getDefaultForLocale(locale),
       fontWeight,
     );
   }
-  const id = normalizeAppearanceFontId(appearanceFont) ?? appearanceFont;
+  const id = normalizeFontId(appearanceFont) ?? appearanceFont;
   const base = `AppFont-${id}`;
   return fontWeight === "bold" ? `${base}-bold` : base;
 }
 
-function buildAppFontAssets(): Record<string, number> {
+function buildFontAssetsForIds(ids: FontId[]): Record<string, number> {
   const out: Record<string, number> = {};
-  (Object.keys(APP_FONT_FACE_SETS) as AppearanceFontId[]).forEach((id) => {
-    if (SKIA_ONLY_APPEARANCE_FONTS.has(id)) return;
+  ids.forEach((id) => {
+    if (SKIA_ONLY_FONTS.has(id)) return;
     const set = APP_FONT_FACE_SETS[id];
     out[appFontFamilyForText(id, "normal")] = set.regular;
     out[appFontFamilyForText(id, "bold")] = set.bold;
@@ -335,8 +437,27 @@ function buildAppFontAssets(): Record<string, number> {
   return out;
 }
 
-/** useFonts일괄로드용 */
-export const APP_FONT_ASSETS: Record<string, number> = buildAppFontAssets();
+export function getEagerFontIdsForLocale(locale: AppLocaleKey): FontId[] {
+  return APP_FONT_ITEMS_BY_LOCALE[locale].map((item) => item.value);
+}
+
+/** 부트 시점에 즉시 로드할 폰트*/
+export function buildEagerFontAssets(
+  locale: AppLocaleKey,
+): Record<string, number> {
+  return buildFontAssetsForIds(getEagerFontIdsForLocale(locale));
+}
+
+/** 나머지 로케일 용 폰트*/
+export function buildLazyFontAssets(
+  locale: AppLocaleKey,
+): Record<string, number> {
+  const eagerIds = new Set(getEagerFontIdsForLocale(locale));
+  const remainingIds = (Object.keys(APP_FONT_FACE_SETS) as FontId[]).filter(
+    (id) => !eagerIds.has(id) && !SKIA_ONLY_FONTS.has(id),
+  );
+  return buildFontAssetsForIds(remainingIds);
+}
 
 export const APP_THEME_FONT_FAMILY = "AppTheme";
 export const APP_THEME_FONT_FAMILY_BOLD = "AppTheme-Bold";

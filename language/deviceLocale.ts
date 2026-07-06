@@ -18,6 +18,8 @@ export function deviceLocaleToAppLocale(locale: LocaleLike): AppLocaleKey {
   if (code === "ko") return "ko";
   if (code === "ja") return "ja";
   if (code === "en") return "en";
+  if (code === "fr") return "fr";
+  if (code === "es") return "es";
 
   if (code === "zh") {
     if (script === "hant" || region === "TW" || region === "HK" || region === "MO") {

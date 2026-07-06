@@ -3,7 +3,7 @@ import {
   settingsStyles,
 } from "@/constants/settingsStyles";
 import { styles as base } from "@/constants/styles";
-import { useSettings } from "@/contexts/settingsContext";
+import { useSettingsRest } from "@/contexts/settingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -32,7 +32,7 @@ const CREDITS: CreditEntry[] = [
 export default function CreditsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { textSectionLabel } = useSettings();
+  const { textSectionLabel } = useSettingsRest();
 
   return (
     <View style={[base.container, { paddingTop: insets.top }]}>

@@ -1,6 +1,6 @@
 import { SliderComponent } from "@/components/slider";
 import { styles } from "@/constants/styles";
-import { useSettings } from "@/contexts/settingsContext";
+import { useSettingsRest } from "@/contexts/settingsContext";
 import React from "react";
 import { StyleProp, Text, View, ViewStyle } from "react-native";
 
@@ -39,7 +39,7 @@ export function SettingsSliderBlock({
   disabled = false,
   containerStyle,
 }: SettingsSliderBlockProps) {
-  const { sheetStringsRevision, resolvedAppLocale } = useSettings();
+  const { sheetStringsRevision, resolvedAppLocale } = useSettingsRest();
   /** Slider 네이티브 뷰 옆의 라벨 Text가 안 갱신되는 경우 리마운트로 동기화 */
   const blockKey = `ssb-${slotId ?? "default"}-${sheetStringsRevision}-${resolvedAppLocale}-${label}`;
   return (

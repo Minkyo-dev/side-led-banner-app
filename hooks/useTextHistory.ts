@@ -79,7 +79,7 @@ export function useTextHistory(initialText: string) {
     const live = liveRef.current;
     const top = stack[stack.length - 1];
 
-    // 미확정 입력 중: 마지막 안정 스냅샷으로 되돌리기
+    // 마지막 스냅샷으로 되돌리기
     if (top && top.text !== live.text) {
       redoStackRef.current = [...redoStackRef.current, live];
       liveRef.current = top;

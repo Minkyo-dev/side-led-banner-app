@@ -1,7 +1,7 @@
 import { hasPixelLedEffect } from "@/constants/pixelLed";
 import {
   uiThemeFontStyle,
-  GALMURI11_FONT_ID,
+  getPixelFontIdForLocale,
 } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import {
@@ -13,7 +13,7 @@ import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { type BannerConfig, useSettings } from "../../contexts/settingsContext";
+import { type BannerConfig, useSettingsRest } from "../../contexts/settingsContext";
 import {
   SettingsSliderBlock,
   type SettingsSliderBlockProps,
@@ -75,7 +75,7 @@ export const EffectSection = () => {
     resolvedAppLocale,
     isProActive,
     openRewardAdModal,
-  } = useSettings();
+  } = useSettingsRest();
 
   const {
     effectSelectedItems,
@@ -201,7 +201,7 @@ export const EffectSection = () => {
                           gradientBackgroundPreset ??
                           DEFAULT_GRADIENT_BACKGROUND_PRESET_ID;
                       } else if (effect === "Pixel") {
-                        patch.font = GALMURI11_FONT_ID;
+                        patch.font = getPixelFontIdForLocale(resolvedAppLocale);
                       }
                       updateConfig("appearance", patch);
                     }

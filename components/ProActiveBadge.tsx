@@ -1,9 +1,9 @@
-import { useSettings } from "@/contexts/settingsContext";
+import { useSettingsRest } from "@/contexts/settingsContext";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 export function ProActiveBadge() {
-  const { isProActive } = useSettings();
+  const { isProActive } = useSettingsRest();
   if (!isProActive) return null;
   return (
     <View style={styles.badge}>

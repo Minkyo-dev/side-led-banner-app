@@ -1,18 +1,25 @@
 import { SplashLoadingScreen } from "@/components/SplashLoadingScreen";
-import { APP_FONT_ASSETS, APP_THEME_FONT_ASSETS } from "@/constants/appFonts";
+import {
+  APP_THEME_FONT_ASSETS,
+  buildEagerFontAssets,
+  buildLazyFontAssets,
+} from "@/constants/appFonts";
 import { SettingsProvider } from "@/contexts/settingsContext";
+import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
 import * as amplitude from "@amplitude/analytics-react-native";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import * as Font from "expo-font";
 import { useFonts } from "expo-font";
+import { useLocales } from "expo-localization";
 import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
@@ -23,10 +30,28 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [fontsLoaded] = useFonts({
-    ...APP_FONT_ASSETS,
-    ...APP_THEME_FONT_ASSETS,
-  });
+
+  // 기기 언어의 폰트 5개만 부팅 시 즉시 로드
+  const locales = useLocales();
+  const deviceAppLocale = useMemo(
+    () => deviceLocaleToAppLocale(locales[0] ?? { languageCode: "en" }),
+    [locales],
+  );
+  const eagerFontAssets = useMemo(
+    () => ({ ...buildEagerFontAssets(deviceAppLocale), ...APP_THEME_FONT_ASSETS }),
+    [deviceAppLocale],
+  );
+  const [fontsLoaded] = useFonts(eagerFontAssets);
+
+  // 나머지 로케일 폰트는 백그라운드로 지연 로드
+  useEffect(() => {
+    if (!fontsLoaded) return;
+    const lazyAssets = buildLazyFontAssets(deviceAppLocale);
+    Font.loadAsync(lazyAssets).catch((err) => {
+      if (__DEV__) console.warn("[fonts] lazy font load failed", err);
+    });
+  }, [fontsLoaded, deviceAppLocale]);
+
   useEffect(() => {
     if (Platform.OS !== "android") return;
     void NavigationBar.setVisibilityAsync("hidden");

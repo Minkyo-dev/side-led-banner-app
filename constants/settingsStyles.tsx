@@ -1,4 +1,5 @@
 import { uiThemeFontStyle } from "@/constants/appFonts";
+import { moderateScale } from "@/constants/scale";
 import { StyleSheet } from "react-native";
 
 export const settingsStyles = StyleSheet.create({
@@ -18,8 +19,8 @@ export const settingsStyles = StyleSheet.create({
     gap: 8,
   },
   backButton: {
-    width: 32,
-    height: 32,
+    width: moderateScale(32),
+    height: moderateScale(32),
     justifyContent: "center",
     alignItems: "flex-start",
   },
@@ -31,20 +32,20 @@ export const settingsStyles = StyleSheet.create({
   },
   titleText: {
     ...uiThemeFontStyle,
-    fontSize: 22,
+    fontSize: moderateScale(22),
     fontWeight: "700",
     color: "black",
   },
   rootLinkText: {
     ...uiThemeFontStyle,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "#2A7BE4",
     fontWeight: "500",
   },
   /** Settings 루트 페이지의 App Version 값 텍스트 */
   versionValueText: {
     ...uiThemeFontStyle,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "#787878",
     fontWeight: "400",
   },
@@ -65,13 +66,13 @@ export const openSourceInfoStyles = StyleSheet.create({
   nameText: {
     ...uiThemeFontStyle,
     flex: 1,
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: "500",
     color: "black",
   },
   versionText: {
     ...uiThemeFontStyle,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: "400",
     color: "#9A9A9A",
   },
@@ -80,21 +81,20 @@ export const openSourceInfoStyles = StyleSheet.create({
 /** Credits 스크린*/
 export const creditsStyles = StyleSheet.create({
   row: {
-    paddingVertical: 14,
+    paddingVertical:4,
     paddingHorizontal: 15,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#DDDDDD",
-    gap: 4,
   },
   roleText: {
     ...uiThemeFontStyle,
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: "500",
     color: "#9A9A9A",
   },
   namesText: {
     ...uiThemeFontStyle,
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: "600",
     color: "black",
     textAlign: "right",
@@ -104,13 +104,13 @@ export const creditsStyles = StyleSheet.create({
   },
   subtitleText: {
     ...uiThemeFontStyle,
-    fontSize: 13,
+    fontSize: moderateScale(13),
     fontWeight: "400",
     color: "#9A9A9A",
   },
 });
 
-const SUNNY_LIST_THUMBNAIL_SIZE = 44;
+const SUNNY_LIST_THUMBNAIL_SIZE = moderateScale(44);
 
 export const sunnyListStyles = StyleSheet.create({
   row: {
@@ -137,20 +137,20 @@ export const sunnyListStyles = StyleSheet.create({
   },
   thumbnailPlaceholderText: {
     ...uiThemeFontStyle,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: "700",
     color: "#9A9A9A",
   },
   appName: {
     ...uiThemeFontStyle,
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "500",
     color: "black",
   },
   linkText: {
     ...uiThemeFontStyle,
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: "#9A9A9A",
     fontWeight: "500",
   },
