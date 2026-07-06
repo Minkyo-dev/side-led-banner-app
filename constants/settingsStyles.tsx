@@ -81,11 +81,10 @@ export const openSourceInfoStyles = StyleSheet.create({
 /** Credits 스크린*/
 export const creditsStyles = StyleSheet.create({
   row: {
-    paddingVertical: 11,
+    paddingVertical:4,
     paddingHorizontal: 15,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#DDDDDD",
-    gap: 3,
   },
   roleText: {
     ...uiThemeFontStyle,
