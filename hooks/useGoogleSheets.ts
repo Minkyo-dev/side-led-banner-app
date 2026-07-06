@@ -32,8 +32,8 @@ export type GoogleSheetLocaleRow = {
 export type GoogleSheetParseResult = {
   /** A1 (버전·일자 등) */
   sheetVersion: string;
-  /** B1:F1에 표시된 헤더 라벨 원문 5개 */
-  headerLabelsB1F: readonly [string, string, string, string, string];
+  /** B1:{마지막 로케일 열}1에 표시된 헤더 라벨 원문 (`APP_LOCALE_KEYS` 개수만큼) */
+  headerLabelsB1F: readonly string[];
   rows: GoogleSheetLocaleRow[];
 };
 
@@ -68,20 +68,17 @@ function parsePublishedSheetCsv(csvText: string): GoogleSheetParseResult {
   if (rawRows.length === 0) {
     return {
       sheetVersion: "",
-      headerLabelsB1F: ["", "", "", "", ""],
+      headerLabelsB1F: new Array(LOCALE_COLUMN_COUNT).fill(""),
       rows: [],
     };
   }
   /**해더 행 추출 */
   const headerLine = (rawRows[0] ?? []).map(trimCell);
   const sheetVersion = headerLine[0] ?? "";
-  const headerLabelsB1F = [
-    headerLine[COL_B_INDEX + 0] ?? "",
-    headerLine[COL_B_INDEX + 1] ?? "",
-    headerLine[COL_B_INDEX + 2] ?? "",
-    headerLine[COL_B_INDEX + 3] ?? "",
-    headerLine[COL_B_INDEX + 4] ?? "",
-  ] as const;
+  const headerLabelsB1F = Array.from(
+    { length: LOCALE_COLUMN_COUNT },
+    (_, k) => headerLine[COL_B_INDEX + k] ?? "",
+  );
 
   const rows: GoogleSheetLocaleRow[] = [];
 

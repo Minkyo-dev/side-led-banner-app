@@ -43,12 +43,18 @@ export default function SettingsScreen() {
       { label: "日本語", value: "ja" as const },
       { label: "繁體中文", value: "zhTC" as const },
       { label: "简体中文", value: "zhSC" as const },
+      { label: "Français", value: "fr" as const },
+      { label: "Español", value: "es" as const },
     ],
     [],
   );
 
   const languageDropdownMaxHeight = useMemo(
-    () => resolveDropdownMaxHeight(languageDropdownContentHeight, windowH),
+    () =>
+      resolveDropdownMaxHeight(languageDropdownContentHeight, windowH, {
+        capPx: 500,
+        windowHeightRatio: 0.7,
+      }),
     [languageDropdownContentHeight, windowH],
   );
 
