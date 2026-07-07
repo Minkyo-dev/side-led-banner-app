@@ -58,7 +58,8 @@
           "androidAppId": "ca-app-pub-3506417530430977~7354080715",
           "iosAppId": "ca-app-pub-3506417530430977~1773312905"
         }
-      ]
+      ],
+      "expo-tracking-transparency"
     ],
     "experiments": {
       "typedRoutes": true,

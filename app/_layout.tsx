@@ -19,6 +19,7 @@ import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import React, { useEffect, useMemo, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -96,6 +97,11 @@ export default function RootLayout() {
   }, []);
 
   const isReady = fontsLoaded && minTimeElapsed;
+
+  useEffect(() => {
+    if (!isReady || Platform.OS !== "ios") return;
+    requestTrackingPermissionsAsync();
+  }, [isReady]);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
