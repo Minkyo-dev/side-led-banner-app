@@ -253,7 +253,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     blurColor: "",
   },
   appearance: {
-    font: "black_han_sans",
+    font: "noto_sans_kr",
     fontByLocale: {},
     fontSize: 50,
     lineSpacing: 10,
