@@ -162,19 +162,18 @@ export function PixelBackgroundCanvas({
           </Group>
         ) : null}
 
+        {/* 하트 배경은 도트 셰이더 없음 */}
         {isHeartBg && backgroundEffect.imageSource != null ? (
-          <Group layer={backgroundShaderLayer}>
-            <PixelHeartBackground
-              heartSource={backgroundEffect.imageSource}
-              width={width}
-              height={height}
-              translateX={translateX}
-              isTablet={isTablet}
-              isFullscreen={isFullscreen}
-              isFullscreenPortrait={isFullscreenPortrait}
-              isPortrait={isPortrait}
-            />
-          </Group>
+          <PixelHeartBackground
+            heartSource={backgroundEffect.imageSource}
+            width={width}
+            height={height}
+            translateX={translateX}
+            isTablet={isTablet}
+            isFullscreen={isFullscreen}
+            isFullscreenPortrait={isFullscreenPortrait}
+            isPortrait={isPortrait}
+          />
         ) : null}
 
         {isSpeechBg && speechBubbleSource != null ? (
@@ -198,7 +197,7 @@ function usePixelDotShaderLayers(dotSize: number, backgroundColor: string) {
     () => resolveDefaultLedFromBackground(backgroundColor),
     [backgroundColor],
   );
-const backgroundShaderLayer = useMemo(
+  const backgroundShaderLayer = useMemo(
     () => (
       <Paint>
         <RuntimeShader
