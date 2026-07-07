@@ -56,8 +56,7 @@
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-3506417530430977~7354080715",
-          "iosAppId": "ca-app-pub-3506417530430977~1773312905",
-          "userTrackingUsageDescription": "이 식별자는 회원님께 더 관련성 높은 광고를 제공하는 데 사용됩니다."
+          "iosAppId": "ca-app-pub-3506417530430977~1773312905"
         }
       ],
       "expo-tracking-transparency"
