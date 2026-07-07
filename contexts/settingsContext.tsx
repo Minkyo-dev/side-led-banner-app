@@ -190,6 +190,7 @@ function nonProSanitize(cfg: BannerConfig): BannerConfig {
   if (isBgColorProLocked(backgroundColorPalette.indexOf(bg.backgroundColor))) {
     bg.backgroundColor = backgroundColorPalette[0]!;
   }
+  a.fontSize = DEFAULT_BANNER_CONFIG.appearance.fontSize;
   return { ...cfg, appearance: a, background: bg };
 }
 
@@ -691,6 +692,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     isProActiveRef.current = isProActive;
     if (prev && !isProActive) {
       setConfig((current) => nonProSanitize(current));
+      if (activePresetRef.current >= 1) {
+        loadPreset(0);
+      }
     }
   }, [isProActive]);
 

@@ -525,6 +525,20 @@ export const effectSectionLockStyles = StyleSheet.create({
   },
 });
 
+export const sliderLockStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(150,150,150,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  icon: {
+    width: 20,
+    height: 20,
+    resizeMode: "contain",
+  },
+});
+
 const SLIDER_WIDTH = SCREEN_WIDTH - 100;
 export const sliderComponentStyles = StyleSheet.create({
   sliderContainer: {

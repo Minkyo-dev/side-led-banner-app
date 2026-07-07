@@ -20,6 +20,8 @@ export type SettingsSliderBlockProps = {
   /** false : 슬라이더 렌더 X*/
   showSlider?: boolean;
   disabled?: boolean;
+  locked?: boolean;
+  onLockedPress?: () => void;
   /** 라벨 + 슬라이더 묶음 스타일 지정하려면*/
   containerStyle?: StyleProp<ViewStyle>;
 };
@@ -37,6 +39,8 @@ export function SettingsSliderBlock({
   step = 1,
   showSlider = true,
   disabled = false,
+  locked = false,
+  onLockedPress,
   containerStyle,
 }: SettingsSliderBlockProps) {
   const { sheetStringsRevision, resolvedAppLocale } = useSettingsRest();
@@ -66,6 +70,8 @@ export function SettingsSliderBlock({
           maximumValue={maximumValue}
           step={step}
           disabled={disabled}
+          locked={locked}
+          onLockedPress={onLockedPress}
         />
       ) : null}
     </View>
