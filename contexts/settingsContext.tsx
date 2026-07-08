@@ -283,7 +283,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     backgroundBlur: 0,
   },
   motion: {
-    textMoveSpeed: 50,
+    textMoveSpeed: 30,
   },
 };
 

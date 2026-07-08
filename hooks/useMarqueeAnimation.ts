@@ -1,16 +1,16 @@
+import { useSettings } from "@/contexts/settingsContext";
 import {
   buildMarqueeDisplayText,
   normalizeOneLineJoinMode,
   resolveMarqueeJoinSpacerPx,
 } from "@/utils/viewMode";
-import { useSettings } from "@/contexts/settingsContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   cancelAnimation,
   Easing,
   useSharedValue,
   withRepeat,
-  withTiming
+  withTiming,
 } from "react-native-reanimated";
 
 export interface UseMarqueeAnimationParams {
@@ -37,6 +37,7 @@ export function useMarqueeAnimation({
   const { previewText: text, playOption, oneLineJoinMode: oneLineJoinModeRaw } = config.content;
   const speed = config.motion.textMoveSpeed;
   const translateX = useSharedValue(0);
+  const totalShiftRef = useRef(0);
   const [textWidth, setTextWidth] = useState(0);
   const oneLineJoinMode = normalizeOneLineJoinMode(oneLineJoinModeRaw);
 
@@ -54,20 +55,41 @@ export function useMarqueeAnimation({
     if (speed === 0 || textWidth === 0) {
       cancelAnimation(translateX);
       translateX.value = 0;
+      totalShiftRef.current = 0;
       return;
     }
 
     const totalShift = textWidth + spacer + effectBleedPx;
     const duration = (totalShift / (speed * 3)) * 1000;
 
-    translateX.value = 0;
-    translateX.value = withRepeat(
-      withTiming(-totalShift, {
-        duration,
-        easing: Easing.linear,
-      }),
-      -1,
-      false,
+    // translate 0으로 이동하지 않고, 현재 진행 정도에 맞춰 복구
+    const prevTotalShift = totalShiftRef.current;
+    const currentValue = translateX.value;
+    const progress =
+      prevTotalShift > 0
+        ? (((-currentValue) / prevTotalShift) % 1 + 1) % 1
+        : 0;
+    const startValue = -progress * totalShift;
+    const remainingDuration = duration * (1 - progress);
+
+    totalShiftRef.current = totalShift;
+
+    cancelAnimation(translateX);
+    translateX.value = startValue;
+    translateX.value = withTiming(
+      -totalShift,
+      { duration: remainingDuration, easing: Easing.linear },
+      (finished) => {
+        "worklet";
+        if (finished) {
+          translateX.value = 0;
+          translateX.value = withRepeat(
+            withTiming(-totalShift, { duration, easing: Easing.linear }),
+            -1,
+            false,
+          );
+        }
+      },
     );
   }, [
     speed,
