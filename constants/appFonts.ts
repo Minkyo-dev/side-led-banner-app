@@ -7,9 +7,9 @@ export type FontId =
   | "inter"
   | "rubik_one"
   | "tektur"
-  | "black_han_sans"
-  | "do_hyeon"
-  | "jua"
+  | "gowun_batang"
+  | "hahmlet"
+  | "gaegu"
   | "nanum_square_neo"
   | "noto_sans_kr"
   | "kaisei"
@@ -18,9 +18,9 @@ export type FontId =
   | "mochiy_pop_one"
   | "line_seed_jp"
   | "noto_sans_tc"
-  | "zcool_qingke_huangyou"
   | "noto_sans_sc"
-  | "long_cang"
+  | "zhengfeng_brush"
+  | "yrdzst"
   | "noto_serif_sc"
   | "galmuri11"
   | "fusion_pixel_zh_hans"
@@ -33,7 +33,9 @@ export type FontId =
   | "noto_serif_tc"
   | "chiron_goround_tc"
   | "lxgw_wenkai_tc"
-  | "wdxl_lubrifont_sc";
+  | "chiron_hei_hk"
+  | "tsanger_shuyuan"
+  | "arimo";
 
 export interface FontFaceSet {
   regular: number;
@@ -55,11 +57,11 @@ function singleFace(asset: number): FontFaceSet {
 
 const montserrat = fontFaceSet(
   require("@/assets/fonts/Montserrat/static/Montserrat-Regular.ttf"),
-  require("@/assets/fonts/Montserrat/static/Montserrat-Bold.ttf"),
+  require("@/assets/fonts/Montserrat/static/Montserrat-Black.ttf"),
 );
 const poppins = fontFaceSet(
   require("@/assets/fonts/Poppins/Poppins-Regular.ttf"),
-  require("@/assets/fonts/Poppins/Poppins-Bold.ttf"),
+  require("@/assets/fonts/Poppins/Poppins-Black.ttf"),
 );
 const inter = fontFaceSet(
   require("@/assets/fonts/Inter/static/Inter_28pt-Regular.ttf"),
@@ -82,12 +84,16 @@ const syne = fontFaceSet(
   require("@/assets/fonts/Syne/static/Syne-ExtraBold.ttf"),
 );
 const orbitron = fontFaceSet(
-  require("@/assets/fonts/Orbitron/static/Orbitron-Medium.ttf"),
-  require("@/assets/fonts/Orbitron/static/Orbitron-ExtraBold.ttf"),
+  require("@/assets/fonts/Orbitron/static/Orbitron-Regular.ttf"),
+  require("@/assets/fonts/Orbitron/static/Orbitron-Black.ttf"),
 );
 const robotoSlab = fontFaceSet(
-  require("@/assets/fonts/Roboto_Slab/static/RobotoSlab-Medium.ttf"),
-  require("@/assets/fonts/Roboto_Slab/static/RobotoSlab-ExtraBold.ttf"),
+  require("@/assets/fonts/Roboto_Slab/static/RobotoSlab-Regular.ttf"),
+  require("@/assets/fonts/Roboto_Slab/static/RobotoSlab-Black.ttf"),
+);
+const arimo = fontFaceSet(
+  require("@/assets/fonts/Arimo/static/Arimo-Regular.ttf"),
+  require("@/assets/fonts/Arimo/static/Arimo-Bold.ttf"),
 );
 const notoSerifTc = fontFaceSet(
   require("@/assets/fonts/Noto_Serif_TC/NotoSerifTC-Medium.ttf"),
@@ -95,29 +101,39 @@ const notoSerifTc = fontFaceSet(
 );
 const chironGoRoundTc = fontFaceSet(
   require("@/assets/fonts/Chiron_GoRound_TC/ChironGoRoundTC-Medium.ttf"),
-  require("@/assets/fonts/Chiron_GoRound_TC/ChironGoRoundTC-Bold.ttf"),
+  require("@/assets/fonts/Chiron_GoRound_TC/static/ChironGoRoundTC-Black.ttf"),
 );
 const lxgwWenKaiTc = fontFaceSet(
   require("@/assets/fonts/LXGW_WenKai_TC/LXGWWenKaiTC-Regular.ttf"),
   require("@/assets/fonts/LXGW_WenKai_TC/LXGWWenKaiTC-Bold.ttf"),
 );
-const wdxlLubrifontSc = singleFace(
-  require("@/assets/fonts/WDXL_Lubrifont_SC/WDXLLubrifontSC-Regular.ttf"),
+const tsangerShuYuan = fontFaceSet(
+  require("@/assets/fonts/仓耳舒圆体W02/CangErShuYuanTiW02-2.ttf"),
+  require("@/assets/fonts/仓耳舒圆体W05.ttf"),
 );
 const tektur = fontFaceSet(
   require("@/assets/fonts/Tektur/static/Tektur-Regular.ttf"),
   require("@/assets/fonts/Tektur/static/Tektur-Bold.ttf"),
 );
-const blackHanSans = singleFace(
-  require("@/assets/fonts/Black_Han_Sans/BlackHanSans-Regular.ttf"),
+const gowunBatang = fontFaceSet(
+  require("@/assets/fonts/Gowun_Batang/GowunBatang-Regular.ttf"),
+  require("@/assets/fonts/Gowun_Batang/GowunBatang-Bold.ttf"),
 );
-const doHyeon = singleFace(
-  require("@/assets/fonts/Do_Hyeon/DoHyeon_400Regular.ttf"),
+const hahmlet = fontFaceSet(
+  require("@/assets/fonts/Hahmlet/static/Hahmlet-Medium.ttf"),
+  require("@/assets/fonts/Hahmlet/static/Hahmlet-Black.ttf"),
 );
-const jua = singleFace(require("@/assets/fonts/Jua/Jua-Regular.ttf"));
+const gaegu = fontFaceSet(
+  require("@/assets/fonts/Gaegu/Gaegu-Regular.ttf"),
+  require("@/assets/fonts/Gaegu/Gaegu-Bold.ttf"),
+);
+const chironHeiHk = fontFaceSet(
+  require("@/assets/fonts/Chiron_Hei_HK/static/ChironHeiHK-Medium.ttf"),
+  require("@/assets/fonts/Chiron_Hei_HK/static/ChironHeiHK-Black.ttf"),
+);
 const nanumSquareNeo = fontFaceSet(
   require("@/assets/fonts/nanum-square-neo/NanumSquareNeo-bRg.ttf"),
-  require("@/assets/fonts/nanum-square-neo/NanumSquareNeo-cBd.ttf"),
+  require("@/assets/fonts/nanum-square-neo/TTF/NanumSquareNeo-eHv.ttf"),
 );
 const notoSansKr = fontFaceSet(
   require("@/assets/fonts/Noto_Sans_KR/static/NotoSansKR-Regular.ttf"),
@@ -147,15 +163,17 @@ const notoSansTc = fontFaceSet(
   require("@/assets/fonts/Noto_Sans_TC/static/NotoSansTC-Regular.ttf"),
   require("@/assets/fonts/Noto_Sans_TC/static/NotoSansTC-Bold.ttf"),
 );
-const zcoolQingKeHuangYou = singleFace(
-  require("@/assets/fonts/ZCOOL_QingKe_HuangYou/ZCOOLQingKeHuangYou-Regular.ttf"),
-);
 const notoSansSc = fontFaceSet(
   require("@/assets/fonts/Noto_Sans_SC/static/NotoSansSC-Regular.ttf"),
   require("@/assets/fonts/Noto_Sans_SC/static/NotoSansSC-Bold.ttf"),
 );
-const longCang = singleFace(
-  require("@/assets/fonts/Long_Cang/LongCang-Regular.ttf"),
+const zhengfengBrush = fontFaceSet(
+  require("@/assets/fonts/正風毛筆字體/masafont-2.1/tw/MasaFont-Regular.ttf"),
+  require("@/assets/fonts/正風毛筆字體/masafont-2.1/tw/MasaFont-Bold.ttf"),
+);
+const yrdzst = fontFaceSet(
+  require("@/assets/fonts/YangRenDongZhuShiTi-Regular/YangRenDongZhuShiTi-Regular-2.ttf"),
+  require("@/assets/fonts/YangRenDongZhuShiTi-Bold/YangRenDongZhuShiTi-Bold-2.ttf"),
 );
 const notoSerifSc = fontFaceSet(
   require("@/assets/fonts/Noto_Serif_SC/NotoSerifSC_400Regular.ttf"),
@@ -194,9 +212,9 @@ export const APP_FONT_FACE_SETS: Record<FontId, FontFaceSet> = {
   syne,
   orbitron,
   roboto_slab: robotoSlab,
-  black_han_sans: blackHanSans,
-  do_hyeon: doHyeon,
-  jua,
+  gowun_batang: gowunBatang,
+  hahmlet,
+  gaegu,
   nanum_square_neo: nanumSquareNeo,
   noto_sans_kr: notoSansKr,
   kaisei,
@@ -205,9 +223,9 @@ export const APP_FONT_FACE_SETS: Record<FontId, FontFaceSet> = {
   mochiy_pop_one: mochiyPopOne,
   line_seed_jp: lineSeedJp,
   noto_sans_tc: notoSansTc,
-  zcool_qingke_huangyou: zcoolQingKeHuangYou,
   noto_sans_sc: notoSansSc,
-  long_cang: longCang,
+  zhengfeng_brush: zhengfengBrush,
+  yrdzst,
   noto_serif_sc: notoSerifSc,
   galmuri11,
   fusion_pixel_zh_hans: fusionPixelZhHans,
@@ -215,7 +233,9 @@ export const APP_FONT_FACE_SETS: Record<FontId, FontFaceSet> = {
   noto_serif_tc: notoSerifTc,
   chiron_goround_tc: chironGoRoundTc,
   lxgw_wenkai_tc: lxgwWenKaiTc,
-  wdxl_lubrifont_sc: wdxlLubrifontSc,
+  chiron_hei_hk: chironHeiHk,
+  tsanger_shuyuan: tsangerShuYuan,
+  arimo,
 };
 
 export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> =
@@ -228,11 +248,11 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
       { label: "Tektur", value: "tektur" },
     ],
     ko: [
-      { label: "Black Han Sans", value: "black_han_sans" },
-      { label: "Do Hyeon", value: "do_hyeon" },
-      { label: "Jua", value: "jua" },
-      { label: "Nanum Square Neo", value: "nanum_square_neo" },
       { label: "Noto Sans KR", value: "noto_sans_kr" },
+      { label: "Gowun Batang", value: "gowun_batang" },
+      { label: "Hahmlet", value: "hahmlet" },
+      { label: "Gaegu", value: "gaegu" },
+      { label: "Nanum Square Neo", value: "nanum_square_neo" },
     ],
     ja: [
       { label: "LINE Seed JP", value: "line_seed_jp" },
@@ -247,19 +267,19 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
       { label: "Noto Serif TC", value: "noto_serif_tc" },
       { label: "Chiron GoRound TC", value: "chiron_goround_tc" },
       { label: "LXGW WenKai TC", value: "lxgw_wenkai_tc" },
-      { label: "ZCOOL QingKe HuangYou", value: "zcool_qingke_huangyou" },
+      { label: "Chiron Hei HK", value: "chiron_hei_hk" },
     ],
     zhSC: [
       { label: "Noto Sans SC", value: "noto_sans_sc" },
       { label: "Noto Serif SC", value: "noto_serif_sc" },
-      { label: "ZCOOL QingKe HuangYou", value: "zcool_qingke_huangyou" },
-      { label: "Long Cang", value: "long_cang" },
-      { label: "WDXL Lubrifont SC", value: "wdxl_lubrifont_sc" },
+      { label: "Zhengfeng Brush", value: "zhengfeng_brush" },
+      { label: "YRDZST", value: "yrdzst" },
+      { label: "Tsanger ShuYuan", value: "tsanger_shuyuan" },
     ],
     fr: [
       { label: "Montserrat", value: "montserrat_medium" },
       { label: "Syne", value: "syne" },
-      { label: "Orbitron", value: "orbitron" },
+      { label: "Arimo", value: "arimo" },
       { label: "Roboto Slab", value: "roboto_slab" },
       { label: "Poppins", value: "poppins_medium" },
     ],
@@ -272,7 +292,7 @@ export const APP_FONT_ITEMS_BY_LOCALE: Record<AppLocaleKey, FontDropdownItem[]> 
     ],
   };
 
-const DEFAULT_FONT: FontId = "black_han_sans";
+const DEFAULT_FONT: FontId = "noto_sans_kr";
 
 /** 삭제폰트매핑용 */
 const LEGACY_FONT_IDS: Record<string, FontId> = {
@@ -291,12 +311,18 @@ const LEGACY_FONT_IDS: Record<string, FontId> = {
   chango: "noto_sans_tc",
   zcool_xiaowei: "noto_sans_tc",
   ma_shan_zheng: "noto_sans_sc",
-  kslocalbaseballpark: "black_han_sans",
+  kslocalbaseballpark: "noto_sans_kr",
   m_plus_rounded_1c: "noto_sans_sc",
   chen_yu_luo_yan: "noto_sans_tc",
   zcool_kuaile: "noto_sans_sc",
   m_plus_1p: "noto_sans_sc",
   ziti_guanjia_bodian: "noto_sans_sc",
+  black_han_sans: "noto_sans_kr",
+  do_hyeon: "hahmlet",
+  jua: "gaegu",
+  zcool_qingke_huangyou: "zhengfeng_brush",
+  long_cang: "yrdzst",
+  wdxl_lubrifont_sc: "tsanger_shuyuan",
 };
 
 export function normalizeFontId(

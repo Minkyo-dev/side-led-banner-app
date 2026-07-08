@@ -226,6 +226,8 @@ export const TextSection = () => {
         minimumValue={fontSizeSliderMin}
         maximumValue={100}
         step={1}
+        locked={!isProActive}
+        onLockedPress={openRewardAdModal}
       />
       <SettingsSliderBlock
         label={textSectionLabel("letterSpacing")}

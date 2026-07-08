@@ -19,7 +19,7 @@ const isPlaceholderAdUnitId = !PROD_AD_UNIT_ID || PROD_AD_UNIT_ID.includes("XXXX
 const AD_UNIT_ID =
   __DEV__ || isPlaceholderAdUnitId ? TestIds.REWARDED : PROD_AD_UNIT_ID;
 
-const AD_RETRY_DELAY_MS = 10000;
+const AD_RETRY_DELAY_MS = 2000;
 
 const sharedAd = RewardedAd.createForAdRequest(AD_UNIT_ID, {
   requestNonPersonalizedAdsOnly: true,

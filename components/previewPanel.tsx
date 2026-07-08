@@ -83,6 +83,8 @@ function afterEdit(oldText: string, newText: string): number {
   return newEnd;
 }
 
+const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
+
 export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndoRedoStateChange }: PreviewPanelProps) {
   const [previewHeight, setPreviewHeight] = useState(0);
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
@@ -94,6 +96,8 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     updateConfig,
     ui,
     loadPreset,
+    isProActive,
+    openRewardAdModal,
   } = useSettings();
   const { activePreset } = ui;
 
@@ -390,40 +394,50 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
 
       {/* preset buttons */}
       <View style={styles.presetButtonsContainer}>
-        {[1, 2, 3, 4, 5].map((num, index) => (
-          <TouchableOpacity
-            key={index}
-            style={
-              index === activePreset
-                ? btnStyles.presetButtonActive
-                : btnStyles.presetButton
-            }
-            onPress={() => loadPreset(index)}
-            accessibilityLabel={`Preset ${index + 1}`}
-          >
-            <LinearGradientExpo
-              colors={
+        {[1, 2, 3, 4, 5].map((num, index) => {
+          const isLocked = !isProActive && num >= 2;
+          return (
+            <TouchableOpacity
+              key={index}
+              style={
                 index === activePreset
-                  ? ["white", "#CCCCCC"]
-                  : ["white", "#727272"]
+                  ? btnStyles.presetButtonActive
+                  : btnStyles.presetButton
               }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0.1, y: 0.2 }}
-              style={btnStyles.presetButtonGradient}
+              onPress={() =>
+                isLocked ? openRewardAdModal() : loadPreset(index)
+              }
+              accessibilityLabel={`Preset ${index + 1}`}
             >
-              <Text
-                allowFontScaling={false}
-                style={
+              <LinearGradientExpo
+                colors={
                   index === activePreset
-                    ? btnStyles.presetButtonActiveText
-                    : btnStyles.presetButtonText
+                    ? ["white", "#CCCCCC"]
+                    : ["white", "#727272"]
                 }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0.1, y: 0.2 }}
+                style={btnStyles.presetButtonGradient}
               >
-                {num}
-              </Text>
-            </LinearGradientExpo>
-          </TouchableOpacity>
-        ))}
+                <Text
+                  allowFontScaling={false}
+                  style={
+                    index === activePreset
+                      ? btnStyles.presetButtonActiveText
+                      : btnStyles.presetButtonText
+                  }
+                >
+                  {num}
+                </Text>
+              </LinearGradientExpo>
+              {isLocked && (
+                <View style={btnStyles.presetButtonLockOverlay}>
+                  <Image source={LOCK_ICON} style={btnStyles.presetButtonLockIcon} />
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* contents input container */}

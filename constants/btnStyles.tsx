@@ -45,6 +45,18 @@ export const btnStyles = StyleSheet.create({
     ...uiThemeFontStyle,
     color: "#B1B1AF",
   },
+  presetButtonLockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  presetButtonLockIcon: {
+    width: 14,
+    height: 14,
+    resizeMode: "contain",
+  },
   contentsInputResetButton: {
     aspectRatio: 1,
     borderRadius: 999,

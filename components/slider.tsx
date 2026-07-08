@@ -2,9 +2,14 @@ import {
   SliderMinusButton,
   SliderPlusButton,
 } from "@/assets/svg/sliderButtons";
-import { sliderComponentStyles as styles } from "@/constants/styles";
+import {
+  sliderComponentStyles as styles,
+  sliderLockStyles as lockStyles,
+} from "@/constants/styles";
 import { Slider } from "@miblanchard/react-native-slider";
-import { TouchableOpacity, View } from "react-native";
+import { Image, TouchableOpacity, View } from "react-native";
+
+const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
 
 export const SliderComponent = ({
   value,
@@ -13,6 +18,8 @@ export const SliderComponent = ({
   maximumValue = 100,
   step = 5,
   disabled = false,
+  locked = false,
+  onLockedPress,
 }: {
   value: number;
   onChange: (value: number) => void;
@@ -20,18 +27,21 @@ export const SliderComponent = ({
   maximumValue: number;
   step: number;
   disabled?: boolean;
+  locked?: boolean;
+  onLockedPress?: () => void;
 }) => {
   return (
     <View style={styles.sliderContainer}>
       <TouchableOpacity
         style={styles.sliderButton}
+        disabled={locked}
         onPress={() => onChange(Math.max(minimumValue, value - step))}
       >
         <SliderMinusButton />
       </TouchableOpacity>
       <Slider
         animateTransitions
-        disabled={disabled}
+        disabled={disabled || locked}
         trackClickable={true}
         trackStyle={styles.sliderTrack}
         thumbStyle={styles.sliderThumb}
@@ -50,10 +60,20 @@ export const SliderComponent = ({
       />
       <TouchableOpacity
         style={styles.sliderButton}
+        disabled={locked}
         onPress={() => onChange(Math.min(maximumValue, value + step))}
       >
         <SliderPlusButton />
       </TouchableOpacity>
+      {locked && (
+        <TouchableOpacity
+          style={lockStyles.overlay}
+          activeOpacity={1}
+          onPress={onLockedPress}
+        >
+          <Image source={LOCK_ICON} style={lockStyles.icon} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
