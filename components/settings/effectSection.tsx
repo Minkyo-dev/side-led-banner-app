@@ -21,7 +21,12 @@ import {
 
 const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
 const PRO_LOCKED_EFFECTS = new Set(["Pixel", "Gradient", "Glow"]);
-const PRO_LOCKED_BG_EFFECTS = new Set(["heartBgA", "speechBg1", "speechBg2"]);
+const PRO_LOCKED_BG_EFFECTS = new Set([
+  "effect1",
+  "heartBgA",
+  "speechBg1",
+  "speechBg2",
+]);
 
 const PRIMARY_EFFECT_CHIP_ROWS = [
   ["Bold", "Blink", "Pixel"],
@@ -406,25 +411,36 @@ export const EffectSection = () => {
             </Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.backgroundEffectCard,
-            backgroundEffectPreset === "effect1" &&
-              styles.backgroundEffectCardSelected,
-          ]}
-          onPress={() =>
-            updateConfig("appearance", {
-              backgroundEffectPreset:
-                backgroundEffectPreset === "effect1" ? "none" : "effect1",
-            })
-          }
-        >
-          <Image
-            source={require("@/assets/images/Effect_1_on_L.png")}
-            style={[styles.effectImage, styles.backgroundEffectThumb]}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+        {(() => {
+          const isEffect1Locked = !isProActive && PRO_LOCKED_BG_EFFECTS.has("effect1");
+          return (
+            <TouchableOpacity
+              style={[
+                styles.backgroundEffectCard,
+                !isEffect1Locked && backgroundEffectPreset === "effect1" &&
+                  styles.backgroundEffectCardSelected,
+              ]}
+              onPress={() => {
+                if (isEffect1Locked) { openRewardAdModal(); return; }
+                updateConfig("appearance", {
+                  backgroundEffectPreset:
+                    backgroundEffectPreset === "effect1" ? "none" : "effect1",
+                });
+              }}
+            >
+              <Image
+                source={require("@/assets/images/Effect_1_on_L.png")}
+                style={[styles.effectImage, styles.backgroundEffectThumb]}
+                resizeMode="contain"
+              />
+              {isEffect1Locked && (
+                <View style={fxLock.cardOverlay}>
+                  <Image source={LOCK_ICON} style={fxLock.cardIcon} />
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })()}
         {(
           [
             { preset: "heartBgA", src: require("@/assets/images/Heart_BG_B.png") },

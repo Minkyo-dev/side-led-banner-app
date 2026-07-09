@@ -45,7 +45,8 @@ export function useRewardedAd(onRewardEarned: () => void) {
       sharedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
         onRewardEarnedRef.current();
       }),
-      sharedAd.addAdEventListener(AdEventType.ERROR, () => {
+      sharedAd.addAdEventListener(AdEventType.ERROR, (error) => {
+        if (__DEV__) console.warn("[rewardedAd] load error", error);
         setLoaded(false);
         setTimeout(() => sharedAd.load(), AD_RETRY_DELAY_MS);
       }),

@@ -90,13 +90,13 @@ export const creditsStyles = StyleSheet.create({
     ...uiThemeFontStyle,
     fontSize: moderateScale(15),
     fontWeight: "500",
-    color: "#9A9A9A",
+    color: "#3A3A3A",
   },
   namesText: {
     ...uiThemeFontStyle,
     fontSize: moderateScale(18),
     fontWeight: "600",
-    color: "black",
+    color: "#3A3A3A",
     textAlign: "right",
   },
   namesTextLeft: {

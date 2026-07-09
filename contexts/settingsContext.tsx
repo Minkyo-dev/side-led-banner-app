@@ -157,7 +157,12 @@ export type PresetSnapshot = {
 export const PRESET_SLOT_COUNT = 5;
 
 const PRO_LOCKED_EFFECTS = new Set(["Pixel", "Gradient", "Glow"]);
-const PRO_LOCKED_BG_EFFECTS = new Set(["heartBgA", "speechBg1", "speechBg2"]);
+const PRO_LOCKED_BG_EFFECTS = new Set([
+  "effect1",
+  "heartBgA",
+  "speechBg1",
+  "speechBg2",
+]);
 
 // textColorPalette: 9개 열, 행내 index >= 4 잠금 (colorPicker.tsx 의 isLocked 조건과 동일)
 function isTextColorProLocked(paletteIndex: number): boolean {
@@ -262,7 +267,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     textSelectedColor: "#000000",
     outLine: 0,
     dropShadow: 0,
-    effectSelectedItems: ["Bold"],
+    effectSelectedItems: [],
     effectParamValues: {
       Glow: 50,
       Blink: 5,
@@ -270,7 +275,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     },
     blurIntensity: 0,
     glowIntensity: 50,
-    fontWeight: "bold",
+    fontWeight: "normal",
     glowColor: "#FFD700",
     blinkSpeed: 5,
     pixelColorMix: false,

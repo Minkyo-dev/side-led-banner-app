@@ -15,7 +15,7 @@ const BANNER_AD_UNIT_ID = Platform.select({
 export default function BannerAdComponent({ style }: any) {
   // Banner Ad Component
   return (
-    <View style={[{ alignItems: "center" }, style]}>
+    <View style={[{ alignItems: "center", minHeight: 50 }, style]}>
       <BannerAd
         unitId={TestIds.BANNER}
         size={BannerAdSize.BANNER}
