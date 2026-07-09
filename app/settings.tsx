@@ -22,7 +22,6 @@ import {
   View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SUNNY_LINKS = {
   homepage: "https://ssongyc.github.io/sunny-homepage/",
@@ -36,7 +35,6 @@ const SUNNY_LINKS = {
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
   const [languageDropdownContentHeight, setLanguageDropdownContentHeight] =
     useState(0);
@@ -95,16 +93,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View
-      style={[
-        base.container,
-        {
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          backgroundColor: "#FFFFFF",
-        },
-      ]}
-    >
+    <View style={[base.container, { backgroundColor: "#FFFFFF" }]}>
       <View style={settingsStyles.header}>
         <TouchableOpacity
           onPress={() => router.back()}

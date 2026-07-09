@@ -151,7 +151,12 @@ export type PresetSnapshot = {
 export const PRESET_SLOT_COUNT = 5;
 
 const PRO_LOCKED_EFFECTS = new Set(["Pixel", "Gradient", "Glow"]);
-const PRO_LOCKED_BG_EFFECTS = new Set(["heartBgA", "speechBg1", "speechBg2"]);
+const PRO_LOCKED_BG_EFFECTS = new Set([
+  "effect1",
+  "heartBgA",
+  "speechBg1",
+  "speechBg2",
+]);
 
 // textColorPalette: 9개 열, 행내 index >= 4 잠금 (colorPicker.tsx 의 isLocked 조건과 동일)
 function isTextColorProLocked(paletteIndex: number): boolean {

@@ -24,6 +24,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -55,6 +56,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
+    void NavigationBar.setPositionAsync("absolute");
+    void NavigationBar.setBehaviorAsync("overlay-swipe");
     void NavigationBar.setVisibilityAsync("hidden");
   }, []);
 
@@ -105,6 +108,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <SafeAreaProvider>
       <SettingsProvider>
         <KeyboardProvider>
         {isReady ? (
@@ -130,6 +134,7 @@ export default function RootLayout() {
         </KeyboardProvider>
         <StatusBar hidden />
       </SettingsProvider>
+      </SafeAreaProvider>
     </ThemeProvider>
   );
 }
