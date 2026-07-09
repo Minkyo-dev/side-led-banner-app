@@ -81,7 +81,7 @@ export const openSourceInfoStyles = StyleSheet.create({
 /** Credits 스크린*/
 export const creditsStyles = StyleSheet.create({
   row: {
-    paddingVertical:4,
+    paddingVertical: 4,
     paddingHorizontal: 15,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#DDDDDD",
@@ -90,7 +90,7 @@ export const creditsStyles = StyleSheet.create({
     ...uiThemeFontStyle,
     fontSize: moderateScale(15),
     fontWeight: "500",
-    color: "#3A3A3A",
+    color: "#292929",
   },
   namesText: {
     ...uiThemeFontStyle,

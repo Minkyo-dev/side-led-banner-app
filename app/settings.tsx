@@ -1,7 +1,11 @@
 import BannerAdComponent from "@/components/admob/bannerAd";
 import type { AppLocaleKey } from "@/constants/language";
 import { settingsStyles } from "@/constants/settingsStyles";
-import { styles as base, resolveDropdownMaxHeight, settingsFooterStyles } from "@/constants/styles";
+import {
+  styles as base,
+  resolveDropdownMaxHeight,
+  settingsFooterStyles,
+} from "@/constants/styles";
 import { useSettingsRest } from "@/contexts/settingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
@@ -23,14 +27,17 @@ const SUNNY_LINKS = {
   homepage: "https://ssongyc.github.io/sunny-homepage/",
   instagram: "https://www.instagram.com/sunnyinnolab/",
   twitter: "https://x.com/Sunnyinnolab",
-  terms: "https://marmalade-neptune-dbe.notion.site/Terms-Conditions-c18656ce6c6045e590f652bf8291f28b?pvs=74",
-  privacy: "https://marmalade-neptune-dbe.notion.site/Privacy-Policy-ced8ead72ced4d8791ca4a71a289dd6b",
+  terms:
+    "https://marmalade-neptune-dbe.notion.site/Terms-Conditions-c18656ce6c6045e590f652bf8291f28b?pvs=74",
+  privacy:
+    "https://marmalade-neptune-dbe.notion.site/Privacy-Policy-ced8ead72ced4d8791ca4a71a289dd6b",
 } as const;
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { height: windowH } = useWindowDimensions();
-  const [languageDropdownContentHeight, setLanguageDropdownContentHeight] = useState(0);
+  const [languageDropdownContentHeight, setLanguageDropdownContentHeight] =
+    useState(0);
   const [languageDropdownWidth, setLanguageDropdownWidth] = useState(0);
   const { updateUI, textSectionLabel, resolvedAppLocale } = useSettingsRest();
 
@@ -64,7 +71,10 @@ export default function SettingsScreen() {
       <View style={base.dropdownItemContent}>
         <Text
           allowFontScaling={false}
-          style={[base.dropdownItemTextStyle, selected && base.dropdownItemTextStyleSelected]}
+          style={[
+            base.dropdownItemTextStyle,
+            selected && base.dropdownItemTextStyleSelected,
+          ]}
         >
           {item.label}
         </Text>
@@ -73,7 +83,10 @@ export default function SettingsScreen() {
     [],
   );
 
-  const appVersion = useMemo(() => Constants.expoConfig?.version ?? "1.0.0", []);
+  const appVersion = useMemo(
+    () => Constants.expoConfig?.version ?? "1.0.0",
+    [],
+  );
 
   const openUrl = (url: string) => {
     void Linking.openURL(url).catch(() => {});
@@ -105,7 +118,10 @@ export default function SettingsScreen() {
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[base.scrollViewContainer, { paddingBottom: 40 }]}
+        contentContainerStyle={[
+          base.scrollViewContainer,
+          { paddingBottom: 40 },
+        ]}
       >
         <View style={base.settingsRow}>
           <Text style={base.settingsRowLabel} allowFontScaling={false}>
@@ -120,11 +136,18 @@ export default function SettingsScreen() {
               overflow: "hidden",
             }}
           >
-            <View onLayout={(e) => setLanguageDropdownContentHeight(e.nativeEvent.layout.height)}>
+            <View
+              onLayout={(e) =>
+                setLanguageDropdownContentHeight(e.nativeEvent.layout.height)
+              }
+            >
               {languageDropdownItems.map((item) => (
                 <View key={item.value} style={base.dropdownItemContainerStyle}>
                   <View style={base.dropdownItemContent}>
-                    <Text style={base.dropdownItemTextStyle} allowFontScaling={false}>
+                    <Text
+                      style={base.dropdownItemTextStyle}
+                      allowFontScaling={false}
+                    >
                       {item.label}
                     </Text>
                   </View>
@@ -134,7 +157,9 @@ export default function SettingsScreen() {
           </View>
           <View
             style={{ width: "56%" }}
-            onLayout={(e) => setLanguageDropdownWidth(e.nativeEvent.layout.width)}
+            onLayout={(e) =>
+              setLanguageDropdownWidth(e.nativeEvent.layout.width)
+            }
           >
             <Dropdown
               data={languageDropdownItems}
@@ -193,7 +218,10 @@ export default function SettingsScreen() {
           <Text style={base.settingsRowLabel} allowFontScaling={false}>
             {textSectionLabel("appVersion")}
           </Text>
-          <Text style={settingsStyles.versionValueText} allowFontScaling={false}>
+          <Text
+            style={settingsStyles.versionValueText}
+            allowFontScaling={false}
+          >
             V {appVersion}
           </Text>
         </View>
@@ -204,12 +232,18 @@ export default function SettingsScreen() {
         onTermsPress={() => openUrl(SUNNY_LINKS.terms)}
         onPrivacyPress={() => openUrl(SUNNY_LINKS.privacy)}
       />
-      <BannerAdComponent style={{ marginBottom: 12 }} />
+      <BannerAdComponent style={{ height: 60, marginBottom: 12 }} />
     </View>
   );
 }
 
-function NavigationRow({ label, onPress }: { label: string; onPress: () => void }) {
+function NavigationRow({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress: () => void;
+}) {
   return (
     <TouchableOpacity style={base.settingsRow} onPress={onPress}>
       <Text style={base.settingsRowLabel} allowFontScaling={false}>
@@ -220,7 +254,15 @@ function NavigationRow({ label, onPress }: { label: string; onPress: () => void 
   );
 }
 
-function LinkRow({ label, linkText, onPress }: { label: string; linkText: string; onPress: () => void }) {
+function LinkRow({
+  label,
+  linkText,
+  onPress,
+}: {
+  label: string;
+  linkText: string;
+  onPress: () => void;
+}) {
   return (
     <TouchableOpacity style={base.settingsRow} onPress={onPress}>
       <Text style={base.settingsRowLabel} allowFontScaling={false}>
@@ -239,7 +281,11 @@ interface SettingsFooterProps {
   onPrivacyPress: () => void;
 }
 
-export function SettingsFooter({ onLogoPress, onTermsPress, onPrivacyPress }: SettingsFooterProps) {
+export function SettingsFooter({
+  onLogoPress,
+  onTermsPress,
+  onPrivacyPress,
+}: SettingsFooterProps) {
   return (
     <View style={[settingsFooterStyles.container, { paddingBottom: 10 }]}>
       <TouchableOpacity onPress={onLogoPress} activeOpacity={0.7}>
@@ -249,27 +295,24 @@ export function SettingsFooter({ onLogoPress, onTermsPress, onPrivacyPress }: Se
           resizeMode="contain"
         />
       </TouchableOpacity>
-      
+
       <View style={settingsFooterStyles.linksRow}>
         <TouchableOpacity onPress={onTermsPress}>
           <Text style={settingsFooterStyles.linkText} allowFontScaling={false}>
             Terms
           </Text>
         </TouchableOpacity>
-        
+
         <Text style={settingsFooterStyles.separator} allowFontScaling={false}>
           |
         </Text>
-        
+
         <TouchableOpacity onPress={onPrivacyPress}>
           <Text style={settingsFooterStyles.linkText} allowFontScaling={false}>
             Privacy
           </Text>
         </TouchableOpacity>
       </View>
-      
     </View>
-    
   );
 }
-
