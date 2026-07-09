@@ -36,18 +36,12 @@ import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
 import { tRewardAdLabel } from "@/language/rewardAdLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
-import {
-  readAppLanguage,
-  writeAppLanguage,
-} from "@/utils/appLanguageStorage";
+import { readAppLanguage, writeAppLanguage } from "@/utils/appLanguageStorage";
 import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
 } from "@/utils/presetStorage";
-import {
-  readProModeExpiry,
-  writeProModeExpiry,
-} from "@/utils/proModeStorage";
+import { readProModeExpiry, writeProModeExpiry } from "@/utils/proModeStorage";
 import { getRelLineSpacing } from "@/utils/textSizing";
 import {
   normalizeOneLineJoinMode,
@@ -165,7 +159,6 @@ function isTextColorProLocked(paletteIndex: number): boolean {
   return paletteIndex % 9 >= 4;
 }
 
-
 const BG_ROW1_COUNT = 8; // COLS(9) - 1(photo button)
 function isBgColorProLocked(paletteIndex: number): boolean {
   if (paletteIndex < 0) return false;
@@ -262,7 +255,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     textSelectedColor: "#000000",
     outLine: 0,
     dropShadow: 0,
-    effectSelectedItems: ["Bold"],
+    effectSelectedItems: [],
     effectParamValues: {
       Glow: 50,
       Blink: 5,
@@ -270,7 +263,7 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
     },
     blurIntensity: 0,
     glowIntensity: 50,
-    fontWeight: "bold",
+    fontWeight: "normal",
     glowColor: "#FFD700",
     blinkSpeed: 5,
     pixelColorMix: false,
@@ -291,7 +284,10 @@ const DEFAULT_BANNER_CONFIG: BannerConfig = {
 function blankPresetSnapshot(): PresetSnapshot {
   return {
     ...presetFromConfig(DEFAULT_BANNER_CONFIG),
-    content: { ...presetFromConfig(DEFAULT_BANNER_CONFIG).content, previewText: "" },
+    content: {
+      ...presetFromConfig(DEFAULT_BANNER_CONFIG).content,
+      previewText: "",
+    },
   };
 }
 
@@ -436,14 +432,16 @@ const ContentContext = createContext<ContentContextValue | null>(null);
  */
 export const useSettingsRest = () => {
   const ctx = useContext(RestContext);
-  if (!ctx) throw new Error("useSettingsRest must be used within SettingsProvider");
+  if (!ctx)
+    throw new Error("useSettingsRest must be used within SettingsProvider");
   return ctx;
 };
 
 /** content만 필요한 컴포넌트가 구독하게 */
 export const useSettingsContent = () => {
   const ctx = useContext(ContentContext);
-  if (!ctx) throw new Error("useSettingsContent must be used within SettingsProvider");
+  if (!ctx)
+    throw new Error("useSettingsContent must be used within SettingsProvider");
   return ctx;
 };
 
@@ -458,7 +456,10 @@ export const useSettings = (): SettingsContextValue => {
     throw new Error("useSettings must be used within SettingsProvider");
   }
   return useMemo(
-    () => ({ ...rest, config: { ...rest.config, content: contentCtx.content } }),
+    () => ({
+      ...rest,
+      config: { ...rest.config, content: contentCtx.content },
+    }),
     [rest, contentCtx],
   );
 };
@@ -506,7 +507,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     appLanguage: "system",
     proMode: null,
     rewardAdVisible: false,
-    lineSpacingSliderMax: Math.floor(getRelLineSpacing({ requestedLineSpacingPx: 40, fontSizePercent: 100 })),
+    lineSpacingSliderMax: Math.floor(
+      getRelLineSpacing({ requestedLineSpacingPx: 40, fontSizePercent: 100 }),
+    ),
   });
 
   const resolvedAppLocale: AppLocaleKey =
@@ -560,8 +563,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [ui.activePreset]);
 
   useEffect(() => {
-    const max = Math.floor(getRelLineSpacing({ requestedLineSpacingPx: 40, fontSizePercent: config.appearance.fontSize }));
-    setUI((prev) => prev.lineSpacingSliderMax === max ? prev : { ...prev, lineSpacingSliderMax: max });
+    const max = Math.floor(
+      getRelLineSpacing({
+        requestedLineSpacingPx: 40,
+        fontSizePercent: config.appearance.fontSize,
+      }),
+    );
+    setUI((prev) =>
+      prev.lineSpacingSliderMax === max
+        ? prev
+        : { ...prev, lineSpacingSliderMax: max },
+    );
   }, [config.appearance.fontSize]);
 
   const isProActiveRef = useRef(false);
@@ -605,11 +617,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     );
     (async () => {
       try {
-        const [raw, storedAppLanguage, storedProModeExpiry] = await Promise.all([
-          readPresetSlotsJson(),
-          readAppLanguage(),
-          readProModeExpiry(),
-        ]);
+        const [raw, storedAppLanguage, storedProModeExpiry] = await Promise.all(
+          [readPresetSlotsJson(), readAppLanguage(), readProModeExpiry()],
+        );
         if (cancelled) return;
 
         if (storedAppLanguage) {
@@ -670,7 +680,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   // config 업데이트 함수
   const updateConfig = useCallback(
-    <K extends keyof BannerConfig>(group: K, updates: Partial<BannerConfig[K]>) => {
+    <K extends keyof BannerConfig>(
+      group: K,
+      updates: Partial<BannerConfig[K]>,
+    ) => {
       setConfig((prev) => ({
         ...prev,
         [group]: { ...prev[group], ...updates },
@@ -757,9 +770,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const normalizedFont = normalizeFontId(config.appearance.font);
-    const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
+    const isPixelActive = hasPixelLedEffect(
+      config.appearance.effectSelectedItems,
+    );
     const pixelFontOk =
-      isPixelActive && normalizedFont === getPixelFontIdForLocale(resolvedAppLocale);
+      isPixelActive &&
+      normalizedFont === getPixelFontIdForLocale(resolvedAppLocale);
     if (
       normalizedFont &&
       (!isFontHiddenFromPicker(normalizedFont) || pixelFontOk)
@@ -789,19 +805,32 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   /** locale별 마지막으로 선택한 폰트 저장 */
   useEffect(() => {
     if (!fontBelongsToLocale(config.appearance.font, resolvedAppLocale)) return;
-    if (config.appearance.fontByLocale[resolvedAppLocale] === config.appearance.font) return;
+    if (
+      config.appearance.fontByLocale[resolvedAppLocale] ===
+      config.appearance.font
+    )
+      return;
     setConfig((prev) => ({
       ...prev,
       appearance: {
         ...prev.appearance,
-        fontByLocale: { ...prev.appearance.fontByLocale, [resolvedAppLocale]: prev.appearance.font },
+        fontByLocale: {
+          ...prev.appearance.fontByLocale,
+          [resolvedAppLocale]: prev.appearance.font,
+        },
       },
     }));
-  }, [config.appearance.font, config.appearance.fontByLocale, resolvedAppLocale]);
+  }, [
+    config.appearance.font,
+    config.appearance.fontByLocale,
+    resolvedAppLocale,
+  ]);
 
   /** 앱 언어가 바뀌면, 현재 폰트가 그 언어 폰트가 아닐 시 해당 언어에서 마지막으로 쓰던 폰트(없으면 기본값)로 전환 */
   useEffect(() => {
-    const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
+    const isPixelActive = hasPixelLedEffect(
+      config.appearance.effectSelectedItems,
+    );
     if (isPixelActive) return;
     if (fontBelongsToLocale(config.appearance.font, resolvedAppLocale)) return;
     const nextFont =
@@ -821,7 +850,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   /** 픽셀폰트용 */
   useEffect(() => {
-    const isPixelActive = hasPixelLedEffect(config.appearance.effectSelectedItems);
+    const isPixelActive = hasPixelLedEffect(
+      config.appearance.effectSelectedItems,
+    );
     const pixelFontId = getPixelFontIdForLocale(resolvedAppLocale);
     if (!isPixelActive || config.appearance.font === pixelFontId) {
       return;
@@ -844,9 +875,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
     setConfig((prev) => {
       const needsFontWeight = prev.appearance.fontWeight === "bold";
-      const needsEffectItems = prev.appearance.effectSelectedItems.includes(
-        "Bold",
-      );
+      const needsEffectItems =
+        prev.appearance.effectSelectedItems.includes("Bold");
       if (!needsFontWeight && !needsEffectItems) return prev;
 
       return {

@@ -1,19 +1,22 @@
-import { hasPixelLedEffect } from "@/constants/pixelLed";
 import {
-  uiThemeFontStyle,
   getPixelFontIdForLocale,
+  uiThemeFontStyle,
 } from "@/constants/appFonts";
 import { btnStyles } from "@/constants/btnStyles";
 import {
   DEFAULT_GRADIENT_BACKGROUND_PRESET_ID,
   GRADIENT_BACKGROUND_PRESETS,
 } from "@/constants/gradientBackgroundPresets";
-import { styles, effectSectionLockStyles as fxLock } from "@/constants/styles";
+import { hasPixelLedEffect } from "@/constants/pixelLed";
+import { effectSectionLockStyles as fxLock, styles } from "@/constants/styles";
 import type { EffectSectionLabelKey } from "@/language/effectSectionLabels";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { type BannerConfig, useSettingsRest } from "../../contexts/settingsContext";
+import {
+  type BannerConfig,
+  useSettingsRest,
+} from "../../contexts/settingsContext";
 import {
   SettingsSliderBlock,
   type SettingsSliderBlockProps,
@@ -21,7 +24,12 @@ import {
 
 const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
 const PRO_LOCKED_EFFECTS = new Set(["Pixel", "Gradient", "Glow"]);
-const PRO_LOCKED_BG_EFFECTS = new Set(["heartBgA", "speechBg1", "speechBg2"]);
+const PRO_LOCKED_BG_EFFECTS = new Set([
+  "effect1",
+  "heartBgA",
+  "speechBg1",
+  "speechBg2",
+]);
 
 const PRIMARY_EFFECT_CHIP_ROWS = [
   ["Bold", "Blink", "Pixel"],
@@ -173,12 +181,17 @@ export const EffectSection = () => {
                   style={[
                     btnStyles.effectItemButton,
                     { alignSelf: "flex-start" },
-                    !isLocked && !isBoldDisabled && effectSelectedItems.includes(effect) &&
+                    !isLocked &&
+                      !isBoldDisabled &&
+                      effectSelectedItems.includes(effect) &&
                       btnStyles.effectItemButtonActive,
                     isBoldDisabled && { opacity: 0.35 },
                   ]}
                   onPress={() => {
-                    if (isLocked) { openRewardAdModal(); return; }
+                    if (isLocked) {
+                      openRewardAdModal();
+                      return;
+                    }
                     if (isBoldDisabled) return;
                     const isOn = effectSelectedItems.includes(effect);
                     const next = isOn
@@ -214,7 +227,8 @@ export const EffectSection = () => {
                   <Text
                     style={[
                       btnStyles.effectItemButtonText,
-                      !isLocked && effectSelectedItems.includes(effect) &&
+                      !isLocked &&
+                        effectSelectedItems.includes(effect) &&
                         btnStyles.effectItemButtonTextActive,
                     ]}
                     allowFontScaling={false}
@@ -406,7 +420,7 @@ export const EffectSection = () => {
             </Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[
             styles.backgroundEffectCard,
             backgroundEffectPreset === "effect1" &&
@@ -424,12 +438,25 @@ export const EffectSection = () => {
             style={[styles.effectImage, styles.backgroundEffectThumb]}
             resizeMode="contain"
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         {(
           [
-            { preset: "heartBgA", src: require("@/assets/images/Heart_BG_B.png") },
-            { preset: "speechBg1", src: require("@/assets/images/Speech_BG_1_B.png") },
-            { preset: "speechBg2", src: require("@/assets/images/Speech_BG_2_B.png") },
+            {
+              preset: "effect1",
+              src: require("@/assets/images/Effect_1_on_L.png"),
+            },
+            {
+              preset: "heartBgA",
+              src: require("@/assets/images/Heart_BG_B.png"),
+            },
+            {
+              preset: "speechBg1",
+              src: require("@/assets/images/Speech_BG_1_B.png"),
+            },
+            {
+              preset: "speechBg2",
+              src: require("@/assets/images/Speech_BG_2_B.png"),
+            },
           ] as const
         ).map(({ preset, src }) => {
           const isLocked = !isProActive && PRO_LOCKED_BG_EFFECTS.has(preset);
@@ -438,13 +465,18 @@ export const EffectSection = () => {
               key={preset}
               style={[
                 styles.backgroundEffectCard,
-                !isLocked && backgroundEffectPreset === preset &&
+                !isLocked &&
+                  backgroundEffectPreset === preset &&
                   styles.backgroundEffectCardSelected,
               ]}
               onPress={() => {
-                if (isLocked) { openRewardAdModal(); return; }
+                if (isLocked) {
+                  openRewardAdModal();
+                  return;
+                }
                 updateConfig("appearance", {
-                  backgroundEffectPreset: backgroundEffectPreset === preset ? "none" : preset,
+                  backgroundEffectPreset:
+                    backgroundEffectPreset === preset ? "none" : preset,
                 });
               }}
             >
@@ -465,4 +497,3 @@ export const EffectSection = () => {
     </ScrollView>
   );
 };
-
