@@ -73,26 +73,14 @@ export default function RootLayout() {
   useEffect(() => {
     const key = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
     if (!key) return;
-    amplitude.init(key);
 
-    // New Architecture에서 NativeModules.AmplitudeReactNative가 null이면
-    // context 플러그인이 platform을 "Web"으로 설정해서 수정.
-    if (Platform.OS === "ios") {
-      amplitude.add({
-        name: "platform-fix",
-        type: "enrichment" as const,
-        setup: async () => undefined,
-        execute: async (event) => {
-          event.platform = "iOS";
-          event.os_name = "ios";
-          return event;
-        },
-      });
-    }
+    amplitude.init(key, undefined, {
+      logLevel: amplitude.Types.LogLevel.Debug,
+    });
 
     if (Platform.OS !== "ios") return;
     const sub = AppState.addEventListener("change", (state) => {
-      if (state === "background") amplitude.flush();
+      if (state === "background" || state === "inactive") amplitude.flush();
     });
     return () => sub.remove();
   }, []);
