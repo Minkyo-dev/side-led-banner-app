@@ -21,10 +21,16 @@ const AD_UNIT_ID =
 
 const AD_RETRY_DELAY_MS = 2000;
 
-const sharedAd = RewardedAd.createForAdRequest(AD_UNIT_ID, {
+export const sharedAd = RewardedAd.createForAdRequest(AD_UNIT_ID, {
   requestNonPersonalizedAdsOnly: true,
 });
-sharedAd.load();
+
+let loadRequested = false;
+export function loadRewardedAd() {
+  if (loadRequested) return;
+  loadRequested = true;
+  sharedAd.load();
+}
 
 export function useRewardedAd(onRewardEarned: () => void) {
   const [loaded, setLoaded] = useState(sharedAd.loaded);
@@ -56,6 +62,10 @@ export function useRewardedAd(onRewardEarned: () => void) {
   }, []);
 
   const show = useCallback(() => {
+    if (!sharedAd.loaded) {
+      if (__DEV__) console.warn("[rewardedAd] show() called before ad loaded");
+      return;
+    }
     sharedAd.show();
   }, []);
 

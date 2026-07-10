@@ -22,6 +22,8 @@ import { StatusBar } from "expo-status-bar";
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import React, { useEffect, useMemo, useState } from "react";
 import { AppState, Platform } from "react-native";
+import mobileAds from "react-native-google-mobile-ads";
+import { loadRewardedAd } from "@/hooks/useRewardedAd";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -102,8 +104,14 @@ export default function RootLayout() {
   const isReady = fontsLoaded && minTimeElapsed;
 
   useEffect(() => {
-    if (!isReady || Platform.OS !== "ios") return;
-    requestTrackingPermissionsAsync();
+    if (!isReady) return;
+    (async () => {
+      if (Platform.OS === "ios") {
+        await requestTrackingPermissionsAsync();
+      }
+      await mobileAds().initialize();
+      loadRewardedAd();
+    })();
   }, [isReady]);
 
   return (
