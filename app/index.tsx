@@ -126,8 +126,7 @@ export default function Index() {
     updateUI({ activeTab: tab });
   };
 
-  const isDark = useColorScheme() === "dark";
-  const toolbarBtn = isDark ? "#ffffff" : "#2c2c2c";
+  const toolbarBtn = "#ffffff";
 
   const cursorUpRef = useRef<(() => void) | null>(null);
   const cursorDownRef = useRef<(() => void) | null>(null);
