@@ -84,6 +84,8 @@ export default function RootLayout() {
       logLevel: amplitude.Types.LogLevel.Debug,
       flushIntervalMillis: 1000,
       flushQueueSize: 1,
+    }).promise.then(() => {
+      amplitude.setUserId(amplitude.getDeviceId());
     });
 
     const sub = AppState.addEventListener("change", (state) => {
