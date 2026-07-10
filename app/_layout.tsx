@@ -10,7 +10,6 @@ import { preloadSkiaTypefaces } from "@/hooks/useCachedSkiaFont";
 import { loadRewardedAd } from "@/hooks/useRewardedAd";
 import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
 import * as amplitude from "@amplitude/analytics-react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   DarkTheme,
   DefaultTheme,
@@ -34,16 +33,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 SplashScreen.preventAutoHideAsync();
-
-const AMPLITUDE_USER_ID_KEY = "amplitude_user_id";
-
-async function getOrCreateAmplitudeUserId(): Promise<string> {
-  const existing = await AsyncStorage.getItem(AMPLITUDE_USER_ID_KEY);
-  if (existing) return existing;
-  const id = `u_${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
-  await AsyncStorage.setItem(AMPLITUDE_USER_ID_KEY, id);
-  return id;
-}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -91,23 +80,19 @@ export default function RootLayout() {
     const key = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
     if (!key) return;
 
-    let sub: { remove: () => void } | undefined;
+    amplitude.init(key, undefined, {
+      logLevel: amplitude.Types.LogLevel.Debug,
+      flushIntervalMillis: 1000,
+      flushQueueSize: 1,
+    }).promise.then(() => {
+      amplitude.setUserId(amplitude.getDeviceId());
+    });
 
-    (async () => {
-      const userId = await getOrCreateAmplitudeUserId();
-      amplitude.init(key, userId, {
-        logLevel: amplitude.Types.LogLevel.Debug,
-        flushIntervalMillis: 1000,
-        flushQueueSize: 1,
-      });
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "background" || state === "inactive") amplitude.flush();
+    });
 
-      if (Platform.OS !== "ios") return;
-      sub = AppState.addEventListener("change", (state) => {
-        if (state === "background" || state === "inactive") amplitude.flush();
-      });
-    })();
-
-    return () => sub?.remove();
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {
