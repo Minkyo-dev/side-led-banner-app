@@ -485,6 +485,16 @@ export function buildLazyFontAssets(
   return buildFontAssetsForIds(remainingIds);
 }
 
+export function getSkiaFontAssets(locale: AppLocaleKey): number[] {
+  const ids = getEagerFontIdsForLocale(locale);
+  const assets: number[] = [];
+  ids.forEach((id) => {
+    const set = APP_FONT_FACE_SETS[id];
+    assets.push(set.regular, set.bold);
+  });
+  return assets;
+}
+
 export const APP_THEME_FONT_FAMILY = "AppTheme";
 export const APP_THEME_FONT_FAMILY_BOLD = "AppTheme-Bold";
 
