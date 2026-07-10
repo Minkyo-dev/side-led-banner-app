@@ -27,7 +27,7 @@ function loadTypeface(asset: number): Promise<SkTypeface | null> {
       typefaceCache.set(asset, typeface);
       return typeface;
     } catch {
-      typefaceCache.set(asset, null);
+      // IO 실패는 일시적일 수 있어 영구 캐시하지 않고 재시도 가능하게 두겠습니다
       return null;
     } finally {
       pendingTypefaceLoads.delete(asset);
@@ -37,6 +37,15 @@ function loadTypeface(asset: number): Promise<SkTypeface | null> {
   pendingTypefaceLoads.set(asset, promise);
   return promise;
 }
+
+/** 부팅 시점 등에서 캐시를 미리 데워두기 위한 fire-and-forget 프리로드 */
+export function preloadSkiaTypefaces(assets: number[]): void {
+  assets.forEach((asset) => {
+    void loadTypeface(asset);
+  });
+}
+
+const RETRY_DELAYS_MS = [500, 1500, 3000];
 
 /** asset 기준 전역 캐시를 쓰는 useFont 대체 훅. */
 export function useCachedSkiaFont(
@@ -58,11 +67,30 @@ export function useCachedSkiaFont(
       return;
     }
     let cancelled = false;
-    loadTypeface(asset).then((tf) => {
-      if (!cancelled) setTypeface(tf);
-    });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    // 첫 로드가 실패해도(iOS 저사양/태블릿에서 초기 IO 지연 등) 마퀴 애니메이션이
+    // textWidth=0 상태로 영구히 멈추지 않도록 짧은 백오프로 재시도한다
+    const attemptLoad = (retryIndex: number) => {
+      loadTypeface(asset).then((tf) => {
+        if (cancelled) return;
+        if (tf) {
+          setTypeface(tf);
+          return;
+        }
+        const delay = RETRY_DELAYS_MS[retryIndex];
+        if (delay == null) {
+          setTypeface(null);
+          return;
+        }
+        timer = setTimeout(() => attemptLoad(retryIndex + 1), delay);
+      });
+    };
+    attemptLoad(0);
+
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, [asset]);
 

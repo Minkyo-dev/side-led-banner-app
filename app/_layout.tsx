@@ -3,8 +3,11 @@ import {
   APP_THEME_FONT_ASSETS,
   buildEagerFontAssets,
   buildLazyFontAssets,
+  getSkiaFontAssets,
 } from "@/constants/appFonts";
 import { SettingsProvider } from "@/contexts/settingsContext";
+import { preloadSkiaTypefaces } from "@/hooks/useCachedSkiaFont";
+import { loadRewardedAd } from "@/hooks/useRewardedAd";
 import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
 import * as amplitude from "@amplitude/analytics-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -24,7 +27,6 @@ import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import React, { useEffect, useMemo, useState } from "react";
 import { AppState, Platform } from "react-native";
 import mobileAds from "react-native-google-mobile-ads";
-import { loadRewardedAd } from "@/hooks/useRewardedAd";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -66,6 +68,10 @@ export default function RootLayout() {
       if (__DEV__) console.warn("[fonts] lazy font load failed", err);
     });
   }, [fontsLoaded, deviceAppLocale]);
+
+  useEffect(() => {
+    preloadSkiaTypefaces(getSkiaFontAssets(deviceAppLocale));
+  }, [deviceAppLocale]);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
