@@ -24,6 +24,8 @@ import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import {
   type GoogleSheetLocaleRow,
   type GoogleSheetParseResult,
+  SETTINGS_SHEET_CSV_URL,
+  SETTINGS_SHEET_LOCALE_ORDER,
   useGoogleSheets,
 } from "@/hooks/useGoogleSheets";
 import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
@@ -478,6 +480,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     refetch: refetchSheetStrings,
   } = useGoogleSheets();
 
+  const { data: settingsSheetData } = useGoogleSheets(
+    SETTINGS_SHEET_CSV_URL,
+    SETTINGS_SHEET_LOCALE_ORDER,
+  );
+
   /** 기기 로케일 */
   const locales = useLocales();
   const primaryLocale = locales[0];
@@ -522,6 +529,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const sheetParseResult = sheetData ?? null;
   const sheetRows = sheetData?.rows ?? null;
+  const settingsSheetRows = settingsSheetData?.rows ?? null;
 
   const sheetStringsRevision = useMemo(
     () =>
@@ -531,8 +539,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const textSectionLabel = useCallback(
     (key: TextSectionLabelKey) =>
-      tTextSectionLabel(key, resolvedAppLocale, sheetRows),
-    [resolvedAppLocale, sheetRows],
+      tTextSectionLabel(key, resolvedAppLocale, sheetRows, settingsSheetRows),
+    [resolvedAppLocale, sheetRows, settingsSheetRows],
   );
 
   const effectSectionLabel = useCallback(
