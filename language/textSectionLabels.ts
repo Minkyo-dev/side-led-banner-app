@@ -316,14 +316,55 @@ const TEXT_SHEET_PICK: Partial<
   size: { sheetRow: 5 },
 };
 
+
+const SETTINGS_SHEET_PICK: Partial<
+  Record<TextSectionLabelKey, SheetRowPickOptions>
+> = {
+  settingsTitle: { sheetRow: 2 },
+  language: { sheetRow: 24 },
+  instagram: { sheetRow: 37 },
+  twitter: { sheetRow: 38 },
+  link: { sheetRow: 39 },
+  sunnyGames: { sheetRow: 43 },
+  credits: { sheetRow: 57 },
+  openSourceInfo: { sheetRow: 67 },
+  appVersion: { sheetRow: 72 },
+};
+
 export function tTextSectionLabel(
   key: TextSectionLabelKey,
   locale: AppLocaleKey,
   sheetRows?: GoogleSheetLocaleRow[] | null,
+  settingsSheetRows?: GoogleSheetLocaleRow[] | null,
 ): string {
   const fb = LABELS[key];
-  const opts = TEXT_SHEET_PICK[key];
 
+  const settingsOpts = SETTINGS_SHEET_PICK[key];
+  if (settingsOpts) {
+    const fromSettingsSheet = pickLocaleFromSheetRows(
+      settingsSheetRows,
+      locale,
+      fb.en,
+      fb.ko,
+      settingsOpts,
+    );
+    /** 시트 행이 아직 번역 안 됐으면(현재 언어 칸 == 영어 칸) 코드 기본값을 우선함 */
+    if (fromSettingsSheet && locale !== "en") {
+      const enFromSettingsSheet = pickLocaleFromSheetRows(
+        settingsSheetRows,
+        "en",
+        fb.en,
+        fb.ko,
+        settingsOpts,
+      );
+      if (fromSettingsSheet === enFromSettingsSheet && fb[locale]) {
+        return fb[locale];
+      }
+    }
+    if (fromSettingsSheet) return fromSettingsSheet;
+  }
+
+  const opts = TEXT_SHEET_PICK[key];
   const fromSheet = pickLocaleFromSheetRows(
     sheetRows,
     locale,

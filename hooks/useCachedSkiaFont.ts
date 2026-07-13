@@ -12,6 +12,32 @@ import { Image } from "react-native";
 const typefaceCache = new Map<number, SkTypeface | null>();
 const pendingTypefaceLoads = new Map<number, Promise<SkTypeface | null>>();
 
+const LOAD_RETRY_DELAYS_MS = [300, 1000, 2000];
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchTypeface(asset: number): Promise<SkTypeface | null> {
+  const uri = Image.resolveAssetSource(asset).uri;
+  const data = await Skia.Data.fromURI(uri);
+  return data ? Skia.Typeface.MakeFreeTypeFaceFromData(data) : null;
+}
+
+// 부팅 직후처럼 폰트 다운로드가 몰릴 때 개발 서버(Metro)에서 일시적으로
+// 거부되는 경우가 있어, 실패 시 짧은 자체 재시도합니다.
+async function fetchTypefaceWithRetry(asset: number): Promise<SkTypeface | null> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await fetchTypeface(asset);
+    } catch {
+      const delay = LOAD_RETRY_DELAYS_MS[attempt];
+      if (delay == null) return null;
+      await wait(delay);
+    }
+  }
+}
+
 function loadTypeface(asset: number): Promise<SkTypeface | null> {
   const cached = typefaceCache.get(asset);
   if (cached !== undefined) return Promise.resolve(cached);
@@ -19,20 +45,15 @@ function loadTypeface(asset: number): Promise<SkTypeface | null> {
   const pending = pendingTypefaceLoads.get(asset);
   if (pending) return pending;
 
-  const promise = (async () => {
-    try {
-      const uri = Image.resolveAssetSource(asset).uri;
-      const data = await Skia.Data.fromURI(uri);
-      const typeface = data ? Skia.Typeface.MakeFreeTypeFaceFromData(data) : null;
+  const promise = fetchTypefaceWithRetry(asset)
+    .then((typeface) => {
+      // 성공/영구 실패 모두 결과를 캐시해 이후 호출자가 중복 재시도하지 않게 함
       typefaceCache.set(asset, typeface);
       return typeface;
-    } catch {
-      // IO 실패는 일시적일 수 있어 영구 캐시하지 않고 재시도 가능하게 두겠습니다
-      return null;
-    } finally {
+    })
+    .finally(() => {
       pendingTypefaceLoads.delete(asset);
-    }
-  })();
+    });
 
   pendingTypefaceLoads.set(asset, promise);
   return promise;

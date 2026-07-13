@@ -8,6 +8,24 @@ import { useCallback, useEffect, useState } from "react";
 export const GOOGLE_SHEET_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vS4uzvVy0xudw8AviSG0o-JsE5IiuBdpYt4tAAxDXFSK9l0i2To3cZ2pBqCDc3AoRoeENUW_QC5s4_d/pub?gid=0&single=true&output=csv";
 
+/**
+ * "Settings (2)" 시트. B~H열 순서가 `APP_LOCALE_KEYS`와 다르게 영어가 B열부터 시작하ㅂ니다.
+ * @see SETTINGS_SHEET_LOCALE_ORDER
+ */
+export const SETTINGS_SHEET_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5To4DMk6Jv889Y09eFtHdUdwa0cNIE4JKWpxfK6NTl8KfgJ4hNvxusbMvoaQp1aAUQLcAnv0hwOMw/pub?gid=0&single=true&output=csv";
+
+/** (English, 한국어, 日本語, 简体中文, 繁體中文, Français, Español) */
+export const SETTINGS_SHEET_LOCALE_ORDER: readonly AppLocaleKey[] = [
+  "en",
+  "ko",
+  "ja",
+  "zhSC",
+  "zhTC",
+  "fr",
+  "es",
+];
+
 /** 스프레드시트 열 순서와 동일 (`APP_LOCALE_KEYS`와 같음)*/
 export const SHEET_LOCALE_KEYS = APP_LOCALE_KEYS;
 
@@ -15,7 +33,6 @@ export type SheetLocaleKey = AppLocaleKey;
 
 /** 실제 값 추출 시작하는 인덱스 */
 const COL_B_INDEX = 1;
-const LOCALE_COLUMN_COUNT = APP_LOCALE_KEYS.length;
 
 export type GoogleSheetLocaleRow = {
   /**
@@ -41,10 +58,13 @@ function trimCell(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-function localesFromB2F(cells: string[]): Record<SheetLocaleKey, string> {
+function localesFromB2F(
+  cells: string[],
+  localeOrder: readonly AppLocaleKey[],
+): Record<SheetLocaleKey, string> {
   const locales = {} as Record<SheetLocaleKey, string>;
-  for (let k = 0; k < LOCALE_COLUMN_COUNT; k++) {
-    const key = APP_LOCALE_KEYS[k];
+  for (let k = 0; k < localeOrder.length; k++) {
+    const key = localeOrder[k];
     locales[key] = cells[COL_B_INDEX + k] ?? "";
   }
   return locales;
@@ -54,7 +74,10 @@ function hasAnyB2F(locales: Record<SheetLocaleKey, string>): boolean {
   return Object.values(locales).some((v) => v !== "");
 }
 
-function parsePublishedSheetCsv(csvText: string): GoogleSheetParseResult {
+function parsePublishedSheetCsv(
+  csvText: string,
+  localeOrder: readonly AppLocaleKey[],
+): GoogleSheetParseResult {
   const parsed = Papa.parse<string[]>(csvText, {
     header: false,
     /** 줄 번호를 스프레드시트 행과 맞추려면 빈 줄도 유지 */
@@ -68,7 +91,7 @@ function parsePublishedSheetCsv(csvText: string): GoogleSheetParseResult {
   if (rawRows.length === 0) {
     return {
       sheetVersion: "",
-      headerLabelsB1F: new Array(LOCALE_COLUMN_COUNT).fill(""),
+      headerLabelsB1F: new Array(localeOrder.length).fill(""),
       rows: [],
     };
   }
@@ -76,7 +99,7 @@ function parsePublishedSheetCsv(csvText: string): GoogleSheetParseResult {
   const headerLine = (rawRows[0] ?? []).map(trimCell);
   const sheetVersion = headerLine[0] ?? "";
   const headerLabelsB1F = Array.from(
-    { length: LOCALE_COLUMN_COUNT },
+    { length: localeOrder.length },
     (_, k) => headerLine[COL_B_INDEX + k] ?? "",
   );
 
@@ -89,7 +112,7 @@ function parsePublishedSheetCsv(csvText: string): GoogleSheetParseResult {
     const rowKeyRaw = cells[0] ?? "";
     const rowKey = rowKeyRaw !== "" ? rowKeyRaw : `row-${sheetRow}`;
 
-    const locales = localesFromB2F(cells);
+    const locales = localesFromB2F(cells, localeOrder);
     if (!hasAnyB2F(locales)) continue;
 
     rows.push({ sheetRow, rowKey, locales });
@@ -110,6 +133,7 @@ export type UseGoogleSheetsResult = {
  */
 export function useGoogleSheets(
   csvUrl: string = GOOGLE_SHEET_CSV_URL,
+  localeOrder: readonly AppLocaleKey[] = APP_LOCALE_KEYS,
 ): UseGoogleSheetsResult {
   const [data, setData] = useState<GoogleSheetParseResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,7 +153,7 @@ export function useGoogleSheets(
         throw new Error(`Google Sheet 요청 실패: HTTP ${response.status}`);
       }
       const csvText = await response.text();
-      setData(parsePublishedSheetCsv(csvText));
+      setData(parsePublishedSheetCsv(csvText, localeOrder));
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
       setError(err);
@@ -138,7 +162,7 @@ export function useGoogleSheets(
     } finally {
       setLoading(false);
     }
-  }, [csvUrl]);
+  }, [csvUrl, localeOrder]);
 
   useEffect(() => {
     void load();

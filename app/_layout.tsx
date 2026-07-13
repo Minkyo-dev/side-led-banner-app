@@ -2,21 +2,26 @@ import { SplashLoadingScreen } from "@/components/SplashLoadingScreen";
 import {
   APP_THEME_FONT_ASSETS,
   buildEagerFontAssets,
-  buildLazyFontAssets,
+  getFontAssetIds,
   getSkiaFontAssets,
 } from "@/constants/appFonts";
 import { SettingsProvider } from "@/contexts/settingsContext";
 import { preloadSkiaTypefaces } from "@/hooks/useCachedSkiaFont";
 import { loadRewardedAd } from "@/hooks/useRewardedAd";
 import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
+import {
+  collectPriorityFontIds,
+  loadFontIds,
+  loadRemainingFonts,
+} from "@/utils/fontPreload";
 import * as amplitude from "@amplitude/analytics-react-native";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import * as Font from "expo-font";
 import { useFonts } from "expo-font";
+import { useKeepAwake } from 'expo-keep-awake';
 import { useLocales } from "expo-localization";
 import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
@@ -36,6 +41,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  useKeepAwake(); 
 
   // 기기 언어의 폰트 5개만 부팅 시 즉시 로드
   const locales = useLocales();
@@ -49,13 +55,22 @@ export default function RootLayout() {
   );
   const [fontsLoaded] = useFonts(eagerFontAssets);
 
-  // 나머지 로케일 폰트는 백그라운드로 지연 로드
+  // 필요한 폰트를 우선 로드하고, 그 다음 나머지는 백그라운드로 로드
   useEffect(() => {
     if (!fontsLoaded) return;
-    const lazyAssets = buildLazyFontAssets(deviceAppLocale);
-    Font.loadAsync(lazyAssets).catch((err) => {
-      if (__DEV__) console.warn("[fonts] lazy font load failed", err);
+    let cancelled = false;
+    collectPriorityFontIds(deviceAppLocale).then((priorityIds) => {
+      if (cancelled) return;
+      preloadSkiaTypefaces(getFontAssetIds(priorityIds));
+      loadFontIds(priorityIds)
+        .then(() => (cancelled ? undefined : loadRemainingFonts(priorityIds)))
+        .catch((err) => {
+          if (__DEV__) console.warn("[fonts] font preload failed", err);
+        });
     });
+    return () => {
+      cancelled = true;
+    };
   }, [fontsLoaded, deviceAppLocale]);
 
   useEffect(() => {
@@ -81,7 +96,7 @@ export default function RootLayout() {
     if (!key) return;
 
     amplitude.init(key, undefined, {
-      logLevel: amplitude.Types.LogLevel.Debug,
+      logLevel: amplitude.Types.LogLevel.Warn,
       flushIntervalMillis: 1000,
       flushQueueSize: 1,
     }).promise.then(() => {

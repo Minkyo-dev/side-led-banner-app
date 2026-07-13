@@ -24,6 +24,8 @@ import type { SpeechBubblePresetId } from "@/constants/speechBubblePresets";
 import {
   type GoogleSheetLocaleRow,
   type GoogleSheetParseResult,
+  SETTINGS_SHEET_CSV_URL,
+  SETTINGS_SHEET_LOCALE_ORDER,
   useGoogleSheets,
 } from "@/hooks/useGoogleSheets";
 import { deviceLocaleToAppLocale } from "@/language/deviceLocale";
@@ -37,6 +39,7 @@ import { tRewardAdLabel } from "@/language/rewardAdLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
 import { readAppLanguage, writeAppLanguage } from "@/utils/appLanguageStorage";
+import { ensureLocaleFontsLoaded } from "@/utils/fontPreload";
 import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
@@ -478,6 +481,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     refetch: refetchSheetStrings,
   } = useGoogleSheets();
 
+  const { data: settingsSheetData } = useGoogleSheets(
+    SETTINGS_SHEET_CSV_URL,
+    SETTINGS_SHEET_LOCALE_ORDER,
+  );
+
   /** 기기 로케일 */
   const locales = useLocales();
   const primaryLocale = locales[0];
@@ -520,8 +528,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const resolvedAppLocale: AppLocaleKey =
     ui.appLanguage === "system" ? deviceAppLocale : ui.appLanguage;
 
+  /** 언어가 부팅 시 미리 로드되지 않은 언어로 바뀌면 그 로케일 폰트를 로드 */
+  useEffect(() => {
+    ensureLocaleFontsLoaded(resolvedAppLocale).catch((err) => {
+      if (__DEV__) console.warn("[fonts] locale font load failed", err);
+    });
+  }, [resolvedAppLocale]);
+
   const sheetParseResult = sheetData ?? null;
   const sheetRows = sheetData?.rows ?? null;
+  const settingsSheetRows = settingsSheetData?.rows ?? null;
 
   const sheetStringsRevision = useMemo(
     () =>
@@ -531,8 +547,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const textSectionLabel = useCallback(
     (key: TextSectionLabelKey) =>
-      tTextSectionLabel(key, resolvedAppLocale, sheetRows),
-    [resolvedAppLocale, sheetRows],
+      tTextSectionLabel(key, resolvedAppLocale, sheetRows, settingsSheetRows),
+    [resolvedAppLocale, sheetRows, settingsSheetRows],
   );
 
   const effectSectionLabel = useCallback(

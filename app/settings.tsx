@@ -19,7 +19,7 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
-  View,
+  View
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 
@@ -101,14 +101,13 @@ export default function SettingsScreen() {
           accessibilityLabel="Back"
           hitSlop={10}
         >
-          <Ionicons
+<Ionicons
             name={Platform.OS === "ios" ? "chevron-back" : "arrow-back"}
             size={24}
             color="black"
           />
         </TouchableOpacity>
         <View style={settingsStyles.titleRow}>
-          <Ionicons name="settings-outline" size={22} color="black" />
           <Text style={settingsStyles.titleText} allowFontScaling={false}>
             {textSectionLabel("settingsTitle")}
           </Text>
