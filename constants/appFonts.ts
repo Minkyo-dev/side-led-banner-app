@@ -1,4 +1,4 @@
-import type { AppLocaleKey } from "@/constants/language";
+import { APP_LOCALE_KEYS, type AppLocaleKey } from "@/constants/language";
 
 /** settings폰트키용 */
 export type FontId =
@@ -474,25 +474,55 @@ export function buildEagerFontAssets(
   return buildFontAssetsForIds(getEagerFontIdsForLocale(locale));
 }
 
-/** 나머지 로케일 용 폰트*/
-export function buildLazyFontAssets(
-  locale: AppLocaleKey,
+function dedupeFontIds(ids: FontId[]): FontId[] {
+  return Array.from(new Set(ids));
+}
+
+/** id 목록 RN 폰트 asset 매핑 */
+export function buildFontAssets(ids: FontId[]): Record<string, number> {
+  return buildFontAssetsForIds(dedupeFontIds(ids));
+}
+
+/** 주어진 id들을 제외한 나머지 전체 폰트 asset 매핑 */
+export function buildRemainingFontAssets(
+  excludeIds: FontId[],
 ): Record<string, number> {
-  const eagerIds = new Set(getEagerFontIdsForLocale(locale));
+  const exclude = new Set(excludeIds);
   const remainingIds = (Object.keys(APP_FONT_FACE_SETS) as FontId[]).filter(
-    (id) => !eagerIds.has(id) && !SKIA_ONLY_FONTS.has(id),
+    (id) => !exclude.has(id) && !SKIA_ONLY_FONTS.has(id),
   );
   return buildFontAssetsForIds(remainingIds);
 }
 
-export function getSkiaFontAssets(locale: AppLocaleKey): number[] {
-  const ids = getEagerFontIdsForLocale(locale);
+/** 모든 locale의 default 폰트 id */
+export function getAllDefaultFontIds(): FontId[] {
+  return dedupeFontIds(APP_LOCALE_KEYS.map(getDefaultForLocale));
+}
+
+/** fontByLocale 맵에 저장된 폰트 id들 */
+export function getFontIdsInLocaleMap(
+  map: Partial<Record<AppLocaleKey, string>> | undefined | null,
+): FontId[] {
+  if (!map) return [];
+  const ids = Object.values(map)
+    .filter((value): value is string => !!value)
+    .map((value) => normalizeFontId(value))
+    .filter((id): id is FontId => id != null);
+  return dedupeFontIds(ids);
+}
+
+/** id 목록 → Skia용 asset(require id) 목록 (regular+bold)*/
+export function getFontAssetIds(ids: FontId[]): number[] {
   const assets: number[] = [];
   ids.forEach((id) => {
     const set = APP_FONT_FACE_SETS[id];
     assets.push(set.regular, set.bold);
   });
   return assets;
+}
+
+export function getSkiaFontAssets(locale: AppLocaleKey): number[] {
+  return getFontAssetIds(getEagerFontIdsForLocale(locale));
 }
 
 export const APP_THEME_FONT_FAMILY = "AppTheme";

@@ -39,6 +39,7 @@ import { tRewardAdLabel } from "@/language/rewardAdLabels";
 import type { TextSectionLabelKey } from "@/language/textSectionLabels";
 import { tTextSectionLabel } from "@/language/textSectionLabels";
 import { readAppLanguage, writeAppLanguage } from "@/utils/appLanguageStorage";
+import { ensureLocaleFontsLoaded } from "@/utils/fontPreload";
 import {
   persistPresetSlotsSnapshot,
   readPresetSlotsJson,
@@ -526,6 +527,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const resolvedAppLocale: AppLocaleKey =
     ui.appLanguage === "system" ? deviceAppLocale : ui.appLanguage;
+
+  /** 언어가 부팅 시 미리 로드되지 않은 언어로 바뀌면 그 로케일 폰트를 로드 */
+  useEffect(() => {
+    ensureLocaleFontsLoaded(resolvedAppLocale).catch((err) => {
+      if (__DEV__) console.warn("[fonts] locale font load failed", err);
+    });
+  }, [resolvedAppLocale]);
 
   const sheetParseResult = sheetData ?? null;
   const sheetRows = sheetData?.rows ?? null;
