@@ -29,7 +29,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import React, { useEffect, useMemo, useState } from "react";
-import { AppState, Platform } from "react-native";
+import { AppState, InteractionManager, Platform } from "react-native";
 import mobileAds from "react-native-google-mobile-ads";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
@@ -92,26 +92,6 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    const key = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
-    if (!key) return;
-
-    amplitude.init(key, amplitude.getUserId(), {
-      logLevel: amplitude.Types.LogLevel.Warn,
-      flushIntervalMillis: 30000,
-      flushQueueSize: 1,
-      disableCookies: true,
-    }).promise.then(() => {
-      amplitude.setUserId(amplitude.getDeviceId());
-    });
-
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "background" || state === "inactive") amplitude.flush();
-    });
-
-    return () => sub.remove();
-  }, []);
-
-  useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
 
@@ -119,13 +99,47 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!isReady) return;
-    (async () => {
-      if (Platform.OS === "ios") {
-        await requestTrackingPermissionsAsync();
-      }
-      await mobileAds().initialize();
-      loadRewardedAd();
-    })();
+
+    const task = InteractionManager.runAfterInteractions(() => {
+      const initAmplitude = async () => {
+        const key = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
+        if (!key) return;
+        try {
+          await amplitude.init(key, undefined, {
+            logLevel: amplitude.Types.LogLevel.Warn,
+            flushIntervalMillis: 30000,
+            flushQueueSize: 1,
+            disableCookies: true,
+          }).promise;
+        } catch (e) {
+          if (__DEV__) console.warn("[App] Amplitude init failed:", e);
+        }
+      };
+
+      const initializeAds = async () => {
+        try {
+          if (Platform.OS === "ios") {
+            await requestTrackingPermissionsAsync();
+          }
+          await mobileAds().initialize();
+          loadRewardedAd();
+        } catch (e) {
+          if (__DEV__) console.warn("[App] MobileAds init failed:", e);
+        }
+      };
+
+      initAmplitude();
+      initializeAds();
+    });
+
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "background" || state === "inactive") amplitude.flush();
+    });
+
+    return () => {
+      task.cancel();
+      sub.remove();
+    };
   }, [isReady]);
 
   return (
