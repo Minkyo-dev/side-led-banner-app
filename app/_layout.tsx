@@ -95,10 +95,11 @@ export default function RootLayout() {
     const key = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
     if (!key) return;
 
-    amplitude.init(key, undefined, {
+    amplitude.init(key, amplitude.getUserId(), {
       logLevel: amplitude.Types.LogLevel.Warn,
-      flushIntervalMillis: 1000,
+      flushIntervalMillis: 30000,
       flushQueueSize: 1,
+      disableCookies: true,
     }).promise.then(() => {
       amplitude.setUserId(amplitude.getDeviceId());
     });
