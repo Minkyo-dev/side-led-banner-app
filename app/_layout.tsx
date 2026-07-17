@@ -106,7 +106,6 @@ export default function RootLayout() {
         if (!key) return;
         try {
           await amplitude.init(key, amplitude.getDeviceId(), {
-            logLevel: amplitude.Types.LogLevel.Warn,
             disableCookies: true,
           });
         } catch (e) {
