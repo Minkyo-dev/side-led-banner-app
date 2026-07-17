@@ -105,7 +105,7 @@ export default function RootLayout() {
         const key = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
         if (!key) return;
         try {
-          await amplitude.init(key, undefined, {
+          await amplitude.init(key, amplitude.getDeviceId(), {
             logLevel: amplitude.Types.LogLevel.Warn,
             flushIntervalMillis: 30000,
             flushQueueSize: 1,
