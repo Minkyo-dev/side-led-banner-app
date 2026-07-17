@@ -107,10 +107,8 @@ export default function RootLayout() {
         try {
           await amplitude.init(key, amplitude.getDeviceId(), {
             logLevel: amplitude.Types.LogLevel.Warn,
-            flushIntervalMillis: 30000,
-            flushQueueSize: 1,
             disableCookies: true,
-          }).promise;
+          });
         } catch (e) {
           if (__DEV__) console.warn("[App] Amplitude init failed:", e);
         }
