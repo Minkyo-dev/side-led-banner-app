@@ -39,6 +39,8 @@ export type TextSectionLabelKey =
   | "link"
   | "credits"
   | "openSourceInfo"
+  | "terms"
+  | "privacy"
   | "appVersion";
 
 /** TEXT*/
@@ -296,6 +298,24 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     fr: "Infos open source",
     es: "Información de código abierto",
   },
+  terms: {
+    ko: "이용약관",
+    en: "Terms",
+    ja: "利用規約",
+    zhTC: "服務條款",
+    zhSC: "服务条款",
+    fr: "Conditions",
+    es: "Términos",
+  },
+  privacy: {
+    ko: "개인정보처리방침",
+    en: "Privacy",
+    ja: "プライバシー",
+    zhTC: "隱私權",
+    zhSC: "隐私政策",
+    fr: "Confidentialité",
+    es: "Privacidad",
+  },
   appVersion: {
     ko: "앱 버전",
     en: "App Version",
@@ -327,8 +347,10 @@ const SETTINGS_SHEET_PICK: Partial<
   link: { sheetRow: 39 },
   sunnyGames: { sheetRow: 43 },
   credits: { sheetRow: 57 },
-  openSourceInfo: { sheetRow: 67 },
-  appVersion: { sheetRow: 72 },
+  openSourceInfo: { sheetRow: 64 },
+  terms: { sheetRow: 67 },
+  privacy: { sheetRow: 68 },
+  appVersion: { sheetRow: 65 },
 };
 
 export function tTextSectionLabel(
