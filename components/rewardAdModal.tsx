@@ -166,6 +166,7 @@ type BenefitRow = {
 };
 
 const BENEFIT_ROWS: BenefitRow[] = [
+  { labelKey: "rewardBenefitTextSize" },
   { labelKey: "rewardBenefitColors" },
   { labelKey: "rewardBenefitEffects" },
   { labelKey: "rewardBenefitFavorites" },

@@ -9,8 +9,8 @@ import {
 
 
 const PROD_AD_UNIT_ID = Platform.select({
-  ios: "ca-app-pub-3506417530430977/XXXXXXXXXX",
-  android: "ca-app-pub-3506417530430977/XXXXXXXXXX",
+  ios: "ca-app-pub-3506417530430977/4076706298",
+  android: "ca-app-pub-3506417530430977/6499152286",
   default: TestIds.REWARDED,
 });
 

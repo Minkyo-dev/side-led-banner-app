@@ -6,11 +6,11 @@ import {
 } from "@/language/matchSheetRows";
 
 /**
- * 리워드 광고 팝업 문자열 (게시 CSV 32~38행과 동기화).
- * 시트 A열 키: reward.headerBadge, reward.benefitColors, … (비어 있으면 행 번호·영/한 앵커로 매칭)
+ * 리워드 광고 팝업 문자
  */
 export type RewardAdLabelKey =
   | "rewardHeaderBadge"
+  | "rewardBenefitTextSize"
   | "rewardBenefitColors"
   | "rewardBenefitEffects"
   | "rewardBenefitFavorites"
@@ -27,6 +27,15 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
     zhSC: "免费使用 LED Pop Pro",
     fr: "Utilisez LED Pop Pro gratuitement",
     es: "Usa LED Pop Pro gratis",
+  },
+  rewardBenefitTextSize: {
+    ko: "글자 크기 조절 가능",
+    en: "Adjustable text size",
+    ja: "文字サイズを調整可能",
+    zhTC: "可調整文字大小",
+    zhSC: "可调整文字大小",
+    fr: "Taille du texte ajustable",
+    es: "Tamaño de texto ajustable",
   },
   rewardBenefitColors: {
     ko: "모든 텍스트와 배경 색상 사용 가능",
@@ -88,13 +97,12 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
 const REWARD_SHEET_PICK: Partial<
   Record<RewardAdLabelKey, SheetRowPickOptions>
 > = {
-  rewardHeaderBadge: { sheetRow: 32 },
-  rewardBenefitColors: { sheetRow: 33 },
-  rewardBenefitEffects: { sheetRow: 34 },
+  rewardDescription: { sheetRow: 32 },
+  rewardBenefitTextSize: { sheetRow: 33 },
+  rewardBenefitColors: { sheetRow: 34 },
   rewardBenefitFavorites: { sheetRow: 35 },
-  rewardBenefitOutlineShadow: { sheetRow: 36 },
-  rewardDescription: { sheetRow: 37 },
-  rewardWatchAd: { sheetRow: 38 },
+  rewardBenefitEffects: { sheetRow: 36 },
+  rewardWatchAd: { sheetRow: 37 },
 };
 
 /** 시트 E/F 열이 뒤바뀌었거나 깨진 경우 코드 fallback을 씁니다. */
