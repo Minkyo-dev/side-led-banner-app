@@ -27,7 +27,6 @@ import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import React, { useEffect, useMemo, useState } from "react";
 import { AppState, InteractionManager, Platform } from "react-native";
 import mobileAds from "react-native-google-mobile-ads";
@@ -105,9 +104,11 @@ export default function RootLayout() {
         const key = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY ?? "";
         if (!key) return;
         try {
-          await amplitude.init(key, amplitude.getDeviceId(), {
+          await amplitude.init(key, undefined, {
             disableCookies: true,
-          });
+          }).promise;
+          const deviceId = amplitude.getDeviceId();
+          if (deviceId) amplitude.setUserId(deviceId);
         } catch (e) {
           if (__DEV__) console.warn("[App] Amplitude init failed:", e);
         }
@@ -115,9 +116,6 @@ export default function RootLayout() {
 
       const initializeAds = async () => {
         try {
-          if (Platform.OS === "ios") {
-            await requestTrackingPermissionsAsync();
-          }
           await mobileAds().initialize();
           loadRewardedAd();
         } catch (e) {
