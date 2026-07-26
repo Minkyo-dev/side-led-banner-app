@@ -16,8 +16,9 @@ const PROD_BANNER_AD_UNIT_ID = Platform.select({
 const isPlaceholderAdUnitId =
   !PROD_BANNER_AD_UNIT_ID || PROD_BANNER_AD_UNIT_ID.includes("XXXXXXXXXX");
 
-const BANNER_AD_UNIT_ID =
-  __DEV__ || isPlaceholderAdUnitId ? TestIds.BANNER : PROD_BANNER_AD_UNIT_ID;
+const BANNER_AD_UNIT_ID = isPlaceholderAdUnitId
+  ? TestIds.BANNER
+  : PROD_BANNER_AD_UNIT_ID;
 
 export default function BannerAdComponent({ style }: any) {
   // Banner Ad Component
