@@ -16,8 +16,7 @@ const PROD_AD_UNIT_ID = Platform.select({
 
 const isPlaceholderAdUnitId = !PROD_AD_UNIT_ID || PROD_AD_UNIT_ID.includes("XXXXXXXXXX");
 
-const AD_UNIT_ID =
-  __DEV__ || isPlaceholderAdUnitId ? TestIds.REWARDED : PROD_AD_UNIT_ID;
+const AD_UNIT_ID = isPlaceholderAdUnitId ? TestIds.REWARDED : PROD_AD_UNIT_ID;
 
 const AD_RETRY_DELAY_MS = 2000;
 
