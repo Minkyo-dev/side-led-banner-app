@@ -97,6 +97,18 @@ export default function RootLayout() {
   const isReady = fontsLoaded && minTimeElapsed;
 
   useEffect(() => {
+    const initializeAds = async () => {
+      try {
+        await mobileAds().initialize();
+        loadRewardedAd();
+      } catch (e) {
+        if (__DEV__) console.warn("[App] MobileAds init failed:", e);
+      }
+    };
+    initializeAds();
+  }, []);
+
+  useEffect(() => {
     if (!isReady) return;
 
     const task = InteractionManager.runAfterInteractions(() => {
@@ -114,17 +126,7 @@ export default function RootLayout() {
         }
       };
 
-      const initializeAds = async () => {
-        try {
-          await mobileAds().initialize();
-          loadRewardedAd();
-        } catch (e) {
-          if (__DEV__) console.warn("[App] MobileAds init failed:", e);
-        }
-      };
-
       initAmplitude();
-      initializeAds();
     });
 
     const sub = AppState.addEventListener("change", (state) => {
