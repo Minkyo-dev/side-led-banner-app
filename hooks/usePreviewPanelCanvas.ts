@@ -12,6 +12,7 @@ import {
 } from "@/constants/appFonts";
 import { useSettings } from "@/contexts/settingsContext";
 import { useCachedSkiaFont } from "@/hooks/useCachedSkiaFont";
+import { useResolvedFontAssetRef } from "@/hooks/useResolvedFontAssetRef";
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
 import {
   buildMarqueeTextBlob,
@@ -140,8 +141,9 @@ export interface UsePreviewPanelCanvasParams {
   isPixelMode?: boolean;
 }
 
-const PIXEL_ZH_HANS_ASSET = APP_FONT_FACE_SETS.fusion_pixel_zh_hans.regular;
-const PIXEL_ZH_HANT_ASSET = APP_FONT_FACE_SETS.fusion_pixel_zh_hant.regular;
+// 픽셀 폰트는 항상 로컬 번들 asset(number)이며 원격 폰트로 전환되지 않음
+const PIXEL_ZH_HANS_ASSET = APP_FONT_FACE_SETS.fusion_pixel_zh_hans.regular as number;
+const PIXEL_ZH_HANT_ASSET = APP_FONT_FACE_SETS.fusion_pixel_zh_hant.regular as number;
 
 function isHangulChar(ch: string): boolean {
   const code = ch.codePointAt(0) ?? 0;
@@ -236,10 +238,14 @@ export function usePreviewPanelCanvas({
   ).regular;
 
   // 픽셀 모드 아닐 때 로케일 폴백 폰트 — 선택 폰트가 해당 스크립트가 아닐 때만 로드
-  const jaFallbackFont = useCachedSkiaFont(!isPixelMode && !selectedFontIsJa ? jaFallbackAsset : null, previewFontSize);
-  const koFallbackFont = useCachedSkiaFont(!isPixelMode && !selectedFontIsKo ? koFallbackAsset : null, previewFontSize);
-  const tcFallbackFont = useCachedSkiaFont(!isPixelMode && !selectedFontIsZhTC ? tcFallbackAsset : null, previewFontSize);
-  const scFallbackFont = useCachedSkiaFont(!isPixelMode && !selectedFontIsZhSC ? scFallbackAsset : null, previewFontSize);
+  const jaFallbackRef = useResolvedFontAssetRef(!isPixelMode && !selectedFontIsJa ? jaFallbackAsset : null);
+  const koFallbackRef = useResolvedFontAssetRef(!isPixelMode && !selectedFontIsKo ? koFallbackAsset : null);
+  const tcFallbackRef = useResolvedFontAssetRef(!isPixelMode && !selectedFontIsZhTC ? tcFallbackAsset : null);
+  const scFallbackRef = useResolvedFontAssetRef(!isPixelMode && !selectedFontIsZhSC ? scFallbackAsset : null);
+  const jaFallbackFont = useCachedSkiaFont(jaFallbackRef, previewFontSize);
+  const koFallbackFont = useCachedSkiaFont(koFallbackRef, previewFontSize);
+  const tcFallbackFont = useCachedSkiaFont(tcFallbackRef, previewFontSize);
+  const scFallbackFont = useCachedSkiaFont(scFallbackRef, previewFontSize);
 
   // 문자별 폰트 선택기: 선택 폰트는 자기 스크립트 문자에만 적용하고, 나머지는 해당 스크립트의 폴백 폰트를 사용
   const localeCharFontPicker = useMemo((): ((ch: string) => SkFont) | null => {

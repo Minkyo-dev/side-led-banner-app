@@ -13,6 +13,7 @@ import {
   collectPriorityFontIds,
   loadFontIds,
   loadRemainingFonts,
+  prefetchRemoteFonts,
 } from "@/utils/fontPreload";
 import * as amplitude from "@amplitude/analytics-react-native";
 import {
@@ -61,6 +62,7 @@ export default function RootLayout() {
     collectPriorityFontIds(deviceAppLocale).then((priorityIds) => {
       if (cancelled) return;
       preloadSkiaTypefaces(getFontAssetIds(priorityIds));
+      prefetchRemoteFonts(priorityIds);
       loadFontIds(priorityIds)
         .then(() => (cancelled ? undefined : loadRemainingFonts(priorityIds)))
         .catch((err) => {

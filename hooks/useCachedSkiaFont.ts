@@ -9,8 +9,10 @@ import { Image } from "react-native";
  * 동시에 쓸 때마다 TTF를 매번 새로 디코딩합니다. 여기서는 asset(require id) 기준으로
  * 앱 전역에 한 번만 디코딩해서 공유합니다.
  */
-const typefaceCache = new Map<number, SkTypeface | null>();
-const pendingTypefaceLoads = new Map<number, Promise<SkTypeface | null>>();
+export type FontAssetRef = number | string;
+
+const typefaceCache = new Map<FontAssetRef, SkTypeface | null>();
+const pendingTypefaceLoads = new Map<FontAssetRef, Promise<SkTypeface | null>>();
 
 const LOAD_RETRY_DELAYS_MS = [300, 1000, 2000];
 
@@ -18,15 +20,15 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchTypeface(asset: number): Promise<SkTypeface | null> {
-  const uri = Image.resolveAssetSource(asset).uri;
+async function fetchTypeface(asset: FontAssetRef): Promise<SkTypeface | null> {
+  const uri = typeof asset === "number" ? Image.resolveAssetSource(asset).uri : asset;
   const data = await Skia.Data.fromURI(uri);
   return data ? Skia.Typeface.MakeFreeTypeFaceFromData(data) : null;
 }
 
 // 부팅 직후처럼 폰트 다운로드가 몰릴 때 개발 서버(Metro)에서 일시적으로
 // 거부되는 경우가 있어, 실패 시 짧은 자체 재시도합니다.
-async function fetchTypefaceWithRetry(asset: number): Promise<SkTypeface | null> {
+async function fetchTypefaceWithRetry(asset: FontAssetRef): Promise<SkTypeface | null> {
   for (let attempt = 0; ; attempt += 1) {
     try {
       return await fetchTypeface(asset);
@@ -38,7 +40,7 @@ async function fetchTypefaceWithRetry(asset: number): Promise<SkTypeface | null>
   }
 }
 
-function loadTypeface(asset: number): Promise<SkTypeface | null> {
+function loadTypeface(asset: FontAssetRef): Promise<SkTypeface | null> {
   const cached = typefaceCache.get(asset);
   if (cached !== undefined) return Promise.resolve(cached);
 
@@ -60,7 +62,7 @@ function loadTypeface(asset: number): Promise<SkTypeface | null> {
 }
 
 /** 부팅 시점 등에서 캐시를 미리 데워두기 위한 fire-and-forget 프리로드 */
-export function preloadSkiaTypefaces(assets: number[]): void {
+export function preloadSkiaTypefaces(assets: FontAssetRef[]): void {
   assets.forEach((asset) => {
     void loadTypeface(asset);
   });
@@ -70,7 +72,7 @@ const RETRY_DELAYS_MS = [500, 1500, 3000];
 
 /** asset 기준 전역 캐시를 쓰는 useFont 대체 훅. */
 export function useCachedSkiaFont(
-  asset: number | null | undefined,
+  asset: FontAssetRef | null | undefined,
   size: number,
 ): SkFont | null {
   const [typeface, setTypeface] = useState<SkTypeface | null>(() =>
