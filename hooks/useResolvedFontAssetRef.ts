@@ -18,9 +18,15 @@ export function useResolvedFontAssetRef(
     if (!marker) return;
     let cancelled = false;
     const fontSource = REMOTE_FONT_FACE_SETS[marker.remote][marker.weight];
-    ensureRemoteFontDownloaded(fontSource).then((uri) => {
-      if (!cancelled) setRemoteUri(uri);
-    });
+    if (__DEV__) console.log("[fonts] remote font resolve start", marker.remote, marker.weight);
+    ensureRemoteFontDownloaded(fontSource)
+      .then((uri) => {
+        if (__DEV__) console.log("[fonts] remote font resolve done", marker.remote, marker.weight, uri);
+        if (!cancelled) setRemoteUri(uri);
+      })
+      .catch((err) => {
+        if (__DEV__) console.warn("[fonts] remote font resolve failed", marker.remote, marker.weight, err);
+      });
     return () => {
       cancelled = true;
     };

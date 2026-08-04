@@ -81,9 +81,14 @@ export function loadRemainingFonts(excludeIds: FontId[]): Promise<void> {
 /** 앱 번들에서 뺀 원격 폰트를 백그라운드로 미리 받아 캐싱(스플래시를 막지 않음) */
 export function prefetchRemoteFonts(ids: FontId[]): void {
   getRemoteFontIdsForIds(ids).forEach((remoteId) => {
-    ensureRemoteFontSetDownloaded(REMOTE_FONT_FACE_SETS[remoteId]).catch((err) => {
-      if (__DEV__) console.warn("[fonts] remote font prefetch failed", remoteId, err);
-    });
+    if (__DEV__) console.log("[fonts] remote font prefetch start", remoteId);
+    ensureRemoteFontSetDownloaded(REMOTE_FONT_FACE_SETS[remoteId])
+      .then((uris) => {
+        if (__DEV__) console.log("[fonts] remote font prefetch done", remoteId, uris);
+      })
+      .catch((err) => {
+        if (__DEV__) console.warn("[fonts] remote font prefetch failed", remoteId, err);
+      });
   });
 }
 
