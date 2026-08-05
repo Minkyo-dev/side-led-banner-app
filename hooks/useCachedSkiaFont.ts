@@ -1,3 +1,6 @@
+import { isRemoteFontMarker, type FontAssetSource } from "@/constants/appFonts";
+import { REMOTE_FONT_FACE_SETS } from "@/constants/remoteFonts";
+import { ensureRemoteFontDownloaded } from "@/utils/remoteFontLoader";
 import type { SkFont, SkTypeface } from "@shopify/react-native-skia";
 import { Skia } from "@shopify/react-native-skia";
 import { useEffect, useMemo, useState } from "react";
@@ -118,4 +121,31 @@ export function useCachedSkiaFont(
   }, [asset]);
 
   return useMemo(() => (typeface ? Skia.Font(typeface, size) : null), [typeface, size]);
+}
+
+export function useResolvedFontAssetRef(
+  source: FontAssetSource | null,
+): FontAssetRef | null {
+  const [remoteUri, setRemoteUri] = useState<string | null>(null);
+  const marker = source != null && isRemoteFontMarker(source) ? source : null;
+
+  useEffect(() => {
+    if (!marker) return;
+    let cancelled = false;
+    const fontSource = REMOTE_FONT_FACE_SETS[marker.remote][marker.weight];
+    ensureRemoteFontDownloaded(fontSource)
+      .then((uri) => {
+        if (__DEV__) console.log("[fonts] remote font resolve done", marker.remote, marker.weight, uri);
+        if (!cancelled) setRemoteUri(uri);
+      })
+      .catch((err) => {
+        if (__DEV__) console.warn("[fonts] remote font resolve failed", marker.remote, marker.weight, err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [marker?.remote, marker?.weight]);
+
+  if (source == null) return null;
+  return typeof source === "number" ? source : remoteUri;
 }

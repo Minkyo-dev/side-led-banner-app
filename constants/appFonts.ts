@@ -38,7 +38,6 @@ export type FontId =
   | "tsanger_shuyuan"
   | "arimo";
 
-/** 앱 번들에 없고 첫 실행 시 다운로드해야 하는 폰트를 가리키는 마커 */
 export interface RemoteFontMarker {
   remote: RemoteFontId;
   weight: "regular" | "bold";
@@ -121,7 +120,6 @@ const notoSerifTc = fontFaceSet(
   require("@/assets/fonts/Noto_Serif_TC/NotoSerifTC-Medium.ttf"),
   require("@/assets/fonts/Noto_Serif_TC/NotoSerifTC-Bold.ttf"),
 );
-// 앱 번들 용량 절감 테스트: 55MB짜리 이 폰트만 로컬 번들에서 빼고 첫 실행 시 다운로드
 const chironGoRoundTc = remoteFace("chiron_goround_tc");
 const lxgwWenKaiTc = fontFaceSet(
   require("@/assets/fonts/LXGW_WenKai_TC/LXGWWenKaiTC-Regular.ttf"),
@@ -147,10 +145,7 @@ const gaegu = fontFaceSet(
   require("@/assets/fonts/Gaegu/Gaegu-Regular.ttf"),
   require("@/assets/fonts/Gaegu/Gaegu-Bold.ttf"),
 );
-const chironHeiHk = fontFaceSet(
-  require("@/assets/fonts/Chiron_Hei_HK/static/ChironHeiHK-Medium.ttf"),
-  require("@/assets/fonts/Chiron_Hei_HK/static/ChironHeiHK-Black.ttf"),
-);
+const chironHeiHk = remoteFace("chiron_hei_hk");
 const nanumSquareNeo = fontFaceSet(
   require("@/assets/fonts/nanum-square-neo/NanumSquareNeo-bRg.ttf"),
   require("@/assets/fonts/nanum-square-neo/TTF/NanumSquareNeo-eHv.ttf"),
@@ -187,10 +182,7 @@ const notoSansSc = fontFaceSet(
   require("@/assets/fonts/Noto_Sans_SC/static/NotoSansSC-Regular.ttf"),
   require("@/assets/fonts/Noto_Sans_SC/static/NotoSansSC-Bold.ttf"),
 );
-const zhengfengBrush = fontFaceSet(
-  require("@/assets/fonts/正風毛筆字體/masafont-2.1/tw/MasaFont-Regular.ttf"),
-  require("@/assets/fonts/正風毛筆字體/masafont-2.1/tw/MasaFont-Bold.ttf"),
-);
+const zhengfengBrush = remoteFace("zhengfeng_brush");
 const yrdzst = fontFaceSet(
   require("@/assets/fonts/YangRenDongZhuShiTi-Regular/YangRenDongZhuShiTi-Regular-2.ttf"),
   require("@/assets/fonts/YangRenDongZhuShiTi-Bold/YangRenDongZhuShiTi-Bold-2.ttf"),
@@ -477,7 +469,6 @@ function buildFontAssetsForIds(ids: FontId[]): Record<string, number> {
   ids.forEach((id) => {
     if (SKIA_ONLY_FONTS.has(id)) return;
     const set = APP_FONT_FACE_SETS[id];
-    // 원격 폰트는 여기서 등록하지 않음 — 다운로드 완료 후 remoteFontLoader가 별도로 Font.loadAsync 호출
     if (!isRemoteFontMarker(set.regular)) {
       out[appFontFamilyForText(id, "normal")] = set.regular;
     }
@@ -536,7 +527,6 @@ export function getFontIdsInLocaleMap(
   return dedupeFontIds(ids);
 }
 
-/** id 목록 → Skia용 asset(require id) 목록 (regular+bold). 원격 폰트는 제외됨 */
 export function getFontAssetIds(ids: FontId[]): number[] {
   const assets: number[] = [];
   ids.forEach((id) => {
@@ -547,7 +537,6 @@ export function getFontAssetIds(ids: FontId[]): number[] {
   return assets;
 }
 
-/** id 목록 중 원격 다운로드가 필요한 폰트의 RemoteFontId 목록(중복 제거) */
 export function getRemoteFontIdsForIds(ids: FontId[]): RemoteFontId[] {
   const out = new Set<RemoteFontId>();
   ids.forEach((id) => {

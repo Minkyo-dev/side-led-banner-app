@@ -78,7 +78,6 @@ export function loadRemainingFonts(excludeIds: FontId[]): Promise<void> {
   return loadAssetsWithRetry(buildRemainingFontAssets(excludeIds));
 }
 
-/** 앱 번들에서 뺀 원격 폰트를 백그라운드로 미리 받아 캐싱(스플래시를 막지 않음) */
 export function prefetchRemoteFonts(ids: FontId[]): void {
   getRemoteFontIdsForIds(ids).forEach((remoteId) => {
     if (__DEV__) console.log("[fonts] remote font prefetch start", remoteId);

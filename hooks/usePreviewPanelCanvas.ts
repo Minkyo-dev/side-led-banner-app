@@ -11,8 +11,7 @@ import {
   resolveFontFaceSet,
 } from "@/constants/appFonts";
 import { useSettings } from "@/contexts/settingsContext";
-import { useCachedSkiaFont } from "@/hooks/useCachedSkiaFont";
-import { useResolvedFontAssetRef } from "@/hooks/useResolvedFontAssetRef";
+import { useCachedSkiaFont, useResolvedFontAssetRef } from "@/hooks/useCachedSkiaFont";
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
 import {
   buildMarqueeTextBlob,
@@ -141,7 +140,6 @@ export interface UsePreviewPanelCanvasParams {
   isPixelMode?: boolean;
 }
 
-// 픽셀 폰트는 항상 로컬 번들 asset(number)이며 원격 폰트로 전환되지 않음
 const PIXEL_ZH_HANS_ASSET = APP_FONT_FACE_SETS.fusion_pixel_zh_hans.regular as number;
 const PIXEL_ZH_HANT_ASSET = APP_FONT_FACE_SETS.fusion_pixel_zh_hant.regular as number;
 
