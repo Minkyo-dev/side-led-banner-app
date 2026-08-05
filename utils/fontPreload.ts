@@ -5,12 +5,15 @@ import {
   getEagerFontIdsForLocale,
   getFontAssetIds,
   getFontIdsInLocaleMap,
+  getRemoteFontIdsForIds,
   type FontId,
 } from "@/constants/appFonts";
 import type { AppLocaleKey } from "@/constants/language";
+import { REMOTE_FONT_FACE_SETS } from "@/constants/remoteFonts";
 import { preloadSkiaTypefaces } from "@/hooks/useCachedSkiaFont";
 import { readAppLanguage } from "@/utils/appLanguageStorage";
 import { readPresetSlotsJson } from "@/utils/presetStorage";
+import { ensureRemoteFontSetDownloaded } from "@/utils/remoteFontLoader";
 import * as Font from "expo-font";
 
 type PresetSlotLike = {
@@ -73,6 +76,19 @@ export function loadFontIds(ids: FontId[]): Promise<void> {
 
 export function loadRemainingFonts(excludeIds: FontId[]): Promise<void> {
   return loadAssetsWithRetry(buildRemainingFontAssets(excludeIds));
+}
+
+export function prefetchRemoteFonts(ids: FontId[]): void {
+  getRemoteFontIdsForIds(ids).forEach((remoteId) => {
+    if (__DEV__) console.log("[fonts] remote font prefetch start", remoteId);
+    ensureRemoteFontSetDownloaded(REMOTE_FONT_FACE_SETS[remoteId])
+      .then((uris) => {
+        if (__DEV__) console.log("[fonts] remote font prefetch done", remoteId, uris);
+      })
+      .catch((err) => {
+        if (__DEV__) console.warn("[fonts] remote font prefetch failed", remoteId, err);
+      });
+  });
 }
 
 const loadedLocales = new Set<AppLocaleKey>();

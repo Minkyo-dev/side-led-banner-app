@@ -1,4 +1,5 @@
 import { APP_LOCALE_KEYS, type AppLocaleKey } from "@/constants/language";
+import { REMOTE_FONT_FACE_SETS, type RemoteFontId } from "@/constants/remoteFonts";
 
 /** settings폰트키용 */
 export type FontId =
@@ -37,14 +38,27 @@ export type FontId =
   | "tsanger_shuyuan"
   | "arimo";
 
+export interface RemoteFontMarker {
+  remote: RemoteFontId;
+  weight: "regular" | "bold";
+}
+
+export type FontAssetSource = number | RemoteFontMarker;
+
 export interface FontFaceSet {
-  regular: number;
-  bold: number;
+  regular: FontAssetSource;
+  bold: FontAssetSource;
 }
 
 export interface FontDropdownItem {
   label: string;
   value: FontId;
+}
+
+export function isRemoteFontMarker(
+  source: FontAssetSource,
+): source is RemoteFontMarker {
+  return typeof source === "object" && source !== null;
 }
 
 function fontFaceSet(regular: number, bold: number): FontFaceSet {
@@ -53,6 +67,13 @@ function fontFaceSet(regular: number, bold: number): FontFaceSet {
 
 function singleFace(asset: number): FontFaceSet {
   return { regular: asset, bold: asset };
+}
+
+function remoteFace(remote: RemoteFontId): FontFaceSet {
+  return {
+    regular: { remote, weight: "regular" },
+    bold: { remote, weight: "bold" },
+  };
 }
 
 const montserrat = fontFaceSet(
@@ -99,10 +120,7 @@ const notoSerifTc = fontFaceSet(
   require("@/assets/fonts/Noto_Serif_TC/NotoSerifTC-Medium.ttf"),
   require("@/assets/fonts/Noto_Serif_TC/NotoSerifTC-Bold.ttf"),
 );
-const chironGoRoundTc = fontFaceSet(
-  require("@/assets/fonts/Chiron_GoRound_TC/ChironGoRoundTC-Medium.ttf"),
-  require("@/assets/fonts/Chiron_GoRound_TC/static/ChironGoRoundTC-Black.ttf"),
-);
+const chironGoRoundTc = remoteFace("chiron_goround_tc");
 const lxgwWenKaiTc = fontFaceSet(
   require("@/assets/fonts/LXGW_WenKai_TC/LXGWWenKaiTC-Regular.ttf"),
   require("@/assets/fonts/LXGW_WenKai_TC/LXGWWenKaiTC-Bold.ttf"),
@@ -127,10 +145,7 @@ const gaegu = fontFaceSet(
   require("@/assets/fonts/Gaegu/Gaegu-Regular.ttf"),
   require("@/assets/fonts/Gaegu/Gaegu-Bold.ttf"),
 );
-const chironHeiHk = fontFaceSet(
-  require("@/assets/fonts/Chiron_Hei_HK/static/ChironHeiHK-Medium.ttf"),
-  require("@/assets/fonts/Chiron_Hei_HK/static/ChironHeiHK-Black.ttf"),
-);
+const chironHeiHk = remoteFace("chiron_hei_hk");
 const nanumSquareNeo = fontFaceSet(
   require("@/assets/fonts/nanum-square-neo/NanumSquareNeo-bRg.ttf"),
   require("@/assets/fonts/nanum-square-neo/TTF/NanumSquareNeo-eHv.ttf"),
@@ -167,10 +182,7 @@ const notoSansSc = fontFaceSet(
   require("@/assets/fonts/Noto_Sans_SC/static/NotoSansSC-Regular.ttf"),
   require("@/assets/fonts/Noto_Sans_SC/static/NotoSansSC-Bold.ttf"),
 );
-const zhengfengBrush = fontFaceSet(
-  require("@/assets/fonts/正風毛筆字體/masafont-2.1/tw/MasaFont-Regular.ttf"),
-  require("@/assets/fonts/正風毛筆字體/masafont-2.1/tw/MasaFont-Bold.ttf"),
-);
+const zhengfengBrush = remoteFace("zhengfeng_brush");
 const yrdzst = fontFaceSet(
   require("@/assets/fonts/YangRenDongZhuShiTi-Regular/YangRenDongZhuShiTi-Regular-2.ttf"),
   require("@/assets/fonts/YangRenDongZhuShiTi-Bold/YangRenDongZhuShiTi-Bold-2.ttf"),
@@ -457,8 +469,12 @@ function buildFontAssetsForIds(ids: FontId[]): Record<string, number> {
   ids.forEach((id) => {
     if (SKIA_ONLY_FONTS.has(id)) return;
     const set = APP_FONT_FACE_SETS[id];
-    out[appFontFamilyForText(id, "normal")] = set.regular;
-    out[appFontFamilyForText(id, "bold")] = set.bold;
+    if (!isRemoteFontMarker(set.regular)) {
+      out[appFontFamilyForText(id, "normal")] = set.regular;
+    }
+    if (!isRemoteFontMarker(set.bold)) {
+      out[appFontFamilyForText(id, "bold")] = set.bold;
+    }
   });
   return out;
 }
@@ -511,14 +527,24 @@ export function getFontIdsInLocaleMap(
   return dedupeFontIds(ids);
 }
 
-/** id 목록 → Skia용 asset(require id) 목록 (regular+bold)*/
 export function getFontAssetIds(ids: FontId[]): number[] {
   const assets: number[] = [];
   ids.forEach((id) => {
     const set = APP_FONT_FACE_SETS[id];
-    assets.push(set.regular, set.bold);
+    if (!isRemoteFontMarker(set.regular)) assets.push(set.regular);
+    if (!isRemoteFontMarker(set.bold)) assets.push(set.bold);
   });
   return assets;
+}
+
+export function getRemoteFontIdsForIds(ids: FontId[]): RemoteFontId[] {
+  const out = new Set<RemoteFontId>();
+  ids.forEach((id) => {
+    const set = APP_FONT_FACE_SETS[id];
+    if (isRemoteFontMarker(set.regular)) out.add(set.regular.remote);
+    if (isRemoteFontMarker(set.bold)) out.add(set.bold.remote);
+  });
+  return Array.from(out);
 }
 
 export function getSkiaFontAssets(locale: AppLocaleKey): number[] {
