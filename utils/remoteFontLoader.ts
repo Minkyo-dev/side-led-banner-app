@@ -1,7 +1,7 @@
 import type { RemoteFontFaceSet, RemoteFontSource } from "@/constants/remoteFonts";
 import { Directory, File, Paths } from "expo-file-system";
 
-const remoteFontsDir = new Directory(Paths.document, "remote-fonts");
+const remoteFontsDir = new Directory(Paths.cache, "remote-fonts");
 const inFlightDownloads = new Map<string, Promise<string>>();
 
 export async function ensureRemoteFontDownloaded(
