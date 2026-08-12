@@ -32,7 +32,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { AppState, InteractionManager, Platform } from "react-native";
 import mobileAds from "react-native-google-mobile-ads";
 import { KeyboardProvider } from "react-native-keyboard-controller";
-import "react-native-reanimated";
+import { ReducedMotionConfig, ReduceMotion } from "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -143,6 +143,8 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      {/* 배너 스크롤/깜빡임은 앱의 핵심 기능이므로 iOS '동작 줄이기' 설정을 따르지 않음 */}
+      <ReducedMotionConfig mode={ReduceMotion.Never} />
       <SafeAreaProvider>
       <SettingsProvider>
         <KeyboardProvider>
