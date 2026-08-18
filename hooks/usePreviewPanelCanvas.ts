@@ -80,7 +80,9 @@ function layoutSkiaLine(
       const adv =
         ch === " "
           ? getSpaceAdvanceWidth(charFont)
-          : charFont.measureText(ch).width + (i < text.length - 1 ? letterSpacing : 0);
+          : (charFont.getGlyphWidths(charFont.getGlyphIDs(ch, 1))[0] ??
+              charFont.measureText(ch).width) +
+            (i < text.length - 1 ? letterSpacing : 0);
       x += adv;
     }
   }
