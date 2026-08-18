@@ -168,16 +168,11 @@ export function MarqueeCanvas({
   const recordTextAsPixel = isPixelTextDots;
   const hasPixelOutlineDots = pixelOutlineRings > 0;
 
-  // 반복 방지용
-  const effectiveSpacer = canvas.isBubbleActive
-    ? Math.max(spacer, layout.width)
-    : spacer;
-
   const { stripPaint, glowStripPaint, stripWidth } = useTilePicture({
     blob,
     textBlobs: canvas.skiaTextBlobs,
     textWidthPx: canvas.skiaTextWidth,
-    spacerPx: effectiveSpacer,
+    spacerPx: spacer,
     canvasWidthPx: layout.width,
     canvasHeightPx: layout.height,
     previewTextColor,

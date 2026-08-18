@@ -333,6 +333,7 @@ const TEXT_SHEET_PICK: Partial<
 > = {
   color: { englishOccurrenceIndex: 0 },
   backgroundColor: { englishOccurrenceIndex: 1 },
+  blur: { sheetRow: 17 },
   size: { sheetRow: 5 },
 };
 
