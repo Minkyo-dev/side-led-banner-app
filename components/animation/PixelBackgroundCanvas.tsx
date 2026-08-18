@@ -31,7 +31,6 @@ import {
 } from "@shopify/react-native-skia";
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
-import type { SharedValue } from "react-native-reanimated";
 
 const TABLET_MIN_SHORTEST_SIDE_DP = 600;
 
@@ -46,7 +45,6 @@ export type PixelBackgroundCanvasProps = {
   backgroundColor: string;
   backgroundImageUri?: string | null;
   backgroundEffect: BackgroundEffectAnimationResult;
-  translateX: SharedValue<number>;
   isPortrait: boolean;
   mode: BackgroundEffectImageMode;
 };
@@ -79,7 +77,6 @@ export function PixelBackgroundCanvas({
   backgroundColor,
   backgroundImageUri,
   backgroundEffect,
-  translateX,
   isPortrait,
   mode,
 }: PixelBackgroundCanvasProps) {
@@ -168,7 +165,6 @@ export function PixelBackgroundCanvas({
             heartSource={backgroundEffect.imageSource}
             width={width}
             height={height}
-            translateX={translateX}
             isTablet={isTablet}
             isFullscreen={isFullscreen}
             isFullscreenPortrait={isFullscreenPortrait}

@@ -48,7 +48,6 @@ import { buildCanvas } from "./animation/buildCanvas";
 import { buildPixelBackground } from "./animation/buildPixelBackground";
 import { MarqueeCanvas } from "./animation/MarqueeCanvas";
 import { PixelBackgroundCanvas } from "./animation/PixelBackgroundCanvas";
-import { resolveHeartTickerSource } from "./animation/resolveBackgroundEffectImage";
 
 const inputAccessoryViewID = "doneAccessory";
 
@@ -170,21 +169,6 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
 
   const { opacity: blinkOpacity } = useBlinkOpacityStyle();
 
-  // desync 방지용
-  const heartBackground = useMemo(() => {
-    if (effects.isPixelEffect) return null;
-    const source = resolveHeartTickerSource({
-      imageSource:
-        backgroundEdgeEffectAnim.id === "heartBgA"
-          ? backgroundEdgeEffectAnim.imageSource
-          : null,
-      isTablet: false,
-      isFullscreen: false,
-      isFullscreenPortrait: false,
-    });
-    return source ? { source, translateX } : null;
-  }, [effects.isPixelEffect, backgroundEdgeEffectAnim, translateX]);
-
   const marqueeCanvasProps = buildCanvas({
     canvas,
     effects,
@@ -194,7 +178,6 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     hasBgPhoto,
     dropShadow,
     backgroundColor,
-    heartBackground,
   });
 
   const pixelBackgroundProps = useMemo(
@@ -208,7 +191,6 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
         backgroundImageUri: backgroundImageUri ?? null,
         gradientBackgroundPreset,
         backgroundEffect: backgroundEdgeEffectAnim,
-        translateX,
         isPortrait,
         mode: "preview",
       }),
@@ -221,7 +203,6 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
       backgroundImageUri,
       gradientBackgroundPreset,
       backgroundEdgeEffectAnim,
-      translateX,
       isPortrait,
     ],
   );

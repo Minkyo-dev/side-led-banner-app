@@ -1,6 +1,5 @@
 import { BackgroundEffectLayer } from "@/components/animation/BackgroundEffectLayer";
 import { MarqueeCanvas } from "@/components/animation/MarqueeCanvas";
-import { resolveHeartTickerSource } from "@/components/animation/resolveBackgroundEffectImage";
 import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
 import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
 import { ledBannerFullScreenStyles as styles } from "@/constants/styles";
@@ -11,25 +10,25 @@ import { useEffects } from "@/hooks/useEffects";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
-  resolveSpeechCanvasFallback,
-  useSpeechBubble,
+    resolveSpeechCanvasFallback,
+    useSpeechBubble,
 } from "@/hooks/useSpeechBubble";
 import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { resolveBubbleCanvasOpts } from "@/utils/skiaBubbleTextLayout";
 import { getSizingPolicy } from "@/utils/textSizing";
-import { Canvas } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
 import * as NavigationBar from "expo-navigation-bar";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Modal,
-  Platform,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  useWindowDimensions,
-  View,
+    Modal,
+    Platform,
+    Pressable,
+    StatusBar,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from "react-native";
+import { Canvas } from "@shopify/react-native-skia";
 import { buildCanvas } from "./animation/buildCanvas";
 import { buildPixelBackground } from "./animation/buildPixelBackground";
 import { PixelBackgroundCanvas } from "./animation/PixelBackgroundCanvas";
@@ -62,8 +61,6 @@ export const LedBannerFullScreen = ({
   const stageWidth = stageSize.width > 0 ? stageSize.width : windowWidth;
   const stageHeight = stageSize.height > 0 ? stageSize.height : windowHeight;
   const isPortrait = stageHeight >= stageWidth;
-  // 태블릿 기준 동일
-  const isTablet = Math.min(windowWidth, windowHeight) >= 600;
 
   const onStageLayout = useCallback(
     (e: { nativeEvent: { layout: { width: number; height: number } } }) => {
@@ -153,21 +150,6 @@ export const LedBannerFullScreen = ({
     speechBubbleLayout: speechBubbleCanvasLayout,
   });
 
-  // desync 방지용
-  const heartBackground = useMemo(() => {
-    if (effects.isPixelEffect) return null;
-    const source = resolveHeartTickerSource({
-      imageSource:
-        backgroundEdgeEffectAnim.id === "heartBgA"
-          ? backgroundEdgeEffectAnim.imageSource
-          : null,
-      isTablet,
-      isFullscreen: true,
-      isFullscreenPortrait: isPortrait,
-    });
-    return source ? { source, translateX } : null;
-  }, [effects.isPixelEffect, backgroundEdgeEffectAnim, isTablet, isPortrait, translateX]);
-
   const marqueeCanvasProps = buildCanvas({
     canvas,
     effects,
@@ -177,7 +159,6 @@ export const LedBannerFullScreen = ({
     hasBgPhoto,
     dropShadow,
     backgroundColor,
-    heartBackground,
   });
 
   const pixelBackgroundProps = useMemo(
@@ -191,7 +172,6 @@ export const LedBannerFullScreen = ({
         backgroundImageUri: backgroundImageUri ?? null,
         gradientBackgroundPreset,
         backgroundEffect: backgroundEdgeEffectAnim,
-        translateX,
         isPortrait,
         mode: "fullscreen",
       }),
@@ -204,7 +184,6 @@ export const LedBannerFullScreen = ({
       backgroundImageUri,
       gradientBackgroundPreset,
       backgroundEdgeEffectAnim,
-      translateX,
       isPortrait,
     ],
   );

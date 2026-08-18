@@ -1,6 +1,5 @@
 import type { BackgroundEffectAnimationResult } from "@/hooks/useBackgroundAnimation";
 import type { useEffects } from "@/hooks/useEffects";
-import type { SharedValue } from "react-native-reanimated";
 import type { BackgroundEffectImageMode } from "./resolveBackgroundEffectImage";
 import type { PixelBackgroundCanvasProps } from "./PixelBackgroundCanvas";
 
@@ -15,7 +14,6 @@ export function buildPixelBackground(params: {
   backgroundImageUri?: string | null;
   gradientBackgroundPreset: string;
   backgroundEffect: BackgroundEffectAnimationResult;
-  translateX: SharedValue<number>;
   isPortrait: boolean;
   mode: BackgroundEffectImageMode;
 }): PixelBackgroundCanvasProps {
@@ -30,7 +28,6 @@ export function buildPixelBackground(params: {
     backgroundColor: params.backgroundColor,
     backgroundImageUri: params.backgroundImageUri,
     backgroundEffect: params.backgroundEffect,
-    translateX: params.translateX,
     isPortrait: params.isPortrait,
     mode: params.mode,
   };

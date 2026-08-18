@@ -10,6 +10,7 @@ import { Image } from "expo-image";
 import React from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
+import { HeartBackgroundTicker } from "./HeartBackgroundTicker";
 import { resolveEffect1EdgeStyle } from "./resolveBackgroundEffectImage";
 
 type BackgroundEffectLayerMode = "preview" | "fullscreen";
@@ -34,6 +35,7 @@ type EffectProps = BackgroundEffectLayerProps & {
 
 type EffectRenderer = (props: EffectProps) => React.ReactNode;
 
+const HEART_BG_B_SOURCE = require("@/assets/images/Heart_BG_B.png");
 const HEART_BG_PAD_LANDSCAPE_SOURCE = require("@/assets/images/Heart_BG_H_12.9.png");
 const HEART_BG_PAD_PORTRAIT_SOURCE = require("@/assets/images/Heart_BG_V_12.9.png");
 // 태블릿/패드 판별 기준 (Material/Apple HIG 공통: 짧은 변 600dp 이상)
@@ -80,7 +82,9 @@ function renderHeartBackground({
   effect,
   isTablet,
   isFullscreen,
+  isFullscreenPortrait,
   isPortrait,
+  translateX,
   suppressPixelManagedBackgrounds,
   blurRadius,
 }: EffectProps): React.ReactNode {
@@ -91,7 +95,6 @@ function renderHeartBackground({
     return null;
   }
 
-  // desync 방지용 (MarqueeCanvas 참고)
   if (isTablet && isFullscreen) {
     const padHeartSource = isPortrait
       ? HEART_BG_PAD_PORTRAIT_SOURCE
@@ -106,7 +109,8 @@ function renderHeartBackground({
     );
   }
 
-  return null;
+  const heartSource = isFullscreenPortrait ? HEART_BG_B_SOURCE : effect.imageSource;
+  return <HeartBackgroundTicker source={heartSource} blurRadius={blurRadius} />;
 }
 
 function renderSpeechBubble({

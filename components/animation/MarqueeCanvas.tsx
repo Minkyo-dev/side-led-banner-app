@@ -1,5 +1,4 @@
 import { DOT_MATRIX_TEXT_SOURCE } from "@/components/animation/dotMatrixTextShader";
-import { SkiaHeartTiles } from "@/components/animation/SkiaHeartTiles";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import { useTilePicture } from "@/hooks/useTilePicture";
 import {
@@ -43,8 +42,6 @@ export interface MarqueeCanvasProps {
   dropShadow: number;
   previewTextColor: string;
   backgroundColor: string;
-  /** desync 방지용 */
-  heartBackground?: { source: number; translateX: SharedValue<number> } | null;
 }
 
 function isNearWhiteColor(color: string): boolean {
@@ -79,13 +76,15 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
   uniform float dotMaskAaScale;
   uniform float outlineLuminance;
   uniform float ringDetectThreshold;
+  uniform float gridPhaseX;
 
   float coverageAt(half4 s) {
     return s.a;
   }
 
   float bodyCoverage(vec2 p) {
-    vec2 cellOrigin = floor(p / dotSize) * dotSize;
+    vec2 gridP = p - vec2(gridPhaseX, 0.0);
+    vec2 cellOrigin = floor(gridP / dotSize) * dotSize + vec2(gridPhaseX, 0.0);
     float mid = dotSize * 0.5;
     float last = dotSize - 1.0;
     float m = coverageAt(content.eval(p));
@@ -111,7 +110,8 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
   }
 
   half4 main(vec2 pos) {
-    vec2 cellOrigin = floor(pos / dotSize) * dotSize;
+    vec2 gridPos = pos - vec2(gridPhaseX, 0.0);
+    vec2 cellOrigin = floor(gridPos / dotSize) * dotSize + vec2(gridPhaseX, 0.0);
     vec2 cellCenter = cellOrigin + dotSize * 0.5;
     float selfCov = bodyCoverage(cellCenter);
     if (selfCov >= textThreshold) {
@@ -159,7 +159,6 @@ export function MarqueeCanvas({
   dropShadow,
   previewTextColor,
   backgroundColor,
-  heartBackground,
 }: MarqueeCanvasProps) {
   const blob = canvas.skiaTextBlob;
   const strokeWidthPx = skiaStrokeWidthPx;
@@ -169,11 +168,16 @@ export function MarqueeCanvas({
   const recordTextAsPixel = isPixelTextDots;
   const hasPixelOutlineDots = pixelOutlineRings > 0;
 
+  // 반복 방지용
+  const effectiveSpacer = canvas.isBubbleActive
+    ? Math.max(spacer, layout.width)
+    : spacer;
+
   const { stripPaint, glowStripPaint, stripWidth } = useTilePicture({
     blob,
     textBlobs: canvas.skiaTextBlobs,
     textWidthPx: canvas.skiaTextWidth,
-    spacerPx: spacer,
+    spacerPx: effectiveSpacer,
     canvasWidthPx: layout.width,
     canvasHeightPx: layout.height,
     previewTextColor,
@@ -231,65 +235,63 @@ export function MarqueeCanvas({
     [backgroundColor, previewTextColor],
   );
 
+  const textDotUniforms = useDerivedValue(
+    () => ({
+      dotSize: pixelShaderSize,
+      dotRadius: pixelDotRadius,
+      textThreshold: pixelTextShaderUniforms.textThreshold,
+      panelAlphaThreshold: pixelTextShaderUniforms.panelAlphaThreshold,
+      sampleReachScale: pixelTextShaderUniforms.sampleReachScale,
+      sampleReachYScale: pixelTextShaderUniforms.sampleReachYScale,
+      dotMaskAaScale: pixelTextShaderUniforms.dotMaskAaScale,
+      gridPhaseX: canvas.translateX.value,
+    }),
+    [pixelShaderSize, pixelDotRadius, pixelTextShaderUniforms, canvas.translateX],
+  );
+
   const textDotShaderLayer = useMemo(
     () =>
       isPixelTextDots ? (
         <Paint>
-          <RuntimeShader
-            source={DOT_MATRIX_TEXT_SOURCE}
-            uniforms={{
-              dotSize: pixelShaderSize,
-              dotRadius: pixelDotRadius,
-              textThreshold: pixelTextShaderUniforms.textThreshold,
-              panelAlphaThreshold: pixelTextShaderUniforms.panelAlphaThreshold,
-              sampleReachScale: pixelTextShaderUniforms.sampleReachScale,
-              sampleReachYScale: pixelTextShaderUniforms.sampleReachYScale,
-              dotMaskAaScale: pixelTextShaderUniforms.dotMaskAaScale,
-            }}
-          />
+          <RuntimeShader source={DOT_MATRIX_TEXT_SOURCE} uniforms={textDotUniforms} />
         </Paint>
       ) : undefined,
-    [isPixelTextDots, pixelShaderSize, pixelDotRadius, pixelTextShaderUniforms],
+    [isPixelTextDots, textDotUniforms],
+  );
+
+  const outlineDotUniforms = useDerivedValue(
+    () => ({
+      dotSize: pixelShaderSize,
+      dotRadius: pixelDotRadius,
+      textThreshold: pixelTextShaderUniforms.textThreshold,
+      ringDetectThreshold: 0.01,
+      outlineRings: pixelOutlineRings,
+      dotMaskAaScale: pixelTextShaderUniforms.dotMaskAaScale,
+      outlineLuminance,
+      gridPhaseX: canvas.translateX.value,
+    }),
+    [
+      pixelShaderSize,
+      pixelDotRadius,
+      pixelOutlineRings,
+      pixelTextShaderUniforms,
+      outlineLuminance,
+      canvas.translateX,
+    ],
   );
 
   const outlineDotShaderLayer = useMemo(
     () =>
       hasPixelOutlineDots ? (
         <Paint>
-          <RuntimeShader
-            source={OUTLINE_RING_DOT_SOURCE}
-            uniforms={{
-              dotSize: pixelShaderSize,
-              dotRadius: pixelDotRadius,
-              textThreshold: pixelTextShaderUniforms.textThreshold,
-              ringDetectThreshold: 0.01,
-              outlineRings: pixelOutlineRings,
-              dotMaskAaScale: pixelTextShaderUniforms.dotMaskAaScale,
-              outlineLuminance,
-            }}
-          />
+          <RuntimeShader source={OUTLINE_RING_DOT_SOURCE} uniforms={outlineDotUniforms} />
         </Paint>
       ) : undefined,
-    [
-      hasPixelOutlineDots,
-      pixelShaderSize,
-      pixelDotRadius,
-      pixelOutlineRings,
-      pixelTextShaderUniforms,
-      outlineLuminance,
-    ],
+    [hasPixelOutlineDots, outlineDotUniforms],
   );
 
   return (
     <Canvas style={{ flex: 1 }} opaque={false}>
-      {heartBackground && layout.width > 0 && layout.height > 0 ? (
-        <SkiaHeartTiles
-          source={heartBackground.source}
-          width={layout.width}
-          height={layout.height}
-          translateX={heartBackground.translateX}
-        />
-      ) : null}
       <Group opacity={blinkOpacity} transform={canvas.skiaMarqueeTransform}>
         {canDrawGlowStrip ? (
           <Rect

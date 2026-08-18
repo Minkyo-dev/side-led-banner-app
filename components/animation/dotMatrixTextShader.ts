@@ -10,6 +10,7 @@ export const DOT_MATRIX_TEXT_SOURCE = Skia.RuntimeEffect.Make(`
   uniform float sampleReachScale;
   uniform float sampleReachYScale;
   uniform float dotMaskAaScale;
+  uniform float gridPhaseX;
 
   const float INV_SQRT2 = 0.707106781;
 
@@ -101,7 +102,10 @@ export const DOT_MATRIX_TEXT_SOURCE = Skia.RuntimeEffect.Make(`
   }
 
   half4 main(vec2 pos) {
-    vec2 cellOrigin = floor(pos / dotSize) * dotSize;
+    // 도트 격자를 화면이 아닌 콘텐츠(스크롤되는 텍스트) 기준으로 고정해
+    // 마퀴 스크롤 중 격자 위상이 프레임마다 바뀌며 생기는 떨림을 방지한다.
+    vec2 gridPos = pos - vec2(gridPhaseX, 0.0);
+    vec2 cellOrigin = floor(gridPos / dotSize) * dotSize + vec2(gridPhaseX, 0.0);
     vec2 cellCenter = cellOrigin + dotSize * 0.5;
     float mask = ledDotMask(pos, cellCenter);
     if (mask <= 0.0) {

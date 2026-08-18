@@ -1,13 +1,11 @@
 import { resolveHeartImageSource } from "@/components/animation/resolveBackgroundEffectImage";
 import { SkiaHeartTiles } from "@/components/animation/SkiaHeartTiles";
 import React from "react";
-import type { SharedValue } from "react-native-reanimated";
 
 type Props = {
   heartSource: number;
   width: number;
   height: number;
-  translateX: SharedValue<number>;
   isTablet: boolean;
   isFullscreen: boolean;
   isFullscreenPortrait: boolean;
@@ -19,7 +17,6 @@ export function PixelHeartBackground({
   heartSource,
   width,
   height,
-  translateX,
   isTablet,
   isFullscreen,
   isFullscreenPortrait,
@@ -33,12 +30,5 @@ export function PixelHeartBackground({
     isPortrait,
   });
 
-  return (
-    <SkiaHeartTiles
-      source={assetSource}
-      width={width}
-      height={height}
-      translateX={translateX}
-    />
-  );
+  return <SkiaHeartTiles source={assetSource} width={width} height={height} />;
 }

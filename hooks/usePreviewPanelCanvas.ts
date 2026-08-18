@@ -307,14 +307,14 @@ export function usePreviewPanelCanvas({
         })
       : (displayText.length > 0 ? [displayText] : []);
 
-    if (useBubbleLayout) {
-      return bubbleLayouts(skiaFont, rows, letterSpacing);
-    }
-
     const getCharFont: ((ch: string) => SkFont) | undefined =
       isPixelMode && (pixelZhHansFont || pixelZhHantFont)
         ? (ch) => pickBestCJKFont(ch, pixelZhHansFont, pixelZhHantFont, skiaFont)
         : (localeCharFontPicker ?? undefined);
+
+    if (useBubbleLayout) {
+      return bubbleLayouts(skiaFont, rows, letterSpacing, getCharFont);
+    }
 
     return rows.map((line) => layoutSkiaLine(skiaFont, line, letterSpacing, getCharFont));
   }, [
@@ -433,7 +433,9 @@ export function usePreviewPanelCanvas({
     skiaGlyphPositions: skiaGlyphLayout.glyphPositions,
     skiaMarqueeTransform,
     marqueeOffsetX,
+    translateX,
     skiaCanvasLayout: { width: drawW, height: drawH },
     onSkiaCanvasLayout,
+    isBubbleActive: useBubbleLayout,
   };
 }

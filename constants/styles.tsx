@@ -429,6 +429,17 @@ export const backgroundPhotoSheetStyles = StyleSheet.create({
   },
 });
 
+export const heartBackgroundTickerStyles = StyleSheet.create({
+  clip: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: "hidden",
+  },
+  row: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "row",
+  },
+});
+
 export const colorPickerStyles = StyleSheet.create({
   colorPickerContainer: {
     gap: 10,
