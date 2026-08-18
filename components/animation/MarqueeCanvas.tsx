@@ -1,4 +1,5 @@
 import { DOT_MATRIX_TEXT_SOURCE } from "@/components/animation/dotMatrixTextShader";
+import { SkiaHeartTiles } from "@/components/animation/SkiaHeartTiles";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import { useTilePicture } from "@/hooks/useTilePicture";
 import {
@@ -42,6 +43,8 @@ export interface MarqueeCanvasProps {
   dropShadow: number;
   previewTextColor: string;
   backgroundColor: string;
+  /** desync 방지용 */
+  heartBackground?: { source: number; translateX: SharedValue<number> } | null;
 }
 
 function isNearWhiteColor(color: string): boolean {
@@ -156,6 +159,7 @@ export function MarqueeCanvas({
   dropShadow,
   previewTextColor,
   backgroundColor,
+  heartBackground,
 }: MarqueeCanvasProps) {
   const blob = canvas.skiaTextBlob;
   const strokeWidthPx = skiaStrokeWidthPx;
@@ -278,6 +282,14 @@ export function MarqueeCanvas({
 
   return (
     <Canvas style={{ flex: 1 }} opaque={false}>
+      {heartBackground && layout.width > 0 && layout.height > 0 ? (
+        <SkiaHeartTiles
+          source={heartBackground.source}
+          width={layout.width}
+          height={layout.height}
+          translateX={heartBackground.translateX}
+        />
+      ) : null}
       <Group opacity={blinkOpacity} transform={canvas.skiaMarqueeTransform}>
         {canDrawGlowStrip ? (
           <Rect

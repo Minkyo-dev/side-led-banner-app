@@ -15,6 +15,7 @@ export function buildCanvas(params: {
   hasBgPhoto: boolean;
   dropShadow: number;
   backgroundColor: string;
+  heartBackground?: MarqueeCanvasProps["heartBackground"];
 }): BuiltMarqueeCanvasProps {
   return {
     canvas: params.canvas,
@@ -38,5 +39,6 @@ export function buildCanvas(params: {
     dropShadow: params.dropShadow,
     previewTextColor: params.previewTextColor,
     backgroundColor: params.backgroundColor,
+    heartBackground: params.heartBackground ?? null,
   };
 }

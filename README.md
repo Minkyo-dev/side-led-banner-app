@@ -58,7 +58,7 @@ side-led-banner-app/
 │   │   └── settingsSliderBlock.tsx   # 설정용 슬라이더 블록
 │   ├── animation/
 │   │   ├── BackgroundEffectLayer.tsx # 배경 이펙트 레이어
-│   │   ├── HeartBackgroundTicker.tsx # 하트 배경 티커
+│   │   ├── SkiaHeartTiles.tsx        # 하트 배경 타일(Skia, 텍스트와 같은 Canvas)
 │   │   ├── MarqueeCanvas.tsx         # Skia 마퀴 캔버스
 │   │   └── buildCanvas.ts            # 캔버스 props 조합 유틸
 │   ├── dev/
