@@ -21,7 +21,7 @@ const AD_UNIT_ID = isPlaceholderAdUnitId ? TestIds.REWARDED : PROD_AD_UNIT_ID;
 const AD_RETRY_DELAY_MS = 2000;
 
 export const sharedAd = RewardedAd.createForAdRequest(AD_UNIT_ID, {
-  requestNonPersonalizedAdsOnly: true,
+  requestNonPersonalizedAdsOnly: false,
 });
 
 let loadRequested = false;

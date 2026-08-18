@@ -28,7 +28,7 @@ export default function BannerAdComponent({ style }: any) {
         unitId={BANNER_AD_UNIT_ID}
         size={BannerAdSize.BANNER}
         requestOptions={{
-          requestNonPersonalizedAdsOnly: true,
+          requestNonPersonalizedAdsOnly: false,
         }}
         onAdLoaded={() => {
           console.log("Banner ad loaded");
