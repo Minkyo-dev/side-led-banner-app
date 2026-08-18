@@ -33,6 +33,18 @@ export function resolveHeartImageSource(params: {
   return params.isFullscreenPortrait ? HEART_BG_B_SOURCE : params.heartSource;
 }
 
+/** 태블릿 풀스크린 제외용 */
+export function resolveHeartTickerSource(params: {
+  imageSource: number | null;
+  isTablet: boolean;
+  isFullscreen: boolean;
+  isFullscreenPortrait: boolean;
+}): number | null {
+  if (!params.imageSource) return null;
+  if (params.isTablet && params.isFullscreen) return null;
+  return params.isFullscreenPortrait ? HEART_BG_B_SOURCE : params.imageSource;
+}
+
 export function resolveSpeechBubbleImageSource(
   effectId: BackgroundEffectId,
   mode: BackgroundEffectImageMode,
