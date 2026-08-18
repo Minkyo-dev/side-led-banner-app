@@ -90,13 +90,14 @@ function rowGlyphs(
   letterSpacing: number,
 ): BubbleRowLayout {
   if (text.length === 0) return { text: "", width: 0, glyphs: [] };
+  // getGlyphWidths로 실제 advance를 써야 자간이 작을 때 글자 겹침 방지
+  const advances = font.getGlyphWidths(font.getGlyphIDs(text));
   let x = 0;
   const glyphs: { x: number; text: string }[] = [];
   for (let i = 0; i < text.length; i++) {
     const ch = text[i]!;
     glyphs.push({ x, text: ch });
-    x +=
-      font.measureText(ch).width + (i < text.length - 1 ? letterSpacing : 0);
+    x += (advances[i] ?? 0) + (i < text.length - 1 ? letterSpacing : 0);
   }
   return { text, width: x, glyphs };
 }
