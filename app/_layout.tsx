@@ -80,8 +80,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
-    void NavigationBar.setPositionAsync("absolute");
-    void NavigationBar.setBehaviorAsync("overlay-swipe");
     void NavigationBar.setVisibilityAsync("hidden");
   }, []);
 

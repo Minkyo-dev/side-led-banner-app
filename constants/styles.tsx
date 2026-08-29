@@ -593,6 +593,10 @@ export const ledBannerFullScreenStyles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "#000000",
   },
+  overlay: {
+    zIndex: 9999,
+    elevation: 9999,
+  },
   flex: {
     flex: 1,
   },

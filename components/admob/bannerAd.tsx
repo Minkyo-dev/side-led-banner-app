@@ -16,9 +16,13 @@ const PROD_BANNER_AD_UNIT_ID = Platform.select({
 const isPlaceholderAdUnitId =
   !PROD_BANNER_AD_UNIT_ID || PROD_BANNER_AD_UNIT_ID.includes("XXXXXXXXXX");
 
-const BANNER_AD_UNIT_ID = isPlaceholderAdUnitId
-  ? TestIds.BANNER
-  : PROD_BANNER_AD_UNIT_ID;
+const useGoogleTestAds =
+  __DEV__ || process.env.EXPO_PUBLIC_INCLUDE_GOOGLE_TEST_ADS === "true";
+
+const BANNER_AD_UNIT_ID =
+  useGoogleTestAds || isPlaceholderAdUnitId
+    ? TestIds.BANNER
+    : PROD_BANNER_AD_UNIT_ID;
 
 export default function BannerAdComponent({ style }: any) {
   // Banner Ad Component
