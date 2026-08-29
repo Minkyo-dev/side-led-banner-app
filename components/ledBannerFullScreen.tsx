@@ -20,7 +20,8 @@ import { Image } from "expo-image";
 import * as NavigationBar from "expo-navigation-bar";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Modal,
+    AppState,
+    BackHandler,
     Platform,
     Pressable,
     StatusBar,
@@ -47,14 +48,38 @@ export const LedBannerFullScreen = ({
   const { backgroundColor, backgroundImageUri, backgroundBlur } = config.background;
   const hasBgPhoto = backgroundImageUri != null && backgroundImageUri.length > 0;
 
-  useEffect(() => {
-    if (!visible || Platform.OS !== "android") return;
+  const hideNavigationBar = useCallback(() => {
+    if (Platform.OS !== "android") return;
     void NavigationBar.setVisibilityAsync("hidden");
-    const sub = NavigationBar.addVisibilityListener(({ visibility }) => {
-      if (visibility === "visible") void NavigationBar.setVisibilityAsync("hidden");
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
     });
     return () => sub.remove();
-  }, [visible]);
+  }, [visible, onClose]);
+
+  useEffect(() => {
+    if (!visible || Platform.OS !== "android") return;
+    hideNavigationBar();
+    const retry = setTimeout(hideNavigationBar, 300);
+    const interval = setInterval(() => {
+      void NavigationBar.getVisibilityAsync().then((v) => {
+        if (v === "visible") hideNavigationBar();
+      });
+    }, 1000);
+    const appStateSub = AppState.addEventListener("change", (state) => {
+      if (state === "active") hideNavigationBar();
+    });
+    return () => {
+      clearTimeout(retry);
+      clearInterval(interval);
+      appStateSub.remove();
+    };
+  }, [visible, hideNavigationBar]);
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
@@ -188,18 +213,11 @@ export const LedBannerFullScreen = ({
     ],
   );
 
+  if (!visible) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="fade"
-      presentationStyle="fullScreen"
-      supportedOrientations={["portrait", "landscape"]}
-      statusBarTranslucent
-      navigationBarTranslucent
-      onRequestClose={onClose}
-    >
+    <View style={[styles.root, styles.overlay]} onLayout={onStageLayout}>
       <StatusBar hidden />
-      <View style={styles.root} onLayout={onStageLayout}>
         <View style={styles.layerPassThrough} pointerEvents="box-none">
           <View
             collapsable={false}
@@ -285,7 +303,6 @@ export const LedBannerFullScreen = ({
           onPress={onClose}
           accessibilityLabel="Close fullscreen"
         />
-      </View>
-    </Modal>
+    </View>
   );
 };

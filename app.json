@@ -105,6 +105,12 @@
         }
       ],
       "expo-tracking-transparency",
+      [
+        "expo-navigation-bar",
+        {
+          "behavior": "overlay-swipe"
+        }
+      ],
       "./plugins/withAndroidReleaseSigning"
     ],
     "experiments": {

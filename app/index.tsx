@@ -149,7 +149,7 @@ export default function Index() {
   }, []);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: isPlaying ? 0 : (initialWindowMetrics?.insets.bottom ?? 0) }]}>
+    <View style={[styles.container, { paddingTop: isPlaying ? 0 : insets.top, paddingBottom: isPlaying ? 0 : (initialWindowMetrics?.insets.bottom ?? 0) }]}>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <PreviewPanel
           onCursorMovers={onCursorMovers}
