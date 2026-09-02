@@ -187,7 +187,9 @@ export default function SunnyListScreen() {
   const { textSectionLabel } = useSettingsRest();
 
   const openStore = (entry: SunnyAppEntry) => {
-    void Linking.openURL(pickStoreUrl(entry)).catch(() => {});
+    void Linking.openURL(pickStoreUrl(entry)).catch((error) => {
+      console.error("Store link open failed", error);
+    });
   };
 
   return (

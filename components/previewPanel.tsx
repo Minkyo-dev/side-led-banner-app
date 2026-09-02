@@ -86,8 +86,8 @@ function afterEdit(oldText: string, newText: string): number {
 const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
 
 export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndoRedoStateChange }: PreviewPanelProps) {
-  const [previewHeight, setPreviewHeight] = useState(0);
   const [previewBox, setPreviewBox] = useState({ width: 0, height: 0 });
+  const previewHeight = previewBox.height;
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
 
   const {
@@ -209,11 +209,17 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     ],
   );
 
-  const onPreviewLayout = (e: LayoutEvent) => {
+  const onPreviewLayout = useCallback((e: LayoutEvent) => {
     const { width, height } = e.nativeEvent.layout;
-    setPreviewBox({ width, height });
-    setPreviewHeight(height);
-  };
+    setPreviewBox((prev) =>
+      prev.width === width && prev.height === height ? prev : { width, height },
+    );
+  }, []);
+
+  const onInputScrollLayout = useCallback((e: LayoutEvent) => {
+    const { width } = e.nativeEvent.layout;
+    setInputScrollViewportW((prev) => (prev === width ? prev : width));
+  }, []);
 
   const textInputRef = useRef<TextInput>(null);
 
@@ -469,7 +475,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
           onScroll={onInputScroll}
           style={{ flex: 0.9, height: inputViewportHeightPx }}
           contentContainerStyle={{ flexGrow: 1 }}
-          onLayout={(e) => setInputScrollViewportW(e.nativeEvent.layout.width)}
+          onLayout={onInputScrollLayout}
           {...(Platform.OS === "ios"
             ? {
                 scrollIndicatorInsets: { right: 1 },

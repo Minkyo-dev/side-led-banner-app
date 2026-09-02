@@ -177,6 +177,7 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   adReady?: boolean;
+  adFailed?: boolean;
   onWatchAd?: () => void;
 };
 
@@ -184,6 +185,7 @@ export function RewardAdModal({
   visible,
   onClose,
   adReady = false,
+  adFailed = false,
   onWatchAd,
 }: Props) {
   const { rewardAdLabel, resolvedAppLocale } = useSettingsRest();
@@ -201,7 +203,7 @@ export function RewardAdModal({
     setMounted(false);
     const after = pendingAfterCloseRef.current;
     pendingAfterCloseRef.current = null;
-    after?.();
+    if (after) requestAnimationFrame(after);
   }, []);
 
   useEffect(() => {
@@ -324,8 +326,10 @@ export function RewardAdModal({
               ]}
               allowFontScaling={false}
               numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.72}
             >
-              {rewardAdLabel("rewardWatchAd")}
+              {adFailed ? rewardAdLabel("rewardAdUnavailable") : rewardAdLabel("rewardWatchAd")}
             </Text>
           </View>
         </TouchableOpacity>

@@ -15,6 +15,8 @@ import {
   loadRemainingFonts,
   prefetchRemoteFonts,
 } from "@/utils/fontPreload";
+import { configureAndroidNavigationBarHidden } from "@/utils/SystemChrome";
+import { disableAppTextScaling } from "@/utils/TextScaling";
 import * as amplitude from "@amplitude/analytics-react-native";
 import {
   DarkTheme,
@@ -24,7 +26,6 @@ import {
 import { useFonts } from "expo-font";
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocales } from "expo-localization";
-import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -36,6 +37,8 @@ import { ReducedMotionConfig, ReduceMotion } from "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
+
+disableAppTextScaling();
 
 SplashScreen.preventAutoHideAsync();
 
@@ -79,10 +82,7 @@ export default function RootLayout() {
   }, [deviceAppLocale]);
 
   useEffect(() => {
-    if (Platform.OS !== "android") return;
-    void NavigationBar.setPositionAsync("absolute");
-    void NavigationBar.setBehaviorAsync("overlay-swipe");
-    void NavigationBar.setVisibilityAsync("hidden");
+    configureAndroidNavigationBarHidden();
   }, []);
 
   //최소 0.75초 스플래쉬 강제
@@ -169,7 +169,7 @@ export default function RootLayout() {
           <SplashLoadingScreen />
         )}
         </KeyboardProvider>
-        <StatusBar hidden />
+        <StatusBar hidden={Platform.OS === "android"} />
       </SettingsProvider>
       </SafeAreaProvider>
     </ThemeProvider>

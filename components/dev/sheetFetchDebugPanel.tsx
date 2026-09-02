@@ -70,17 +70,17 @@ function SheetFetchDebugPanelInner() {
           <View style={styles.sheet}>
             <View style={styles.toolbar}>
               <Pressable onPress={() => setOpen(false)} hitSlop={12}>
-                <Text style={styles.toolbarBtn}>닫기</Text>
+                <Text style={styles.toolbarBtn} allowFontScaling={false}>닫기</Text>
               </Pressable>
               <Pressable onPress={() => void refetch()} hitSlop={12}>
-                <Text style={styles.toolbarBtn}>다시 불러오기</Text>
+                <Text style={styles.toolbarBtn} allowFontScaling={false}>다시 불러오기</Text>
               </Pressable>
             </View>
             <ScrollView
               style={styles.scroll}
               contentContainerStyle={styles.scrollContent}
             >
-              <Text selectable style={styles.mono}>
+              <Text selectable style={styles.mono} allowFontScaling={false}>
                 {bodyText}
               </Text>
             </ScrollView>

@@ -2,6 +2,7 @@ import {
   APP_LOCALE_KEYS,
   type AppLocaleKey,
 } from "@/constants/language";
+import { fetchText } from "@/utils/ApiClient";
 import Papa from "papaparse";
 import { useCallback, useEffect, useState } from "react";
 
@@ -148,11 +149,7 @@ export function useGoogleSheets(
         const sep = csvUrl.includes("?") ? "&" : "?";
         url = `${csvUrl}${sep}_=${Date.now()}`;
       }
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Google Sheet 요청 실패: HTTP ${response.status}`);
-      }
-      const csvText = await response.text();
+      const csvText = await fetchText(url);
       setData(parsePublishedSheetCsv(csvText, localeOrder));
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));

@@ -22,8 +22,8 @@
 1. 프로젝트 클론
 
 ```bash
-git clone https://github.com/your-username/led-banner-app.git
-cd led-banner-app
+git clone https://github.com/Minkyo-dev/side-led-banner-app.git
+cd side-led-banner-app
 ```
 
 2. 의존성 설치
@@ -62,8 +62,11 @@ side-led-banner-app/
 │   │   ├── MarqueeCanvas.tsx         # Skia 마퀴 캔버스
 │   │   └── buildCanvas.ts            # 캔버스 props 조합 유틸
 │   ├── dev/
+│   │   ├── proDebugFab.tsx           # Pro 상태 디버그 버튼
 │   │   ├── rewardAdDebugFab.tsx      # 리워드 광고 디버그 버튼
 │   │   └── sheetFetchDebugPanel.tsx  # 시트 fetch 디버그 패널
+│   ├── admob/
+│   │   └── bannerAd.tsx              # 설정 화면 배너 광고
 │   ├── skia/
 │   │   └── GradientBackdrop.tsx      # 그라데이션 배경
 │   ├── previewPanel.tsx              # 미리보기 패널
@@ -82,6 +85,7 @@ side-led-banner-app/
 │   ├── useTextInput.ts             # 입력창 상태 훅
 │   ├── useTextMetrics.ts           # 텍스트 크기 계산 훅
 │   ├── useTilePicture.ts           # 타일 picture 생성 훅
+│   ├── useRewardedAd.ts            # 리워드 광고 선로딩/표시 상태 훅
 │   ├── use-color-scheme.ts         # 다크/라이트 모드 감지
 │   └── use-color-scheme.web.ts     # 웹용 컬러 스킴
 ├── constants/
@@ -105,6 +109,9 @@ side-led-banner-app/
 │   └── translatorHandoff.ts         # 번역 핸드오프 메모
 ├── utils/
 │   ├── buildMarqueeTextBlob.ts      # Skia 텍스트 blob 생성
+│   ├── ApiClient.ts                 # 외부 API 호출 경계
+│   ├── SystemChrome.ts              # Android 네비바 등 시스템 UI 제어
+│   ├── TextScaling.ts               # 앱 텍스트 시스템 크기 영향 차단
 │   ├── glyphLedPanels.ts            # Pixel LED 패널 계산
 │   ├── pixelColorMix.ts             # Pixel 색상 혼합 유틸
 │   ├── presetStorage.ts             # 프리셋 저장 유틸
@@ -140,10 +147,43 @@ side-led-banner-app/
 | [react-native-gesture-handler](https://docs.swmansion.com/react-native-gesture-handler/)        | ~2.28.0  | 터치/제스처 처리                |
 | [expo-screen-orientation](https://docs.expo.dev/versions/latest/sdk/screen-orientation/)        | ~9.0.8   | 전체화면 시 가로/세로 전환 제어 |
 | [expo-linear-gradient](https://docs.expo.dev/versions/latest/sdk/linear-gradient/)              | ~15.0.8  | 프리셋 버튼 그라디언트          |
-| [@react-native-community/slider](https://github.com/callstack/react-native-slider)              | ^5.1.2   | 속도/크기/블러 등 슬라이더 UI   |
+| [@miblanchard/react-native-slider](https://github.com/miblanchard/react-native-slider)          | ^2.6.0   | 속도/크기/블러 등 슬라이더 UI   |
 | [react-native-element-dropdown](https://github.com/hoaphantn7604/react-native-element-dropdown) | ^2.12.4  | 폰트 선택 드롭다운              |
 | [react-native-svg](https://github.com/software-mansion/react-native-svg)                        | 15.12.1  | SVG 아이콘 (재생/정지 버튼 등)  |
 | [react-native-safe-area-context](https://github.com/th3rdwave/react-native-safe-area-context)   | ~5.6.0   | 노치/Safe Area 대응             |
 | [@react-navigation/native](https://reactnavigation.org/)                                        | ^7.1.8   | 네비게이션 & 테마 관리          |
+| [react-native-google-mobile-ads](https://docs.page/invertase/react-native-google-mobile-ads)    | ^16.3.3  | AdMob 배너/리워드 광고          |
 
+
+## V1.0.5 업데이트
+
+- 앱 버전을 `1.0.5`로 변경하고 설정 화면의 App Version 표시를 `V1.0.5`로 맞췄습니다.
+- 저장된 앱 언어, 기기/시스템 언어, 영어 순서로 언어를 결정합니다. 중국어는 번체 조건(`zh-Hant`, `zh-TW`, `zh-HK`, `zh-MO`)을 먼저 검사한 뒤 나머지 `zh-*`를 간체로 처리합니다.
+- 앱 소유 텍스트가 스마트폰 시스템 텍스트 크기에 영향을 받지 않도록 기본 Text/TextInput scaling을 차단했습니다.
+- Android 네비게이션 바 숨김 처리를 시스템 UI 경계로 분리했고, iOS 주요 화면은 Status Bar safe area 아래에 배치했습니다.
+- 외부 API 호출은 `utils/ApiClient.ts` 경계로 모았습니다. Google Sheets 로드는 이 경계를 통해 호출합니다.
+- 리워드 광고는 앱 시작 및 Settings 진입 시 선로딩하고, 실패 시 3초/6초 후 최대 3회까지 제한해서 시도합니다. 광고 표시 버튼은 모달이 화면에서 제거된 뒤 다음 프레임에 광고를 표시합니다.
+- 배너 광고는 visible placement 마운트 후 요청하고, 실패 시 3초/6초 후 최대 3회까지 제한해서 시도합니다.
+- 사용하지 않는 것으로 확인된 파일과 이미지 에셋을 삭제했고, PNG 이미지는 화질 변화 없는 무손실 최적화만 적용했습니다.
+- 명백한 중복 레이아웃 상태 업데이트와 production debug component 마운트만 좁게 정리했습니다.
+
+## Android APK 빌드 기록
+
+- Build ID: `35414299-1c89-4ed5-947a-b2c6ff15cb83`
+- Build profile: `preview`
+- Distribution: `INTERNAL`
+- App version: `1.0.5`
+- Android versionCode: `20`
+- Package: `com.minkyokim.sideledbannerapp`
+- compileSdk / targetSdk: `36 / 36`
+- APK SHA-256: `3B8011975A48070DDD3349D133BE0FCE0EBA2C38ECBCDBA3B9C0B494CECA96C8`
+- Signing certificate SHA-256: `730173560958735bf237ca84ba4f35bbe76a6734986929eb65f6ced63d3fd893`
+- Manifest AdMob App ID: `ca-app-pub-3506417530430977~7354080715`
+- Build log: `artifacts/eas-build-35414299.log` (local build output, not committed)
+
+Known build warnings:
+
+- `expo doctor` reported duplicate native module dependencies for `@react-native-async-storage/async-storage`.
+- `expo doctor` reported Expo SDK package version mismatches, including `react-native-keyboard-controller` and several Expo patch versions.
+- `npm install` reported 36 audit findings. These were reported but not automatically changed.
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).

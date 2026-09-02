@@ -16,12 +16,14 @@ import {
 import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { resolveBubbleCanvasOpts } from "@/utils/skiaBubbleTextLayout";
 import { getSizingPolicy } from "@/utils/textSizing";
+import {
+    addAndroidNavigationBarHiddenListener,
+    hideAndroidNavigationBar,
+} from "@/utils/SystemChrome";
 import { Image } from "expo-image";
-import * as NavigationBar from "expo-navigation-bar";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Modal,
-    Platform,
     Pressable,
     StatusBar,
     StyleSheet,
@@ -48,12 +50,9 @@ export const LedBannerFullScreen = ({
   const hasBgPhoto = backgroundImageUri != null && backgroundImageUri.length > 0;
 
   useEffect(() => {
-    if (!visible || Platform.OS !== "android") return;
-    void NavigationBar.setVisibilityAsync("hidden");
-    const sub = NavigationBar.addVisibilityListener(({ visibility }) => {
-      if (visibility === "visible") void NavigationBar.setVisibilityAsync("hidden");
-    });
-    return () => sub.remove();
+    if (!visible) return;
+    hideAndroidNavigationBar();
+    return addAndroidNavigationBarHiddenListener();
   }, [visible]);
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();

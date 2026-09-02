@@ -17,7 +17,7 @@ export function parseAppLanguagePreference(
   if (!raw) return null;
   if (raw === "system") return "system";
   if (isAppLocaleKey(raw)) return raw;
-  return null;
+  throw new Error(`Invalid saved app language: ${raw}`);
 }
 
 export async function readAppLanguage(): Promise<AppLanguagePreference | null> {

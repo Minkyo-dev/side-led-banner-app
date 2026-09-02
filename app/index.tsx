@@ -44,14 +44,18 @@ export default function Index() {
     useSettings();
   const { playOption } = config.content;
   const { isPlaying, activeTab, rewardAdVisible } = ui;
-  const { loaded: rewardAdLoaded, show: showRewardedAd } = useRewardedAd(activatePro);
+  const {
+    loaded: rewardAdLoaded,
+    failed: rewardAdFailed,
+    show: showRewardedAd,
+  } = useRewardedAd(activatePro);
 
   // 실측한 플레이바 폭에 비례해 버튼 크기 키우기 (1.6배 제한)
   const [playBarScale, setPlayBarScale] = useState(1);
   const onPlayBarLayout = useCallback((e: { nativeEvent: { layout: { width: number } } }) => {
     const measuredWidth = e.nativeEvent.layout.width;
     const scale = Math.min(1.6, Math.max(1, measuredWidth / 372));
-    setPlayBarScale(scale);
+    setPlayBarScale((prev) => (prev === scale ? prev : scale));
   }, []);
   const playBarSizes = useMemo(
     () => ({
@@ -249,6 +253,7 @@ export default function Index() {
           visible={rewardAdVisible}
           onClose={() => updateUI({ rewardAdVisible: false })}
           adReady={rewardAdLoaded}
+          adFailed={rewardAdFailed}
           onWatchAd={showRewardedAd}
         />
         {/* fullscreen LED banner modal */}
@@ -256,9 +261,13 @@ export default function Index() {
           visible={isPlaying}
           onClose={handleStop}
         />
-        <RewardAdDebugFab onOpen={openRewardAdModal} />
-        <ProDebugFab />
-        <SheetFetchDebugPanel />
+        {__DEV__ ? (
+          <>
+            <RewardAdDebugFab onOpen={openRewardAdModal} />
+            <ProDebugFab />
+            <SheetFetchDebugPanel />
+          </>
+        ) : null}
       </KeyboardAvoidingView>
       {Platform.OS === "android" && (
         <KeyboardToolbar>
@@ -271,7 +280,7 @@ export default function Index() {
                 accessible={false}
                 focusable={false}
               >
-                <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canUndo ? 1 : 0.3 }]}>↩</Text>
+                <Text allowFontScaling={false} style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canUndo ? 1 : 0.3 }]}>↩</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => redoRef.current?.()}
@@ -280,7 +289,7 @@ export default function Index() {
                 accessible={false}
                 focusable={false}
               >
-                <Text style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canRedo ? 1 : 0.3 }]}>↪</Text>
+                <Text allowFontScaling={false} style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canRedo ? 1 : 0.3 }]}>↪</Text>
               </TouchableOpacity>
             </View>
           </KeyboardToolbar.Content>

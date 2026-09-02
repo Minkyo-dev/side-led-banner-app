@@ -4,69 +4,360 @@ import {
   AdEventType,
   RewardedAd,
   RewardedAdEventType,
-  TestIds,
 } from "react-native-google-mobile-ads";
 
-
-const PROD_AD_UNIT_ID = Platform.select({
+const AD_UNIT_ID = Platform.select({
   ios: "ca-app-pub-3506417530430977/4076706298",
   android: "ca-app-pub-3506417530430977/6499152286",
-  default: TestIds.REWARDED,
 });
 
-const isPlaceholderAdUnitId = !PROD_AD_UNIT_ID || PROD_AD_UNIT_ID.includes("XXXXXXXXXX");
+const LOAD_RETRY_DELAYS_MS = [3000, 6000] as const;
+const AD_VALID_MS = 60 * 60 * 1000;
+type SlotName = "current" | "next";
+type SlotState = "idle" | "loading" | "loaded" | "showing" | "failed";
 
-const AD_UNIT_ID = isPlaceholderAdUnitId ? TestIds.REWARDED : PROD_AD_UNIT_ID;
+type RewardedSlot = {
+  ad: RewardedAd | null;
+  attempt: number;
+  loadedAt: number | null;
+  retryableLoad: boolean;
+  state: SlotState;
+  retryTimer: ReturnType<typeof setTimeout> | null;
+  unsubs: Array<() => void>;
+};
 
-const AD_RETRY_DELAY_MS = 2000;
-
-export const sharedAd = RewardedAd.createForAdRequest(AD_UNIT_ID, {
-  requestNonPersonalizedAdsOnly: true,
+const createEmptySlot = (): RewardedSlot => ({
+  ad: null,
+  attempt: 0,
+  loadedAt: null,
+  retryableLoad: false,
+  state: "idle",
+  retryTimer: null,
+  unsubs: [],
 });
 
-let loadRequested = false;
+let slots: Record<SlotName, RewardedSlot> = {
+  current: createEmptySlot(),
+  next: createEmptySlot(),
+};
+
+let terminalLoadFailed = false;
+let openedCurrentAd = false;
+let earnedRewardCurrentAd = false;
+let rewardGrantedCurrentAd = false;
+let nextLoadRequestedForCurrentShow = false;
+const subscribers = new Set<() => void>();
+const rewardSubscribers = new Set<() => void>();
+
+type DebugEvent = {
+  attempt: number;
+  event: string;
+  platform: string;
+  slot: SlotName;
+  state: SlotState;
+  timestamp: string;
+};
+const debugTrace: DebugEvent[] = [];
+
+function trace(slotName: SlotName, event: string) {
+  if (!__DEV__) return;
+  const slot = slots[slotName];
+  const item = {
+    attempt: slot.attempt,
+    event,
+    platform: Platform.OS,
+    slot: slotName,
+    state: slot.state,
+    timestamp: new Date().toISOString(),
+  };
+  debugTrace.push(item);
+  if (debugTrace.length > 80) debugTrace.shift();
+  console.debug("[rewardedAd]", item);
+}
+
+function resolveSlotName(ad: RewardedAd): SlotName | null {
+  if (slots.current.ad === ad) return "current";
+  if (slots.next.ad === ad) return "next";
+  return null;
+}
+
+function notifySubscribers() {
+  subscribers.forEach((listener) => listener());
+}
+
+function notifyRewardEarned() {
+  rewardSubscribers.forEach((listener) => listener());
+}
+
+function getRewardedAdConfigurationError(): Error | null {
+  return AD_UNIT_ID
+    ? null
+    : new Error(`Rewarded ad is not configured for ${Platform.OS}.`);
+}
+
+function clearSlotRetryTimer(slot: RewardedSlot) {
+  if (!slot.retryTimer) return;
+  clearTimeout(slot.retryTimer);
+  slot.retryTimer = null;
+}
+
+function disposeSlot(slotName: SlotName) {
+  const slot = slots[slotName];
+  clearSlotRetryTimer(slot);
+  slot.unsubs.forEach((unsubscribe) => unsubscribe());
+  slots[slotName] = createEmptySlot();
+}
+
+function createRewardedAd(slotName: SlotName): RewardedAd {
+  const adUnitId = AD_UNIT_ID;
+  if (!adUnitId) {
+    throw new Error(`Rewarded ad is not configured for ${Platform.OS}.`);
+  }
+
+  const slot = slots[slotName];
+  slot.unsubs.forEach((unsubscribe) => unsubscribe());
+  slot.unsubs = [];
+  const ad = RewardedAd.createForAdRequest(adUnitId, {
+    requestNonPersonalizedAdsOnly: true,
+  });
+  slot.ad = ad;
+
+  slot.unsubs = [
+    ad.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      const activeSlotName = resolveSlotName(ad);
+      if (!activeSlotName) return;
+      const activeSlot = slots[activeSlotName];
+      clearSlotRetryTimer(activeSlot);
+      activeSlot.state = "loaded";
+      activeSlot.loadedAt = Date.now();
+      if (activeSlotName === "current") terminalLoadFailed = false;
+      trace(activeSlotName, "loaded");
+      notifySubscribers();
+    }),
+    ad.addAdEventListener(AdEventType.OPENED, () => {
+      const activeSlotName = resolveSlotName(ad);
+      if (activeSlotName !== "current") return;
+      openedCurrentAd = true;
+      trace(activeSlotName, "opened");
+      if (!nextLoadRequestedForCurrentShow) {
+        nextLoadRequestedForCurrentShow = true;
+        loadNextSlotOnce();
+      }
+    }),
+    ad.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+      const activeSlotName = resolveSlotName(ad);
+      if (activeSlotName !== "current") return;
+      earnedRewardCurrentAd = true;
+      trace(activeSlotName, "earned_reward");
+    }),
+    ad.addAdEventListener(AdEventType.CLOSED, () => {
+      const activeSlotName = resolveSlotName(ad);
+      if (activeSlotName !== "current") return;
+      trace(activeSlotName, "closed");
+      if (
+        openedCurrentAd &&
+        earnedRewardCurrentAd &&
+        !rewardGrantedCurrentAd
+      ) {
+        rewardGrantedCurrentAd = true;
+        notifyRewardEarned();
+      }
+      promoteNextSlotToCurrent();
+      notifySubscribers();
+    }),
+    ad.addAdEventListener(AdEventType.ERROR, (error) => {
+      const activeSlotName = resolveSlotName(ad);
+      if (!activeSlotName) return;
+      if (__DEV__) console.warn("[rewardedAd] ad error", error);
+      handleSlotError(activeSlotName);
+    }),
+  ];
+
+  return ad;
+}
+
+function requestSlotLoad(slotName: SlotName) {
+  const slot = slots[slotName];
+  const ad = slot.ad ?? createRewardedAd(slotName);
+  slot.attempt += 1;
+  slot.retryableLoad = slotName === "current";
+  slot.state = "loading";
+  slot.loadedAt = null;
+  trace(slotName, "load_request");
+  notifySubscribers();
+  ad.load();
+}
+
+function handleSlotError(slotName: SlotName) {
+  const slot = slots[slotName];
+  clearSlotRetryTimer(slot);
+
+  if (slotName === "next") {
+    slot.state = "failed";
+    slot.loadedAt = null;
+    trace(slotName, "failed");
+    notifySubscribers();
+    return;
+  }
+
+  if (slot.state === "showing") {
+    terminalLoadFailed = true;
+    slot.state = "failed";
+    slot.loadedAt = null;
+    trace(slotName, "show_failed");
+    notifySubscribers();
+    return;
+  }
+
+  if (!slot.retryableLoad) {
+    terminalLoadFailed = true;
+    slot.state = "failed";
+    slot.loadedAt = null;
+    trace(slotName, "promoted_next_failed");
+    notifySubscribers();
+    return;
+  }
+
+  const retryDelay = LOAD_RETRY_DELAYS_MS[slot.attempt - 1];
+  if (retryDelay == null) {
+    terminalLoadFailed = true;
+    slot.state = "failed";
+    slot.loadedAt = null;
+    trace(slotName, "terminal_load_failed");
+    notifySubscribers();
+    return;
+  }
+
+  trace(slotName, `retry_scheduled_${retryDelay}ms`);
+  slot.retryTimer = setTimeout(() => {
+    slot.retryTimer = null;
+    if (slots.current !== slot || slot.state !== "loading") return;
+    requestSlotLoad("current");
+  }, retryDelay);
+}
+
+function isLoadedSlotExpired(slot: RewardedSlot) {
+  return (
+    slot.state === "loaded" &&
+    slot.loadedAt != null &&
+    Date.now() - slot.loadedAt > AD_VALID_MS
+  );
+}
+
+function promoteNextSlotToCurrent() {
+  disposeSlot("current");
+  slots.current = slots.next;
+  slots.next = createEmptySlot();
+  openedCurrentAd = false;
+  earnedRewardCurrentAd = false;
+  rewardGrantedCurrentAd = false;
+  nextLoadRequestedForCurrentShow = false;
+  terminalLoadFailed = slots.current.state === "failed";
+  trace("current", "next_promoted_to_current");
+}
+
+function loadNextSlotOnce() {
+  const next = slots.next;
+  if (next.state !== "idle") return;
+  requestSlotLoad("next");
+}
+
 export function loadRewardedAd() {
-  if (loadRequested) return;
-  loadRequested = true;
-  sharedAd.load();
+  const configError = getRewardedAdConfigurationError();
+  if (configError) {
+    terminalLoadFailed = true;
+    slots.current.state = "failed";
+    console.error("[rewardedAd] load failed", configError);
+    notifySubscribers();
+    return;
+  }
+
+  const current = slots.current;
+  if (isLoadedSlotExpired(current)) {
+    trace("current", "loaded_ad_expired");
+    disposeSlot("current");
+    terminalLoadFailed = false;
+  }
+
+  const currentState = slots.current.state;
+  if (
+    currentState === "loading" ||
+    currentState === "loaded" ||
+    currentState === "showing"
+  ) {
+    trace("current", "load_reused_existing_cycle");
+    return;
+  }
+
+  slots.current.attempt = 0;
+  terminalLoadFailed = false;
+  requestSlotLoad("current");
+}
+
+function getLoadedState() {
+  return slots.current.state === "loaded";
+}
+
+function getFailedState() {
+  return terminalLoadFailed || slots.current.state === "failed";
 }
 
 export function useRewardedAd(onRewardEarned: () => void) {
-  const [loaded, setLoaded] = useState(sharedAd.loaded);
+  const [loaded, setLoaded] = useState(getLoadedState);
+  const [failed, setFailed] = useState(getFailedState);
   const onRewardEarnedRef = useRef(onRewardEarned);
   onRewardEarnedRef.current = onRewardEarned;
 
   useEffect(() => {
-    if (sharedAd.loaded) setLoaded(true);
+    const syncState = () => {
+      setLoaded(getLoadedState());
+      setFailed(getFailedState());
+    };
+    const rewardListener = () => onRewardEarnedRef.current();
+    subscribers.add(syncState);
+    rewardSubscribers.add(rewardListener);
+    syncState();
 
-    const unsubs = [
-      sharedAd.addAdEventListener(RewardedAdEventType.LOADED, () =>
-        setLoaded(true),
-      ),
-      sharedAd.addAdEventListener(AdEventType.CLOSED, () => {
-        setLoaded(false);
-        sharedAd.load();
-      }),
-      sharedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
-        onRewardEarnedRef.current();
-      }),
-      sharedAd.addAdEventListener(AdEventType.ERROR, (error) => {
-        if (__DEV__) console.warn("[rewardedAd] load error", error);
-        setLoaded(false);
-        setTimeout(() => sharedAd.load(), AD_RETRY_DELAY_MS);
-      }),
-    ];
-
-    return () => unsubs.forEach((u) => u());
+    return () => {
+      subscribers.delete(syncState);
+      rewardSubscribers.delete(rewardListener);
+    };
   }, []);
 
   const show = useCallback(() => {
-    if (!sharedAd.loaded) {
+    const configError = getRewardedAdConfigurationError();
+    if (configError) {
+      terminalLoadFailed = true;
+      slots.current.state = "failed";
+      console.error("[rewardedAd] show failed", configError);
+      notifySubscribers();
+      return;
+    }
+
+    const current = slots.current;
+    if (!current.ad || current.state !== "loaded" || !current.ad.loaded) {
       if (__DEV__) console.warn("[rewardedAd] show() called before ad loaded");
       return;
     }
-    sharedAd.show();
+
+    if (isLoadedSlotExpired(current)) {
+      terminalLoadFailed = true;
+      current.state = "failed";
+      current.loadedAt = null;
+      trace("current", "show_blocked_expired");
+      notifySubscribers();
+      return;
+    }
+
+    openedCurrentAd = false;
+    earnedRewardCurrentAd = false;
+    rewardGrantedCurrentAd = false;
+    nextLoadRequestedForCurrentShow = false;
+    current.state = "showing";
+    trace("current", "show_request");
+    notifySubscribers();
+    current.ad.show();
   }, []);
 
-  return { loaded, show };
+  return { loaded, failed, show };
 }

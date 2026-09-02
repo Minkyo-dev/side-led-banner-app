@@ -16,7 +16,8 @@ export type RewardAdLabelKey =
   | "rewardBenefitFavorites"
   | "rewardBenefitOutlineShadow"
   | "rewardDescription"
-  | "rewardWatchAd";
+  | "rewardWatchAd"
+  | "rewardAdUnavailable";
 
 const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
   rewardHeaderBadge: {
@@ -90,6 +91,15 @@ const LABELS: Record<RewardAdLabelKey, Record<AppLocaleKey, string>> = {
     zhSC: "观看广告",
     fr: "Regarder la pub",
     es: "Ver anuncio",
+  },
+  rewardAdUnavailable: {
+    ko: "광고 사용 불가",
+    en: "Ad Unavailable",
+    ja: "広告を利用できません",
+    zhTC: "廣告無法使用",
+    zhSC: "广告无法使用",
+    fr: "Publicité indisponible",
+    es: "Anuncio no disponible",
   },
 };
 

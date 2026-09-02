@@ -10,7 +10,8 @@ import { useSettingsRest } from "@/contexts/settingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { type Href, useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import { loadRewardedAd } from "@/hooks/useRewardedAd";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
   Linking,
@@ -22,6 +23,7 @@ import {
   View
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SUNNY_LINKS = {
   homepage: "https://ssongyc.github.io/sunny-homepage/",
@@ -35,11 +37,17 @@ const SUNNY_LINKS = {
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
   const [languageDropdownContentHeight, setLanguageDropdownContentHeight] =
     useState(0);
   const [languageDropdownWidth, setLanguageDropdownWidth] = useState(0);
-  const { updateUI, textSectionLabel, resolvedAppLocale } = useSettingsRest();
+  const {
+    updateUI,
+    textSectionLabel,
+    rewardAdLabel,
+    resolvedAppLocale,
+  } = useSettingsRest();
 
   const languageDropdownItems = useMemo(
     () => [
@@ -88,12 +96,18 @@ export default function SettingsScreen() {
     [],
   );
 
+  useEffect(() => {
+    loadRewardedAd();
+  }, []);
+
   const openUrl = (url: string) => {
-    void Linking.openURL(url).catch(() => {});
+    void Linking.openURL(url).catch((error) => {
+      console.error("External link open failed", error);
+    });
   };
 
   return (
-    <View style={[base.container, { backgroundColor: "#FFFFFF" }]}>
+    <View style={[base.container, { backgroundColor: "#FFFFFF", paddingTop: insets.top }]}>
       <View style={settingsStyles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -221,7 +235,7 @@ export default function SettingsScreen() {
             style={settingsStyles.versionValueText}
             allowFontScaling={false}
           >
-            V {appVersion}
+            V{appVersion}
           </Text>
         </View>
       </ScrollView>
@@ -233,7 +247,10 @@ export default function SettingsScreen() {
         onTermsPress={() => openUrl(SUNNY_LINKS.terms)}
         onPrivacyPress={() => openUrl(SUNNY_LINKS.privacy)}
       />
-      <BannerAdComponent style={{ height: 60, marginBottom: 12 }} />
+      <BannerAdComponent
+        style={{ height: 60, marginBottom: 12 }}
+        unavailableLabel={rewardAdLabel("rewardAdUnavailable")}
+      />
     </View>
   );
 }

@@ -638,9 +638,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     );
     (async () => {
       try {
-        const [raw, storedAppLanguage, storedProModeExpiry] = await Promise.all(
-          [readPresetSlotsJson(), readAppLanguage(), readProModeExpiry()],
-        );
+        let storedAppLanguage: AppLanguagePreference | null = null;
+        try {
+          storedAppLanguage = await readAppLanguage();
+        } catch (err) {
+          console.error("[settings] saved appLanguage is invalid", err);
+        }
+
+        const [raw, storedProModeExpiry] = await Promise.all([
+          readPresetSlotsJson(),
+          readProModeExpiry(),
+        ]);
         if (cancelled) return;
 
         if (storedAppLanguage) {
