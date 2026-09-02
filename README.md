@@ -141,11 +141,11 @@ side-led-banner-app/
 
 | 라이브러리                                                                                      | 버전     | 용도                            |
 | ----------------------------------------------------------------------------------------------- | -------- | ------------------------------- |
-| [Expo](https://expo.dev/)                                                                       | ~54.0.31 | React Native 개발 프레임워크    |
+| [Expo](https://expo.dev/)                                                                       | ~54.0.37 | React Native 개발 프레임워크    |
 | [expo-router](https://docs.expo.dev/router/introduction/)                                       | ~6.0.21  | 파일 기반 라우팅                |
 | [react-native-reanimated](https://docs.swmansion.com/react-native-reanimated/)                  | ~4.1.1   | 마키 스크롤 애니메이션          |
 | [react-native-gesture-handler](https://docs.swmansion.com/react-native-gesture-handler/)        | ~2.28.0  | 터치/제스처 처리                |
-| [expo-screen-orientation](https://docs.expo.dev/versions/latest/sdk/screen-orientation/)        | ~9.0.8   | 전체화면 시 가로/세로 전환 제어 |
+| [expo-screen-orientation](https://docs.expo.dev/versions/latest/sdk/screen-orientation/)        | ~9.0.9   | 전체화면 시 가로/세로 전환 제어 |
 | [expo-linear-gradient](https://docs.expo.dev/versions/latest/sdk/linear-gradient/)              | ~15.0.8  | 프리셋 버튼 그라디언트          |
 | [@miblanchard/react-native-slider](https://github.com/miblanchard/react-native-slider)          | ^2.6.0   | 속도/크기/블러 등 슬라이더 UI   |
 | [react-native-element-dropdown](https://github.com/hoaphantn7604/react-native-element-dropdown) | ^2.12.4  | 폰트 선택 드롭다운              |
@@ -166,6 +166,7 @@ side-led-banner-app/
 - 배너 광고는 visible placement 마운트 후 요청하고, 실패 시 3초/6초 후 최대 3회까지 제한해서 시도합니다.
 - 사용하지 않는 것으로 확인된 파일과 이미지 에셋을 삭제했고, PNG 이미지는 화질 변화 없는 무손실 최적화만 적용했습니다.
 - 명백한 중복 레이아웃 상태 업데이트와 production debug component 마운트만 좁게 정리했습니다.
+- Expo SDK 54 권장 패키지 버전으로 정리했습니다. `expo install --check --npm`는 통과하며, `expo doctor`는 AsyncStorage 중복 1건만 남습니다.
 
 ## Android APK 빌드 기록
 

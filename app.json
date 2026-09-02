@@ -104,7 +104,8 @@
           ]
         }
       ],
-      "expo-tracking-transparency"
+      "expo-tracking-transparency",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
