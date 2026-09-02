@@ -20,7 +20,11 @@
       "icon": "./assets/images/LOGO_05_Final.png",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.minkyokim.sideledbannerapp"
+      "package": "com.minkyokim.sideledbannerapp",
+      "blockedPermissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -31,8 +35,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set the banner background.",
-          "cameraPermission": "Allow $(PRODUCT_NAME) to use the camera for the banner background."
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set the banner background."
         }
       ],
       [
