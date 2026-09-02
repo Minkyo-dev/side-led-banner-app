@@ -642,7 +642,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         try {
           storedAppLanguage = await readAppLanguage();
         } catch (err) {
-          console.error("[settings] saved appLanguage is invalid", err);
+          if (__DEV__) console.error("[settings] saved appLanguage is invalid", err);
         }
 
         const [raw, storedProModeExpiry] = await Promise.all([

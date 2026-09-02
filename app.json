@@ -20,10 +20,7 @@
       "icon": "./assets/images/LOGO_05_Final.png",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.minkyokim.sideledbannerapp",
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "package": "com.minkyokim.sideledbannerapp"
     },
     "web": {
       "output": "static",

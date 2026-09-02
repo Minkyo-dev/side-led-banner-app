@@ -155,7 +155,7 @@ export function useGoogleSheets(
       const err = e instanceof Error ? e : new Error(String(e));
       setError(err);
       setData(null);
-      console.error("Google Sheet CSV 로드 실패:", err);
+      if (__DEV__) console.error("Google Sheet CSV 로드 실패:", err);
     } finally {
       setLoading(false);
     }

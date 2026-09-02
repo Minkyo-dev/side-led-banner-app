@@ -267,7 +267,7 @@ export function loadRewardedAd() {
   if (configError) {
     terminalLoadFailed = true;
     slots.current.state = "failed";
-    console.error("[rewardedAd] load failed", configError);
+    if (__DEV__) console.error("[rewardedAd] load failed", configError);
     notifySubscribers();
     return;
   }
@@ -329,7 +329,7 @@ export function useRewardedAd(onRewardEarned: () => void) {
     if (configError) {
       terminalLoadFailed = true;
       slots.current.state = "failed";
-      console.error("[rewardedAd] show failed", configError);
+      if (__DEV__) console.error("[rewardedAd] show failed", configError);
       notifySubscribers();
       return;
     }

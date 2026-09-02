@@ -38,7 +38,7 @@ export default function BannerAdComponent({
   };
 
   if (!BANNER_AD_UNIT_ID) {
-    console.error(`[bannerAd] Banner ad is not configured for ${Platform.OS}.`);
+    if (__DEV__) console.error(`[bannerAd] Banner ad is not configured for ${Platform.OS}.`);
     return (
       <View style={[{ alignItems: "center", minHeight: 50, justifyContent: "center" }, style]}>
         <Text allowFontScaling={false}>{unavailableLabel}</Text>
@@ -60,10 +60,10 @@ export default function BannerAdComponent({
           }}
           onAdLoaded={() => {
             clearRetryTimer();
-            console.log("Banner ad loaded");
+            if (__DEV__) console.log("Banner ad loaded");
           }}
           onAdFailedToLoad={(error) => {
-            console.error("Banner ad failed to load", error);
+            if (__DEV__) console.error("Banner ad failed to load", error);
             clearRetryTimer();
             const retryDelay = LOAD_RETRY_DELAYS_MS[attempt];
             if (retryDelay == null) {

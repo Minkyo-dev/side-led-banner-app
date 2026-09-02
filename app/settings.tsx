@@ -102,7 +102,7 @@ export default function SettingsScreen() {
 
   const openUrl = (url: string) => {
     void Linking.openURL(url).catch((error) => {
-      console.error("External link open failed", error);
+      if (__DEV__) console.error("External link open failed", error);
     });
   };
 

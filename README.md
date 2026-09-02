@@ -153,7 +153,7 @@ side-led-banner-app/
 | [react-native-safe-area-context](https://github.com/th3rdwave/react-native-safe-area-context)   | ~5.6.0   | 노치/Safe Area 대응             |
 | [@react-navigation/native](https://reactnavigation.org/)                                        | ^7.1.8   | 네비게이션 & 테마 관리          |
 | [react-native-google-mobile-ads](https://docs.page/invertase/react-native-google-mobile-ads)    | ^16.3.3  | AdMob 배너/리워드 광고          |
-
+| [@amplitude/analytics-react-native](https://amplitude.com/docs/sdks/analytics/react-native/react-native-sdk) | ^1.8.0 | 익명 사용 이벤트 분석 |
 
 ## V1.0.5 업데이트
 
@@ -167,6 +167,9 @@ side-led-banner-app/
 - 사용하지 않는 것으로 확인된 파일과 이미지 에셋을 삭제했고, PNG 이미지는 화질 변화 없는 무손실 최적화만 적용했습니다.
 - 명백한 중복 레이아웃 상태 업데이트와 production debug component 마운트만 좁게 정리했습니다.
 - Expo SDK 54 권장 패키지 버전으로 정리했습니다. `expo install --check --npm`는 통과하며, `expo doctor`는 AsyncStorage 중복 1건만 남습니다.
+- Amplitude를 `^1.8.0`으로 업데이트했습니다. 최신 정식 버전에서도 내부 `@react-native-async-storage/async-storage@1.24.0` 의존성이 남아 있어 중복 경고는 해소되지 않았습니다.
+- Android에서 사용하지 않는 `RECORD_AUDIO` 권한을 삭제했습니다.
+- Amplitude의 deviceId 기반 `setUserId` 연결을 제거하고, 앱 기능에는 영향을 주지 않는 프로덕션 콘솔 로그를 개발 모드로 제한했습니다.
 
 ## Android APK 빌드 기록
 
@@ -185,6 +188,6 @@ side-led-banner-app/
 Known build warnings:
 
 - `expo doctor` reported duplicate native module dependencies for `@react-native-async-storage/async-storage`.
-- `expo doctor` reported Expo SDK package version mismatches, including `react-native-keyboard-controller` and several Expo patch versions.
-- `npm install` reported 36 audit findings. These were reported but not automatically changed.
+- `expo install --check --npm` passes with the Expo SDK 54 package versions currently installed.
+- `npm install` reported 33 audit findings after the compatible dependency updates. These were reported but not automatically changed.
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
