@@ -168,7 +168,7 @@ side-led-banner-app/
 - 명백한 중복 레이아웃 상태 업데이트와 production debug component 마운트만 좁게 정리했습니다.
 - Expo SDK 54 권장 패키지 버전으로 정리했습니다. `expo install --check --npm`는 통과하며, `expo doctor`는 AsyncStorage 중복 1건만 남습니다.
 - Amplitude를 `^1.8.0`으로 업데이트했습니다. 최신 정식 버전에서도 내부 `@react-native-async-storage/async-storage@1.24.0` 의존성이 남아 있어 중복 경고는 해소되지 않았습니다.
-- Android에서 사용하지 않는 `RECORD_AUDIO` 권한을 삭제했습니다.
+- Android에서 사용하지 않는 `RECORD_AUDIO` 권한을 삭제했고, `expo-image-picker`가 생성할 수 있는 `CAMERA`/`RECORD_AUDIO` 권한은 `blockedPermissions`로 차단했습니다. 사용하지 않는 iOS 카메라 권한 문구도 제거했습니다.
 - Amplitude의 deviceId 기반 `setUserId` 연결을 제거하고, 앱 기능에는 영향을 주지 않는 프로덕션 콘솔 로그를 개발 모드로 제한했습니다.
 
 ## Android APK 빌드 기록
