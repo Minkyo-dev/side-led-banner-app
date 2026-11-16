@@ -6,9 +6,12 @@ import {
   CONTENTS_INPUT_FONT_SIZE,
   CONTENTS_INPUT_VIEWPORT_HEIGHT,
 } from "@/constants/styles";
-import { useSettings } from "@/contexts/settingsContext";
+import {
+  useSettingsContent,
+  useSettingsLocalizationContext,
+} from "@/contexts/settingsContext";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { Platform, ScrollView, TextInput, TextLayoutEvent, useWindowDimensions } from "react-native";
+import { Platform, type ScrollViewInstance, type TextInputInstance, TextLayoutEvent, useWindowDimensions } from "react-native";
 
 const TEXT_MEASURE_OFFSCREEN_LEFT = -100_000;
 const INPUT_WIDTH_CURSOR_PAD = 28;
@@ -20,11 +23,12 @@ function stripLegacyInputMarkers(text: string): string {
 
 export function useTextInput(params: {
   inputScrollViewportW: number;
-  textInputRef: RefObject<TextInput | null>;
+  textInputRef: RefObject<TextInputInstance | null>;
 }) {
   const { inputScrollViewportW } = params;
-  const { config, resolvedAppLocale: appLocale } = useSettings();
-  const { previewText } = config.content;
+  const { content } = useSettingsContent();
+  const { resolvedAppLocale: appLocale } = useSettingsLocalizationContext();
+  const { previewText } = content;
   const { width: windowWidth } = useWindowDimensions();
 
   // 텍스트인풋은 항상 언어별 기본 폰트로만 표시 + 3줄
@@ -37,7 +41,7 @@ export function useTextInput(params: {
 
   const [measuredTextMaxW, setMeasuredTextMaxW] = useState(0);
 
-  const inputScrollRef = useRef<ScrollView>(null);
+  const inputScrollRef = useRef<ScrollViewInstance>(null);
   const inputScrollXRef = useRef(0);
 
   const displayInputText = previewText ? stripLegacyInputMarkers(previewText) : "";

@@ -2,6 +2,7 @@ import {
   isSpeechBubblePreset,
   SPEECH_BUBBLE_PRESETS,
 } from "@/constants/speechBubblePresets";
+import { isSignBoardPreset } from "@/constants/signBoardPresets";
 import type {
   BackgroundEffectAnimationResult,
   BackgroundEffectId,
@@ -120,7 +121,9 @@ function renderSpeechBubble({
   suppressPixelManagedBackgrounds,
   blurRadius,
 }: EffectProps): React.ReactNode {
-  if (suppressPixelManagedBackgrounds) {
+  // Keep sign-board artwork in the shared overlay path so it is composited
+  // after both the photo and Pixel background layers.
+  if (suppressPixelManagedBackgrounds && !isSignBoardPreset(effect.id)) {
     return null;
   }
   if (!isSpeechBubblePreset(effect.id)) {
@@ -139,7 +142,7 @@ function renderSpeechBubble({
   const imageStyle =
     mode === "preview" && previewInset > 0
       ? {
-          ...StyleSheet.absoluteFillObject,
+          ...StyleSheet.absoluteFill,
           top: -previewInset,
           bottom: -previewInset,
         }
@@ -154,6 +157,9 @@ const effectRenderers: Record<BackgroundEffectId, EffectRenderer> = {
   heartBgA: renderHeartBackground,
   speechBg1: renderSpeechBubble,
   speechBg2: renderSpeechBubble,
+  nameBg: renderSpeechBubble,
+  locationBg: renderSpeechBubble,
+  todayBg: renderSpeechBubble,
 };
 
 /** 배경이펙트레이어용 */

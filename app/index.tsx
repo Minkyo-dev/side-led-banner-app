@@ -1,8 +1,12 @@
+import AdDiagnostics from "@/components/dev/AdDiagnostics";
+import { FontDownloadModal } from "@/components/fontDownloadModal";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   MultipleLinePlayButton,
   OneLinePlayButton,
 } from "@/assets/svg/playOptionButton";
 import { PlayResumeButton } from "@/assets/svg/playResumeButton";
+import { usePremium } from "@/contexts/premiumContext";
 import { ProDebugFab } from "@/components/dev/proDebugFab";
 import { RewardAdDebugFab } from "@/components/dev/rewardAdDebugFab";
 import { SheetFetchDebugPanel } from "@/components/dev/sheetFetchDebugPanel";
@@ -16,27 +20,27 @@ import { btnStyles } from "@/constants/btnStyles";
 import { styles, toolbarStyles } from "@/constants/styles";
 import { TabType, useSettings } from "@/contexts/settingsContext";
 import { useRewardedAd } from "@/hooks/useRewardedAd";
-import * as amplitude from "@amplitude/analytics-react-native";
+import { trackAnalyticsEvent } from "@/utils/ApiClient";
 import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Platform, Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import { Platform, StatusBar, Text, TouchableOpacity, View } from "react-native";
 import { KeyboardAvoidingView, KeyboardToolbar } from "react-native-keyboard-controller";
-import { initialWindowMetrics, useSafeAreaInsets } from "react-native-safe-area-context";
+import { initialWindowMetrics, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 
-function DismissButton(props: any) {
-  const isDark = useColorScheme() === "dark";
-  const color = isDark ? "#ffffff" : "#000000";
+// iOS applies changing system insets in native layout, without a JS padding pass.
+const MainScreen = Platform.OS === "ios" ? SafeAreaView : View;
+
+function DismissLabel() {
   return (
-    <TouchableOpacity onPress={props.onPress} style={props.style}>
-      <Text allowFontScaling={false} style={[styles.accessoryClose, { color }]}>✔</Text>
-    </TouchableOpacity>
+    <Text allowFontScaling={false} style={styles.accessoryClose}>✔</Text>
   );
 }
 
 export default function Index() {
+  const { isPremium } = usePremium();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -45,10 +49,21 @@ export default function Index() {
   const { playOption } = config.content;
   const { isPlaying, activeTab, rewardAdVisible } = ui;
   const {
+    failure: rewardAdFailure,
+    delayed: rewardAdDelayed,
+    expired: rewardAdExpired,
     loaded: rewardAdLoaded,
     failed: rewardAdFailed,
+    showFailed: rewardAdShowFailed,
+    canRetry: rewardAdCanRetry,
+    retry: retryRewardedAd,
+    isReady: isRewardedAdReady,
     show: showRewardedAd,
   } = useRewardedAd(activatePro);
+
+  useEffect(() => {
+    if (rewardAdShowFailed) openRewardAdModal();
+  }, [rewardAdShowFailed, openRewardAdModal]);
 
   // 실측한 플레이바 폭에 비례해 버튼 크기 키우기 (1.6배 제한)
   const [playBarScale, setPlayBarScale] = useState(1);
@@ -70,10 +85,10 @@ export default function Index() {
     if (!isPlaying) {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     }
-  }, []);
+  }, [isPlaying]);
 
-  const handlePlay = async () => {
-    amplitude.track("Play_clicked", {
+  const handlePlay = () => {
+    trackAnalyticsEvent("Play_clicked", {
       play_mode: playOption,
       font: config.appearance.font,
       fontSize: config.appearance.fontSize,
@@ -89,11 +104,17 @@ export default function Index() {
       effects: config.appearance.effectSelectedItems.join(","),
       backgroundEffect: config.appearance.backgroundEffectPreset,
     });
-    await ScreenOrientation.unlockAsync();
     updateUI({ isPlaying: true });
   };
 
+  // The editor must already be covered before native rotation is unlocked.
+  const handlePlayReady = useCallback(() => {
+    void ScreenOrientation.unlockAsync();
+  }, []);
+
   const handleStop = async () => {
+    // Restore system chrome while Play still covers the main screen.
+    if (Platform.OS === "ios") StatusBar.setHidden(false, "none");
     await ScreenOrientation.lockAsync(
       ScreenOrientation.OrientationLock.PORTRAIT_UP,
     );
@@ -102,7 +123,7 @@ export default function Index() {
 
   const handleTabPress = (tab: TabType) => {
     if (tab === "TEXT") {
-      amplitude.track("Text_clicked", {
+      trackAnalyticsEvent("Text_clicked", {
         font: config.appearance.font,
         fontSize: config.appearance.fontSize,
         textMoveSpeed: config.motion.textMoveSpeed,
@@ -113,13 +134,13 @@ export default function Index() {
         dropShadow: config.appearance.dropShadow,
       });
     } else if (tab === "BACKGROUND") {
-      amplitude.track("BG_clicked", {
+      trackAnalyticsEvent("BG_clicked", {
         backgroundColor: config.background.backgroundColor,
         backgroundBlur: config.background.backgroundBlur,
         has_photo: config.background.backgroundImageUri != null,
       });
     } else if (tab === "EFFECT") {
-      amplitude.track("Effects_clicked", {
+      trackAnalyticsEvent("Effects_clicked", {
         effects: config.appearance.effectSelectedItems.join(","),
         backgroundEffect: config.appearance.backgroundEffectPreset,
         gradientPreset: config.appearance.effectSelectedItems.includes("Gradient")
@@ -153,8 +174,19 @@ export default function Index() {
   }, []);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: isPlaying ? 0 : (initialWindowMetrics?.insets.bottom ?? 0) }]}>
+    <View style={{ flex: 1, backgroundColor: config.background.backgroundColor }}>
+    <MainScreen
+      style={[styles.container, { opacity: isPlaying ? 0 : 1 }, Platform.OS !== "ios" && { paddingTop: insets.top, paddingBottom: isPlaying ? 0 : (initialWindowMetrics?.insets.bottom ?? 0) }]}
+      pointerEvents={isPlaying ? "none" : "auto"}
+      accessibilityElementsHidden={isPlaying}
+      importantForAccessibility={isPlaying ? "no-hide-descendants" : "auto"}
+    >
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        <View
+          style={{ flex: 1 }}
+          accessibilityElementsHidden={rewardAdVisible}
+          importantForAccessibility={rewardAdVisible ? "no-hide-descendants" : "auto"}
+        >
         <PreviewPanel
           onCursorMovers={onCursorMovers}
           onUndoRedoControl={onUndoRedoControl}
@@ -173,7 +205,7 @@ export default function Index() {
           <TouchableOpacity
             style={[btnStyles.playBarSideSlot, { width: playBarSizes.icon }]}
             onPress={() => {
-              amplitude.track("OneL_clicked");
+              trackAnalyticsEvent("OneL_clicked");
               updateConfig("content", { playOption: "one" });
             }}
           >
@@ -183,7 +215,7 @@ export default function Index() {
           <TouchableOpacity
             style={[btnStyles.playBarSideSlot, { width: playBarSizes.icon }]}
             onPress={() => {
-              amplitude.track("ThreeL_clicked");
+              trackAnalyticsEvent("ThreeL_clicked");
               updateConfig("content", { playOption: "multi" });
             }}
           >
@@ -200,16 +232,16 @@ export default function Index() {
           <TouchableOpacity
             style={[btnStyles.playBarSideSlot, { width: playBarSizes.icon }]}
             onPress={() => {
-              amplitude.track("Setting_clicked");
+              trackAnalyticsEvent("Setting_clicked");
               router.push("/settings" as Href);
             }}
             accessibilityLabel={textSectionLabel("settingsTitle")}
           >
             <Image
-              source={require("@/assets/images/settings.png")}
+              source={require("@/assets/images/icon_config_DT_xxhdpi.png")}
               style={[
                 btnStyles.playBarSettingsImage,
-                { width: playBarSizes.icon, height: playBarSizes.icon },
+                { width: playBarSizes.icon * 0.85, height: playBarSizes.icon * 0.85 },
               ]}
               contentFit="contain"
             />
@@ -249,29 +281,36 @@ export default function Index() {
           {activeTab === "EFFECT" && <EffectSection />}
         </View>
         
-        <RewardAdModal
+        <AdDiagnostics />
+        </View>
+        {!isPremium && <RewardAdModal
           visible={rewardAdVisible}
           onClose={() => updateUI({ rewardAdVisible: false })}
+          adFailure={rewardAdFailure}
+          adDelayed={rewardAdDelayed}
+          adExpired={rewardAdExpired}
           adReady={rewardAdLoaded}
           adFailed={rewardAdFailed}
+          adShowFailed={rewardAdShowFailed}
+          canRetry={rewardAdCanRetry}
+          onRetry={retryRewardedAd}
+          isAdReady={isRewardedAdReady}
           onWatchAd={showRewardedAd}
-        />
-        {/* fullscreen LED banner modal */}
-        <LedBannerFullScreen
-          visible={isPlaying}
-          onClose={handleStop}
-        />
+        />}
+        <FontDownloadModal />
         {__DEV__ ? (
           <>
-            <RewardAdDebugFab onOpen={openRewardAdModal} />
             <ProDebugFab />
+            <RewardAdDebugFab onOpen={openRewardAdModal} />
             <SheetFetchDebugPanel />
           </>
         ) : null}
       </KeyboardAvoidingView>
       {Platform.OS === "android" && (
-        <KeyboardToolbar>
-          <KeyboardToolbar.Content>
+        <KeyboardToolbar
+          showArrows={false}
+          doneText={<DismissLabel />}
+          content={
             <View style={toolbarStyles.cursorNavContainer}>
               <TouchableOpacity
                 onPress={() => undoRef.current?.()}
@@ -280,7 +319,7 @@ export default function Index() {
                 accessible={false}
                 focusable={false}
               >
-                <Text allowFontScaling={false} style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canUndo ? 1 : 0.3 }]}>↩</Text>
+                <MaterialIcons allowFontScaling={false} name="undo" size={styles.accessoryClose.fontSize} color={toolbarBtn} style={{ opacity: canUndo ? 1 : 0.3 }} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => redoRef.current?.()}
@@ -289,13 +328,18 @@ export default function Index() {
                 accessible={false}
                 focusable={false}
               >
-                <Text allowFontScaling={false} style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: canRedo ? 1 : 0.3 }]}>↪</Text>
+                <MaterialIcons allowFontScaling={false} name="redo" size={styles.accessoryClose.fontSize} color={toolbarBtn} style={{ opacity: canRedo ? 1 : 0.3 }} />
               </TouchableOpacity>
             </View>
-          </KeyboardToolbar.Content>
-          <KeyboardToolbar.Done button={DismissButton} />
-        </KeyboardToolbar>
+          }
+        />
       )}
+    </MainScreen>
+    <LedBannerFullScreen
+      visible={isPlaying}
+      onReady={handlePlayReady}
+      onClose={handleStop}
+    />
     </View>
   );
 }

@@ -12,7 +12,7 @@ import { Image } from "react-native";
  * 동시에 쓸 때마다 TTF를 매번 새로 디코딩합니다. 여기서는 asset(require id) 기준으로
  * 앱 전역에 한 번만 디코딩해서 공유합니다.
  */
-export type FontAssetRef = number | string;
+type FontAssetRef = number | string;
 
 const typefaceCache = new Map<FontAssetRef, SkTypeface | null>();
 const pendingTypefaceLoads = new Map<FontAssetRef, Promise<SkTypeface | null>>();
@@ -24,7 +24,8 @@ function wait(ms: number): Promise<void> {
 }
 
 async function fetchTypeface(asset: FontAssetRef): Promise<SkTypeface | null> {
-  const uri = typeof asset === "number" ? Image.resolveAssetSource(asset).uri : asset;
+  const uri = typeof asset === "number" ? Image.resolveAssetSource(asset)?.uri : asset;
+  if (!uri) throw new Error("Font asset URI could not be resolved");
   const data = await Skia.Data.fromURI(uri);
   return data ? Skia.Typeface.MakeFreeTypeFaceFromData(data) : null;
 }
@@ -43,7 +44,7 @@ async function fetchTypefaceWithRetry(asset: FontAssetRef): Promise<SkTypeface |
   }
 }
 
-function loadTypeface(asset: FontAssetRef): Promise<SkTypeface | null> {
+export function loadTypeface(asset: FontAssetRef): Promise<SkTypeface | null> {
   const cached = typefaceCache.get(asset);
   if (cached !== undefined) return Promise.resolve(cached);
 
@@ -71,6 +72,13 @@ export function preloadSkiaTypefaces(assets: FontAssetRef[]): void {
   });
 }
 
+/** Manual startup retry may discard failed decodes; successful/in-flight work is retained. */
+export function clearFailedSkiaTypefaces(): void {
+  for (const [asset, typeface] of typefaceCache) {
+    if (typeface === null) typefaceCache.delete(asset);
+  }
+}
+
 const RETRY_DELAYS_MS = [500, 1500, 3000];
 
 /** asset 기준 전역 캐시를 쓰는 useFont 대체 훅. */
@@ -78,20 +86,12 @@ export function useCachedSkiaFont(
   asset: FontAssetRef | null | undefined,
   size: number,
 ): SkFont | null {
-  const [typeface, setTypeface] = useState<SkTypeface | null>(() =>
-    asset != null ? typefaceCache.get(asset) ?? null : null,
-  );
+  const [loaded, setLoaded] = useState(() => ({
+    asset, typeface: asset != null ? typefaceCache.get(asset) ?? null : null,
+  }));
 
   useEffect(() => {
-    if (asset == null) {
-      setTypeface(null);
-      return;
-    }
-    const cached = typefaceCache.get(asset);
-    if (cached !== undefined) {
-      setTypeface(cached);
-      return;
-    }
+    if (asset == null || typefaceCache.has(asset)) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -101,12 +101,12 @@ export function useCachedSkiaFont(
       loadTypeface(asset).then((tf) => {
         if (cancelled) return;
         if (tf) {
-          setTypeface(tf);
+          setLoaded({ asset, typeface: tf });
           return;
         }
         const delay = RETRY_DELAYS_MS[retryIndex];
         if (delay == null) {
-          setTypeface(null);
+          setLoaded({ asset, typeface: null });
           return;
         }
         timer = setTimeout(() => attemptLoad(retryIndex + 1), delay);
@@ -120,23 +120,28 @@ export function useCachedSkiaFont(
     };
   }, [asset]);
 
+  // A font from the previous selection must never count as the requested font being ready.
+  const cached = asset != null ? typefaceCache.get(asset) : null;
+  const typeface = cached !== undefined ? cached : loaded.asset === asset ? loaded.typeface : null;
   return useMemo(() => (typeface ? Skia.Font(typeface, size) : null), [typeface, size]);
 }
 
 export function useResolvedFontAssetRef(
   source: FontAssetSource | null,
 ): FontAssetRef | null {
-  const [remoteUri, setRemoteUri] = useState<string | null>(null);
+  const [resolved, setResolved] = useState<{ key: string; uri: string } | null>(null);
   const marker = source != null && isRemoteFontMarker(source) ? source : null;
 
+  const markerKey = marker ? `${marker.remote}:${marker.weight}` : null;
+
   useEffect(() => {
-    if (!marker) return;
+    if (!marker || !markerKey) return;
     let cancelled = false;
     const fontSource = REMOTE_FONT_FACE_SETS[marker.remote][marker.weight];
     ensureRemoteFontDownloaded(fontSource)
       .then((uri) => {
         if (__DEV__) console.log("[fonts] remote font resolve done", marker.remote, marker.weight, uri);
-        if (!cancelled) setRemoteUri(uri);
+        if (!cancelled) setResolved({ key: markerKey, uri });
       })
       .catch((err) => {
         if (__DEV__) console.warn("[fonts] remote font resolve failed", marker.remote, marker.weight, err);
@@ -144,8 +149,8 @@ export function useResolvedFontAssetRef(
     return () => {
       cancelled = true;
     };
-  }, [marker?.remote, marker?.weight]);
+  }, [marker, markerKey]);
 
   if (source == null) return null;
-  return typeof source === "number" ? source : remoteUri;
+  return typeof source === "number" ? source : resolved && resolved.key === markerKey ? resolved.uri : null;
 }

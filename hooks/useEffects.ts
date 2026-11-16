@@ -9,21 +9,27 @@ import {
   pixelGlyphPanelPadCells,
   resolveContentUpscaleFactor,
   resolvePixelBackgroundShaderSizePx,
-  resolvePixelFontCircleGridMode,
   resolvePixelShaderSizePx,
   resolvePixelTextShaderUniforms,
 } from "@/constants/pixelLed";
-import { useSettings } from "@/contexts/settingsContext";
+import {
+  useSettingsAppearance,
+  useSettingsContent,
+  useSettingsLocalizationContext,
+} from "@/contexts/settingsContext";
 import { computeEffectSpace } from "@/utils/recordTile";
 import { useMemo } from "react";
 
-export type EffectsInput = {
+type EffectsInput = {
   fontSizePx?: number;
+  mode?: "preview" | "fullscreen";
 };
 
 /** Skia마퀴효과용 */
 export function useEffects(input: EffectsInput = {}) {
-  const { config, resolvedAppLocale } = useSettings();
+  const { appearance } = useSettingsAppearance();
+  const { content } = useSettingsContent();
+  const { resolvedAppLocale } = useSettingsLocalizationContext();
   const {
     effectSelectedItems,
     gradientBackgroundPreset,
@@ -32,20 +38,19 @@ export function useEffects(input: EffectsInput = {}) {
     glowColor,
     dropShadow,
     pixelColorMix,
-  } = config.appearance;
-  const { playOption } = config.content;
+  } = appearance;
+  const { playOption } = content;
 
   const isPixelEffect = hasPixelLedEffect(effectSelectedItems);
-  const isPixelCircleGrid = resolvePixelFontCircleGridMode(effectSelectedItems) != null;
   const isPixelTextDots = isPixelEffect;
   const isGlowEffect = effectSelectedItems.includes("Glow");
   const showGradientBackdrop =
     effectSelectedItems.includes("Gradient") &&
     GRADIENT_BACKDROP_IDS.includes(gradientBackgroundPreset as GradientBackdropId);
 
-  const pixelPlay = { playOption, locale: resolvedAppLocale };
+  const pixelPlay = { playOption };
   const pixelShaderSize = isPixelEffect
-    ? resolvePixelShaderSizePx({ ...pixelPlay, fontSizePx: input.fontSizePx })
+    ? resolvePixelShaderSizePx({ ...pixelPlay, fontSizePx: input.fontSizePx, mode: input.mode })
     : 1;
   const pixelBackgroundShaderSize = isPixelEffect
     ? resolvePixelBackgroundShaderSizePx(pixelPlay)
@@ -54,10 +59,10 @@ export function useEffects(input: EffectsInput = {}) {
   const pixelContentUpscaleFactor = isPixelEffect
     ? resolveContentUpscaleFactor({ ...pixelPlay, fontSizePx: input.fontSizePx })
     : 1;
-  const pixelTextShaderUniforms = resolvePixelTextShaderUniforms(pixelShaderSize);
-  const pixelMaskDilateRadius = 1;
+  const pixelTextShaderUniforms = resolvePixelTextShaderUniforms();
+  const pixelMaskDilateRadius = 0;
   const pixelMaskErodeRadius = 0;
-  const pixelGlyphPadCells = isPixelCircleGrid
+  const pixelGlyphPadCells = isPixelEffect
     ? pixelGlyphPanelPadCells(pixelShaderSize)
     : 1;
   const skiaStrokeWidthPx =

@@ -2,29 +2,30 @@
   "expo": {
     "name": "Led Pop",
     "slug": "led-banner-app",
-    "version": "1.0.5",
+    "version": "1.1.4",
     "orientation": "default",
     "icon": "./assets/images/Logo_IOS.png",
     "scheme": "sideledbannerapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "requireFullScreen": true,
       "icon": "./assets/images/LOGO_05_Final.png",
-      "bundleIdentifier": "com.minkyokim.sideledbannerapp",
+      "bundleIdentifier": "com.sunnyinnolab.ledpop",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "icon": "./assets/images/LOGO_05_Final.png",
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.minkyokim.sideledbannerapp",
       "blockedPermissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "versionCode": 32
     },
     "web": {
       "output": "static",
@@ -35,23 +36,31 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set the banner background."
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set the banner background.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       [
-        "expo-splash-screen",
+        "./plugins/withAndroidSplashRetention",
         {
           "backgroundColor": "#1a1a1a",
-          "image": "./assets/images/splash-transparent.png",
-          "imageWidth": 1,
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
           "dark": {
             "backgroundColor": "#1a1a1a",
-            "image": "./assets/images/splash-transparent.png"
+            "image": "./assets/images/splash-icon.png"
           }
         }
       ],
       "expo-font",
       "expo-localization",
+      [
+        "expo-navigation-bar",
+        {
+          "hidden": true
+        }
+      ],
       [
         "react-native-google-mobile-ads",
         {
@@ -104,8 +113,11 @@
           ]
         }
       ],
-      "expo-tracking-transparency",
-      "expo-web-browser"
+      "expo-image",
+      "expo-iap",
+      "./plugins/withPremiumIap",
+      "./plugins/withAndroidKotlin",
+      "./plugins/withAndroidRelease"
     ],
     "experiments": {
       "typedRoutes": true,

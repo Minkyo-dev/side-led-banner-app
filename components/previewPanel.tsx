@@ -2,6 +2,7 @@ import { DeleteAllButton } from "@/assets/svg/deleteAllButton";
 import { GradientBackdrop } from "@/components/skia/GradientBackdrop";
 import { btnStyles } from "@/constants/btnStyles";
 import { type GradientBackdropId } from "@/constants/gradientBackgroundPresets";
+import { isSignBoardPreset } from "@/constants/signBoardPresets";
 import {
   CONTENTS_INPUT_FONT_SIZE,
   styles,
@@ -10,12 +11,18 @@ import {
 import {
   normalizePreviewTextMaxLines,
   PREVIEW_TEXT_MAX_LINES,
-  useSettings,
+  useSettingsAppearance,
+  useSettingsBackground,
+  useSettingsContent,
+  useSettingsUI,
 } from "@/contexts/settingsContext";
+import { StartupPreviewContext } from "@/contexts/startupContext";
 import { useBackgroundAnimation } from "@/hooks/useBackgroundAnimation";
 import { useBlinkOpacityStyle } from "@/hooks/useBlinkOpacityStyle";
 import { useEffects } from "@/hooks/useEffects";
+import { useHeartBackgroundScroll } from "@/hooks/useHeartBackgroundScroll";
 import { useMarqueeAnimation } from "@/hooks/useMarqueeAnimation";
+import { usePlaybackActive } from "@/hooks/usePlaybackActive";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
 import {
   resolveSpeechCanvasFallback,
@@ -26,10 +33,11 @@ import { useTextInput } from "@/hooks/useTextInput";
 import { useTextMetrics } from "@/hooks/useTextMetrics";
 import { resolveBubbleCanvasOpts } from "@/utils/skiaBubbleTextLayout";
 import { getSizingPolicy } from "@/utils/textSizing";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Canvas } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
 import { LinearGradient as LinearGradientExpo } from "expo-linear-gradient";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   InputAccessoryView,
   Keyboard,
@@ -41,15 +49,18 @@ import {
   TouchableOpacity,
   useColorScheme,
   useWindowDimensions,
-  View
+  View,
+  type TextInputInstance
 } from "react-native";
 import { BackgroundEffectLayer } from "./animation/BackgroundEffectLayer";
-import { buildCanvas } from "./animation/buildCanvas";
 import { buildPixelBackground } from "./animation/buildPixelBackground";
 import { MarqueeCanvas } from "./animation/MarqueeCanvas";
 import { PixelBackgroundCanvas } from "./animation/PixelBackgroundCanvas";
+import { useMarqueeCanvasProps } from "./animation/useMarqueeCanvasProps";
 
 const inputAccessoryViewID = "doneAccessory";
+const EDITOR_DISPLAY_HEIGHT_RATIO = 0.31;
+const INPUT_AREA_VERTICAL_SPACE = 12;
 
 type LayoutEvent = {
   nativeEvent: { layout: { height: number; width: number } };
@@ -90,28 +101,24 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
   const previewHeight = previewBox.height;
   const [inputScrollViewportW, setInputScrollViewportW] = useState(0);
 
-  const {
-    config,
-    handleTextChange,
-    updateConfig,
-    ui,
-    loadPreset,
-    isProActive,
-    openRewardAdModal,
-  } = useSettings();
+  const { appearance, updateConfig } = useSettingsAppearance();
+  const { background } = useSettingsBackground();
+  const { content, handleTextChange } = useSettingsContent();
+  const { ui, loadPreset, isProActive, openRewardAdModal } = useSettingsUI();
   const { activePreset } = ui;
 
-  const { previewText, playOption } = config.content;
+  const { previewText } = content;
   const { textSelectedColor, gradientBackgroundPreset, dropShadow } =
-    config.appearance;
+    appearance;
   const { backgroundColor, backgroundImageUri, backgroundBlur } =
-    config.background;
+    background;
   const hasBgPhoto =
     backgroundImageUri != null && backgroundImageUri.length > 0;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isPortrait = windowHeight >= windowWidth;
 
-  const backgroundEdgeEffectAnim = useBackgroundAnimation();
+  const isAnimationActive = usePlaybackActive(!ui.isPlaying);
+  const backgroundEdgeEffectAnim = useBackgroundAnimation(isAnimationActive);
   const sizingPolicy = useMemo(
     () => getSizingPolicy({ effectId: backgroundEdgeEffectAnim.id }),
     [backgroundEdgeEffectAnim.id],
@@ -120,7 +127,8 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
   const speechBubble = useSpeechBubble({
     speechBubbleId: sizingPolicy.speechBubbleId,
     effectId: backgroundEdgeEffectAnim.id,
-    isPortrait,
+    // The editor preview uses the landscape artwork even on a portrait phone.
+    isPortrait: isSignBoardPreset(backgroundEdgeEffectAnim.id) ? false : isPortrait,
     basisWidthPx: previewBox.width,
     viewportHeight: previewHeight,
   });
@@ -133,13 +141,16 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     speechMaxHeight: speechBubble.maxTextHeight,
   });
 
-  const effects = useEffects({ fontSizePx: previewFontSize });
+  const effects = useEffects({ fontSizePx: previewFontSize, mode: "preview" });
+
+  const backgroundTranslateX = useHeartBackgroundScroll(isAnimationActive);
 
   const marqueeViewportWidthPx =
     speechBubble.speechBoxPx?.widthPx ?? previewBox.width;
 
   const { displayText, translateX, onTextLayout, SPACER } = useMarqueeAnimation(
     {
+      isActive: isAnimationActive,
       viewportWidthPx: marqueeViewportWidthPx,
       effectBleedPx: effects.effectSpacePx,
     },
@@ -167,9 +178,18 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     }),
   });
 
-  const { opacity: blinkOpacity } = useBlinkOpacityStyle();
+  const reportStartupPreviewReady = useContext(StartupPreviewContext);
+  const startupPreviewReady = previewBox.width > 0 && previewBox.height > 0 &&
+    canvas.isPrepared;
+  useEffect(() => {
+    reportStartupPreviewReady(startupPreviewReady);
+    return () => reportStartupPreviewReady(false);
+  }, [startupPreviewReady, reportStartupPreviewReady, appearance.font,
+    effects.pixelSkiaFontOverride, previewFontSize, previewBox.width, previewBox.height]);
 
-  const marqueeCanvasProps = buildCanvas({
+  const { opacity: blinkOpacity } = useBlinkOpacityStyle(isAnimationActive);
+
+  const marqueeCanvasProps = useMarqueeCanvasProps({
     canvas,
     effects,
     blinkOpacity,
@@ -191,7 +211,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
         backgroundImageUri: backgroundImageUri ?? null,
         gradientBackgroundPreset,
         backgroundEffect: backgroundEdgeEffectAnim,
-        translateX,
+        translateX: backgroundTranslateX,
         isPortrait,
         mode: "preview",
       }),
@@ -204,7 +224,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
       backgroundImageUri,
       gradientBackgroundPreset,
       backgroundEdgeEffectAnim,
-      translateX,
+      backgroundTranslateX,
       isPortrait,
     ],
   );
@@ -221,7 +241,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     setInputScrollViewportW((prev) => (prev === width ? prev : width));
   }, []);
 
-  const textInputRef = useRef<TextInput>(null);
+  const textInputRef = useRef<TextInputInstance>(null);
 
   const {
     displayInputText,
@@ -237,6 +257,11 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
     moveCursorDown,
   } = useTextInput({ inputScrollViewportW, textInputRef });
 
+  const previewContainerHeight =
+    Math.round(windowHeight * EDITOR_DISPLAY_HEIGHT_RATIO) +
+    inputViewportHeightPx +
+    INPUT_AREA_VERTICAL_SPACE;
+
   const history = useTextHistory(previewText);
 
   useEffect(() => {
@@ -246,6 +271,8 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
   useEffect(() => {
     onUndoRedoStateChange?.(history.canUndo, history.canRedo);
   }, [history.canUndo, history.canRedo, onUndoRedoStateChange]);
+
+  const [forcedSnapshot, setForcedSnapshot] = useState<TextSnapshot | undefined>(undefined);
 
   const handleUndo = useCallback(() => {
     const snapshot = history.undo();
@@ -276,11 +303,10 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
   const setPreviewText = (text: string) =>
     updateConfig("content", { previewText: text });
   const inputSelectionRef = useRef({ start: 0, end: 0 });
-  const [forcedSnapshot, setForcedSnapshot] = useState<TextSnapshot | undefined>(undefined);
 
   // onPreviewTextChange 내에서 항상 최신 displayInputText를 참조
   const displayInputTextRef = useRef(displayInputText);
-  displayInputTextRef.current = displayInputText;
+  useLayoutEffect(() => { displayInputTextRef.current = displayInputText; }, [displayInputText]);
 
   const lineCount = previewText.replace(/\r\n?/g, "\n").split("\n").length;
   const atMaxLines = lineCount >= PREVIEW_TEXT_MAX_LINES;
@@ -318,7 +344,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
   };
 
   return (
-    <View style={styles.previewContainer}>
+    <View style={[styles.previewContainer, { height: previewContainerHeight }]}>
       {/* preview */}
       <View
         collapsable={false}
@@ -328,7 +354,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
             justifyContent: "center",
             overflow: "hidden",
             backgroundColor:
-              hasBgPhoto || effects.isPixelEffect ? undefined : backgroundColor,
+              effects.isPixelEffect ? undefined : backgroundColor,
           },
         ]}
         onLayout={onPreviewLayout}
@@ -344,7 +370,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
         {effects.isPixelEffect &&
         previewBox.width > 0 &&
         previewBox.height > 0 ? (
-          <PixelBackgroundCanvas {...pixelBackgroundProps} />
+          <PixelBackgroundCanvas {...pixelBackgroundProps} isActive={isAnimationActive} />
         ) : null}
         {!effects.isPixelEffect &&
         effects.showGradientBackdrop &&
@@ -353,6 +379,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <Canvas style={{ flex: 1 }} opaque={false}>
               <GradientBackdrop
+                isActive={isAnimationActive}
                 key={`gradient-${gradientBackgroundPreset}`}
                 preset={gradientBackgroundPreset as GradientBackdropId}
                 width={previewBox.width}
@@ -364,7 +391,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
         ) : null}
         <BackgroundEffectLayer
           effect={backgroundEdgeEffectAnim}
-          translateX={translateX}
+          translateX={backgroundTranslateX}
           isPortrait={isPortrait}
           mode="preview"
           suppressPixelManagedBackgrounds={effects.isPixelEffect}
@@ -373,7 +400,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
         {speechBubble.speechTextBoxConfig ? (
           <View
             style={{
-              ...StyleSheet.absoluteFillObject,
+              ...StyleSheet.absoluteFill,
               alignItems: "center",
               ...(speechBubble.speechTextTop == null
                 ? { justifyContent: "center" }
@@ -533,7 +560,7 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
                   accessible={false}
                   focusable={false}
                 >
-                  <Text allowFontScaling={false} style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: history.canUndo ? 1 : 0.3 }]}>↩</Text>
+                  <MaterialIcons allowFontScaling={false} name="undo" size={styles.accessoryClose.fontSize} color={toolbarBtn} style={{ opacity: history.canUndo ? 1 : 0.3 }} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleRedo}
@@ -542,13 +569,17 @@ export default function PreviewPanel({ onCursorMovers, onUndoRedoControl, onUndo
                   accessible={false}
                   focusable={false}
                 >
-                  <Text allowFontScaling={false} style={[toolbarStyles.cursorNavText, { color: toolbarBtn, opacity: history.canRedo ? 1 : 0.3 }]}>↪</Text>
+                  <MaterialIcons allowFontScaling={false} name="redo" size={styles.accessoryClose.fontSize} color={toolbarBtn} style={{ opacity: history.canRedo ? 1 : 0.3 }} />
                 </TouchableOpacity>
               </View>
               <TouchableOpacity onPress={Keyboard.dismiss} hitSlop={8}>
-                <Text allowFontScaling={false} style={styles.accessoryClose}>
-                  ✔
-                </Text>
+                <MaterialIcons
+                  allowFontScaling={false}
+                  name="check"
+                  size={styles.accessoryClose.fontSize}
+                  color={toolbarBtn}
+                  style={{ opacity: 1 }}
+                />
               </TouchableOpacity>
             </View>
           </InputAccessoryView>

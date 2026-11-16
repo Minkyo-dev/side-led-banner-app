@@ -6,7 +6,7 @@ import { fetchText } from "@/utils/ApiClient";
 import Papa from "papaparse";
 import { useCallback, useEffect, useState } from "react";
 
-export const GOOGLE_SHEET_CSV_URL =
+const GOOGLE_SHEET_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vS4uzvVy0xudw8AviSG0o-JsE5IiuBdpYt4tAAxDXFSK9l0i2To3cZ2pBqCDc3AoRoeENUW_QC5s4_d/pub?gid=0&single=true&output=csv";
 
 /**
@@ -27,10 +27,7 @@ export const SETTINGS_SHEET_LOCALE_ORDER: readonly AppLocaleKey[] = [
   "es",
 ];
 
-/** 스프레드시트 열 순서와 동일 (`APP_LOCALE_KEYS`와 같음)*/
-export const SHEET_LOCALE_KEYS = APP_LOCALE_KEYS;
-
-export type SheetLocaleKey = AppLocaleKey;
+type SheetLocaleKey = AppLocaleKey;
 
 /** 실제 값 추출 시작하는 인덱스 */
 const COL_B_INDEX = 1;
@@ -122,7 +119,7 @@ function parsePublishedSheetCsv(
   return { sheetVersion, headerLabelsB1F, rows };
 }
 
-export type UseGoogleSheetsResult = {
+type UseGoogleSheetsResult = {
   data: GoogleSheetParseResult | null;
   loading: boolean;
   error: Error | null;
@@ -162,6 +159,8 @@ export function useGoogleSheets(
   }, [csvUrl, localeOrder]);
 
   useEffect(() => {
+    // Start the external request and its loading state together.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 

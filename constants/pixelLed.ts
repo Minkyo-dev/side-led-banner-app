@@ -1,17 +1,12 @@
-import type { AppLocaleKey } from "@/constants/language";
-
 /** 1줄도트기준px용 */
-export const PIXEL_LED_DOT_SIZE_PX = 6;
+const PIXEL_LED_DOT_SIZE_PX = 6;
 /** 다줄도트기준px용 */
-export const PIXEL_LED_DOT_SIZE_PX_MULTILINE = 6;
+const PIXEL_LED_DOT_SIZE_PX_MULTILINE = 6;
 /** 슬라이더100%기준px용 */
-export const PIXEL_LED_REF_FONT_PX = 100;
+const PIXEL_LED_REF_FONT_PX = 100;
 
-export type PixelFontCircleGrid = "galmuri11";
-
-export function resolveReferencePixelLedDotPx(
+function resolveReferencePixelLedDotPx(
   playOption: "one" | "multi",
-  _locale?: AppLocaleKey,
 ): number {
   return playOption === "multi"
     ? PIXEL_LED_DOT_SIZE_PX_MULTILINE
@@ -19,11 +14,11 @@ export function resolveReferencePixelLedDotPx(
 }
 
 /** playOption별 도트 최솟값*/
-export function resolvePixelDotMinPx(playOption: "one" | "multi"): number {
+function resolvePixelDotMinPx(playOption: "one" | "multi"): number {
   return playOption === "one" ? 3 : 1;
 }
 
-export function scalePixelLedDotByFontSize(
+function scalePixelLedDotByFontSize(
   referenceDotPx: number,
   fontSizePx: number,
   minDotPx = 1,
@@ -39,7 +34,6 @@ export function scalePixelLedDotByFontSize(
 /** Pixel크기슬라이더하한용 */
 export function resolvePixelFontSizeSliderMinPercent(params: {
   playOption: "one" | "multi";
-  locale: AppLocaleKey;
   maxFontSizeAtFullSlider?: number;
   sliderFloor?: number;
 }): number {
@@ -65,26 +59,27 @@ export function resolvePixelFontSizeSliderMinPercent(params: {
   );
 }
 
-/** CircleGrid모드반환용 */
-export function resolvePixelFontCircleGridMode(
-  effectSelectedItems: string[],
-): PixelFontCircleGrid | null {
-  return hasPixelLedEffect(effectSelectedItems) ? "galmuri11" : null;
-}
-
 export function resolvePixelShaderSizePx(params: {
   playOption: "one" | "multi";
-  locale?: AppLocaleKey;
   fontSizePx?: number;
+  mode?: "preview" | "fullscreen";
 }): number {
   const fontSize = Math.max(1, params.fontSizePx ?? PIXEL_LED_REF_FONT_PX);
+  if (params.mode === "preview") {
+    // Preserve small glyph strokes instead of forcing them into 4px cells.
+    return Math.min(6, scalePixelLedDotByFontSize(
+      resolveReferencePixelLedDotPx(params.playOption),
+      fontSize,
+      1,
+    ));
+  }
   const raw = scalePixelLedDotByFontSize(
     resolveReferencePixelLedDotPx(params.playOption),
     fontSize,
     resolvePixelDotMinPx(params.playOption),
   );
-  // 최소 4px: 3px 도트는 DPR=3 기기에서 갭이 0.04px(≈0)으로 사각형처럼 보임
-  return Math.max(4, raw);
+  // Keep the existing 4–6px fullscreen appearance.
+  return Math.max(4, Math.min(6, raw));
 }
 
 /**
@@ -105,12 +100,11 @@ export function resolveContentUpscaleFactor(params: {
 /** 배경프레임도트용 */
 export function resolvePixelBackgroundShaderSizePx(params: {
   playOption: "one" | "multi";
-  locale?: AppLocaleKey;
 }): number {
   return resolveReferencePixelLedDotPx(params.playOption);
 }
 
-export type PixelTextShaderUniforms = {
+type PixelTextShaderUniforms = {
   textThreshold: number;
   panelAlphaThreshold: number;
   dotRadiusScale: number;
@@ -120,29 +114,29 @@ export type PixelTextShaderUniforms = {
 };
 
 /**
- * Pixel텍스트셰이더용.
- * inner-only smoothstep 방식: dotRadius 바깥으로 번지지 않으므로
+ * Pixel 텍스트의 정사각형 블록용.
+ * inner-only smoothstep 방식: 블록 바깥으로 번지지 않으므로
  * dotRadius < halfCell 조건만 충족하면 됨 (aa는 내부 페이드 범위).
- *   갭(CSS px) = halfCell - dotRadius = dotSize * (0.5 - dotRadiusScale)
- *   DPR=3 기준 물리 갭 = 갭 × 3
- *   dotSize=4, scale=0.40 → 갭 0.4px CSS = 1.2px physical (선명하게 보임)
- *   dotSize=6, scale=0.40 → 갭 0.6px CSS = 1.8px physical
+ *   셀 사이 전체 간격 = dotSize * (1 - 2 * dotRadiusScale)
+ *   DPR=3 기준 물리 간격 = 논리 간격 × 3
+ *   dotSize=4, scale=0.45 → 간격 0.4px = 1.2px physical
+ *   dotSize=6, scale=0.45 → 간격 0.6px = 1.8px physical
  */
-export function resolvePixelTextShaderUniforms(dotSizePx?: number): PixelTextShaderUniforms {
-  const sz = dotSizePx ?? 4;
-  // inner-only이므로 bleed 없음. 0.40으로 통일 (갭 = sz * 0.10px CSS)
-  const dotRadiusScale = sz <= 4 ? 0.40 : 0.40;
+export function resolvePixelTextShaderUniforms(): PixelTextShaderUniforms {
+  // Keep selected text colors readable over photo grids at fullscreen scale.
+  // 90% square block with a 10% gap; background/outline grids remain at 80%.
+  const dotRadiusScale = 0.45;
   return {
     textThreshold: 0.28,
     panelAlphaThreshold: 0.08,
     dotRadiusScale,
     sampleReachScale: 0.85,
     sampleReachYScale: 0.58,
-    dotMaskAaScale: 0.18,
+    dotMaskAaScale: 0.08,
   };
 }
 
-/** CircleGrid패딩셀 */
+/** Pixel 격자 패널 패딩 셀 */
 export function pixelGlyphPanelPadCells(dotSizePx: number): number {
   return dotSizePx <= 6 ? 1 : 2;
 }

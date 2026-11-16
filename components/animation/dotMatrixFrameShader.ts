@@ -1,7 +1,5 @@
-import { Skia } from "@shopify/react-native-skia";
-
 /** 말풍선 테두리 등 어두운 선만 도트화 (밝은 패널은 투명 → 아래 배경 레이어가 비침) */
-export const DOT_MATRIX_FRAME_SOURCE = Skia.RuntimeEffect.Make(`
+export const DOT_MATRIX_FRAME_SKSL = `
   uniform shader content;
   uniform float dotSize;
   uniform float dotRadius;
@@ -13,9 +11,9 @@ export const DOT_MATRIX_FRAME_SOURCE = Skia.RuntimeEffect.Make(`
   }
 
   float ledDotMask(vec2 pos, vec2 cellCenter) {
-    float d = distance(pos, cellCenter);
-    float aa = dotRadius * 0.12;
-    return 1.0 - smoothstep(dotRadius - aa, dotRadius + 0.001, d);
+    float edge = max(abs(pos.x - cellCenter.x), abs(pos.y - cellCenter.y));
+    float aa = max(dotRadius * 0.08, dotSize * 0.025);
+    return 1.0 - smoothstep(dotRadius - aa, dotRadius, edge);
   }
 
   float strokeAt(vec2 p) {
@@ -49,7 +47,7 @@ export const DOT_MATRIX_FRAME_SOURCE = Skia.RuntimeEffect.Make(`
 
     return half4(dotColor, mask);
   }
-`)!;
+`;
 
 
 export function resolveFramePixelDotSize(textDotSize: number): number {

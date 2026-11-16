@@ -6,6 +6,8 @@ import { getDefaultForLocale } from "@/constants/appFonts";
 import { resolvePixelFontSizeSliderMinPercent } from "@/constants/pixelLed";
 import { resolveDropdownMaxHeight, styles } from "@/constants/styles";
 import { FONT_SIZE_MIN } from "@/utils/textSizing";
+import { requestFontDownload } from "@/utils/remoteFontDownloadPrompt";
+import type { FontId } from "@/constants/appFonts";
 import { normalizeOneLineJoinMode } from "@/utils/viewMode";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -16,7 +18,13 @@ import {
   View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
-import { useSettings } from "../../contexts/settingsContext";
+import {
+  useSettingsAppearance,
+  useSettingsContent,
+  useSettingsLocalizationContext,
+  useSettingsMotion,
+  useSettingsUI,
+} from "../../contexts/settingsContext";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 export const TextSection = () => {
@@ -25,6 +33,8 @@ export const TextSection = () => {
   /** 드롭다운너비측정용 */
   const [maxFontLabelWidth, setMaxFontLabelWidth] = useState(0);
   const [fontDropdownContentHeight, setFontDropdownContentHeight] = useState(0);
+  /** 다운로드 취소/실패 시 드롭다운 내부 선택 상태를 실제 값으로 되돌리기 위한 강제 리마운트 키 */
+  const [fontDropdownResetKey, setFontDropdownResetKey] = useState(0);
   const onFontLabelLayout = useCallback(
     (e: { nativeEvent: { layout: { width: number } } }) => {
       const w = e.nativeEvent.layout.width;
@@ -55,16 +65,12 @@ export const TextSection = () => {
     [],
   );
 
-  const {
-    config,
-    updateConfig,
-    fontItems,
-    textSectionLabel,
-    resolvedAppLocale,
-    isProActive,
-    openRewardAdModal,
-    ui,
-  } = useSettings();
+  const { appearance, updateConfig, fontItems } = useSettingsAppearance();
+  const { content } = useSettingsContent();
+  const { motion } = useSettingsMotion();
+  const { textSectionLabel, resolvedAppLocale } =
+    useSettingsLocalizationContext();
+  const { isProActive, openRewardAdModal, ui } = useSettingsUI();
 
   const fontDropdownMaxHeight = useMemo(
     () => resolveDropdownMaxHeight(fontDropdownContentHeight, windowH),
@@ -78,7 +84,7 @@ export const TextSection = () => {
     [],
   );
 
-  const { playOption, oneLineJoinMode: oneLineJoinModeRaw } = config.content;
+  const { playOption, oneLineJoinMode: oneLineJoinModeRaw } = content;
   const oneLineJoinMode = normalizeOneLineJoinMode(oneLineJoinModeRaw);
   const {
     font,
@@ -88,25 +94,24 @@ export const TextSection = () => {
     textSelectedColor,
     outLine,
     dropShadow,
-  } = config.appearance;
-  const { textMoveSpeed } = config.motion;
+  } = appearance;
+  const { textMoveSpeed } = motion;
 
   const displayFontValue = useMemo(() => {
     if (fontItems.some((item) => item.value === font)) return font;
     return getDefaultForLocale(resolvedAppLocale);
   }, [font, fontItems, resolvedAppLocale]);
-  const { effectSelectedItems } = config.appearance;
+  const { effectSelectedItems } = appearance;
   const isPixelEffect = effectSelectedItems.includes("Pixel");
   const fontSizeSliderMin = useMemo(
     () =>
       isPixelEffect
         ? resolvePixelFontSizeSliderMinPercent({
             playOption,
-            locale: resolvedAppLocale,
             sliderFloor: FONT_SIZE_MIN,
           })
         : FONT_SIZE_MIN,
-    [isPixelEffect, playOption, resolvedAppLocale],
+    [isPixelEffect, playOption],
   );
 
   useEffect(() => {
@@ -115,8 +120,17 @@ export const TextSection = () => {
     }
   }, [fontSize, fontSizeSliderMin, updateConfig]);
 
-  const onFontChange = (item: { value: string }) =>
-    updateConfig("appearance", { font: item.value });
+  const onFontChange = (item: { value: string }) => {
+    const nextFont = item.value;
+    requestFontDownload(nextFont as FontId).then((downloaded) => {
+      if (downloaded) {
+        updateConfig("appearance", { font: nextFont });
+      } else {
+        // 취소/실패 시 라이브러리가 낙관적으로 바꿔둔 선택 표시를 실제 값으로 되돌림
+        setFontDropdownResetKey((k) => k + 1);
+      }
+    });
+  };
   const setTextMoveSpeed = (value: number) =>
     updateConfig("motion", { textMoveSpeed: value });
   const setFontSize = (value: number) =>
@@ -138,8 +152,12 @@ export const TextSection = () => {
 
   return (
     <ScrollView
+      style={styles.settingsPanelContainer}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.scrollViewContainer}
+      keyboardShouldPersistTaps="handled"
+      directionalLockEnabled
+      canCancelContentTouches
     >
       {/* text - font select */}
       <View style={styles.settingsRow}>
@@ -180,6 +198,7 @@ export const TextSection = () => {
           </View>
         </View>
         <Dropdown
+          key={fontDropdownResetKey}
           data={fontItems}
           labelField="label"
           valueField="value"

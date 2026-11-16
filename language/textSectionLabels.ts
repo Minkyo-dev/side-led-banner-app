@@ -19,6 +19,13 @@ export type TextSectionLabelKey =
   /** 배경*/
   | "backgroundColor"
   | "blur"
+  | "photoLandscape"
+  | "photoPortrait"
+  | "cancel"
+  | "done"
+  | "photoCropNotice"
+  | "photoCropNoticeHideToday"
+  | "confirm"
   | "speed"
   | "size"
   | "lineSpacing"
@@ -33,6 +40,11 @@ export type TextSectionLabelKey =
   | "tabEffects"
   /** 설정*/
   | "settingsTitle"
+  | "upgradeToPremium"
+  | "premiumProductTitle"
+  | "premiumProductDescription"
+  | "premiumPrice"
+  | "restorePreviousPurchase"
   | "sunnyGames"
   | "instagram"
   | "twitter"
@@ -42,25 +54,6 @@ export type TextSectionLabelKey =
   | "terms"
   | "privacy"
   | "appVersion";
-
-/** TEXT*/
-export const TEXT_TAB_BODY_LABEL_KEYS = [
-  "font",
-  "speed",
-  "size",
-  "letterSpacing",
-  "lineSpacing",
-  "viewMode",
-  "color",
-  "outline",
-  "dropShadow",
-] as const satisfies readonly TextSectionLabelKey[];
-
-/** BACKGROUND  */
-export const BACKGROUND_TAB_BODY_LABEL_KEYS = [
-  "backgroundColor",
-  "blur",
-] as const satisfies readonly TextSectionLabelKey[];
 
 const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
   language: {
@@ -125,6 +118,69 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     zhSC: "模糊",
     fr: "Flou",
     es: "Desenfoque",
+  },
+  photoLandscape: {
+    ko: "가로",
+    en: "Landscape",
+    ja: "横向き",
+    zhTC: "橫向",
+    zhSC: "横向",
+    fr: "Paysage",
+    es: "Horizontal",
+  },
+  photoPortrait: {
+    ko: "세로",
+    en: "Portrait",
+    ja: "縦向き",
+    zhTC: "直向",
+    zhSC: "竖向",
+    fr: "Portrait",
+    es: "Vertical",
+  },
+  cancel: {
+    ko: "취소",
+    en: "Cancel",
+    ja: "キャンセル",
+    zhTC: "取消",
+    zhSC: "取消",
+    fr: "Annuler",
+    es: "Cancelar",
+  },
+  done: {
+    ko: "완료",
+    en: "Done",
+    ja: "完了",
+    zhTC: "完成",
+    zhSC: "完成",
+    fr: "Terminé",
+    es: "Listo",
+  },
+  photoCropNotice: {
+    ko: "화면 비율에 맞춰 사진 일부가 잘릴 수 있습니다.",
+    en: "Parts of the photo may be cropped to fit the screen.",
+    ja: "画面比率に合わせて写真の一部が切り取られる場合があります。",
+    zhTC: "照片可能會依螢幕比例裁切部分內容。",
+    zhSC: "照片可能会按屏幕比例裁剪部分内容。",
+    fr: "Une partie de la photo peut être recadrée pour s'adapter à l'écran.",
+    es: "Parte de la foto puede recortarse para ajustarse a la pantalla.",
+  },
+  photoCropNoticeHideToday: {
+    ko: "오늘 하루 보지 않기",
+    en: "Don't show again today",
+    ja: "今日はこれ以上表示しない",
+    zhTC: "今天不再顯示",
+    zhSC: "今天不再显示",
+    fr: "Ne plus afficher aujourd'hui",
+    es: "No mostrar de nuevo hoy",
+  },
+  confirm: {
+    ko: "확인",
+    en: "OK",
+    ja: "OK",
+    zhTC: "確定",
+    zhSC: "确定",
+    fr: "OK",
+    es: "Aceptar",
   },
   speed: {
     ko: "속도",
@@ -244,14 +300,59 @@ const LABELS: Record<TextSectionLabelKey, Record<AppLocaleKey, string>> = {
     fr: "Paramètres",
     es: "Ajustes",
   },
+  upgradeToPremium: {
+    ko: "Pro로 업그레이드",
+    en: "Upgrade to Pro",
+    ja: "Pro にアップグレード",
+    zhTC: "升級至 Pro",
+    zhSC: "升级到 Pro",
+    fr: "Passer à Pro",
+    es: "Actualizar a Pro",
+  },
+  premiumProductTitle: {
+    ko: "LED POP Premium",
+    en: "LED POP Premium",
+    ja: "LED POP Premium",
+    zhTC: "LED POP Premium",
+    zhSC: "LED POP Premium",
+    fr: "LED POP Premium",
+    es: "LED POP Premium",
+  },
+  premiumProductDescription: {
+    ko: "광고 없이 LED POP 전체 버전을 즐기세요.",
+    en: "Enjoy the full version of LED POP without ads.",
+    ja: "広告なしで LED POP のフルバージョンをお楽しみください。",
+    zhTC: "享受沒有廣告的 LED POP 完整版。",
+    zhSC: "享受没有广告的 LED POP 完整版。",
+    fr: "Profitez de la version complète de LED POP sans publicités.",
+    es: "Disfruta la versión completa de LED POP sin anuncios.",
+  },
+  premiumPrice: {
+    ko: "$6.99 CAD",
+    en: "$6.99 CAD",
+    ja: "$6.99 CAD",
+    zhTC: "$6.99 CAD",
+    zhSC: "$6.99 CAD",
+    fr: "$6.99 CAD",
+    es: "$6.99 CAD",
+  },
+  restorePreviousPurchase: {
+    ko: "이전 구매 복원",
+    en: "Restore the Previous Purchase",
+    ja: "以前の購入を復元",
+    zhTC: "恢復先前購買",
+    zhSC: "恢复之前购买",
+    fr: "Restaurer l’achat précédent",
+    es: "Restaurar la compra anterior",
+  },
   sunnyGames: {
-    ko: "Sunny의 게임 및 앱",
-    en: "Sunny's Games and Apps",
-    ja: "Sunny のゲームとアプリ",
-    zhTC: "Sunny 的遊戲與應用",
-    zhSC: "Sunny 的游戏与应用",
-    fr: "Jeux et applications de Sunny",
-    es: "Juegos y aplicaciones de Sunny",
+    ko: "Sunny 게임 & 앱",
+    en: "Sunny Games & Apps",
+    ja: "Sunny ゲーム＆アプリ",
+    zhTC: "Sunny 遊戲與應用程式",
+    zhSC: "Sunny 游戏和应用",
+    fr: "Sunny Jeux & Applications",
+    es: "Sunny Juegos y Aplicaciones",
   },
   instagram: {
     ko: "Instagram",
@@ -360,6 +461,8 @@ export function tTextSectionLabel(
   settingsSheetRows?: GoogleSheetLocaleRow[] | null,
 ): string {
   const fb = LABELS[key];
+  // User-approved brand label is fixed in all supported languages.
+  if (key === "sunnyGames") return fb[locale];
 
   const settingsOpts = SETTINGS_SHEET_PICK[key];
   if (settingsOpts) {

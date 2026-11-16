@@ -1,6 +1,6 @@
 # AGENTS.md instructions for C:\dev\Led Banner
 
-These AGENTS.md instructions replace all previously provided AGENTS.md instructions.
+These project instructions supplement the shared development policies. Preserve explicit project exceptions within their documented scope.
 
 I am a solo mobile app/game and Microsoft Windows app developer.
 
@@ -23,7 +23,7 @@ I am a solo mobile app/game and Microsoft Windows app developer.
 
 ## Fallback Policy
 
-- Never implement fallback behavior.
+- Preserve only explicitly approved shared-policy exceptions, such as unsupported device language to supported English; do not add silent functional fallback.
 - If there is a problem, state the problem as-is.
 - If something does not work, state that it does not work.
 - If something cannot be measured, state that it cannot be measured.
@@ -55,7 +55,31 @@ I am a solo mobile app/game and Microsoft Windows app developer.
 
 ## Mobile Advertising Request Policy
 
-- Apply the following bounded load sequence to both banner and rewarded-video ads in every mobile app and game: make the initial request at app startup for startup placements, or immediately when a later screen-specific banner becomes visible; retry once after 3 seconds when it fails, and retry one final time after 6 seconds when the second request fails.
+- Apply the following bounded load sequence to both banner and rewarded-video ads in every mobile app and game: make the initial request at app startup for startup placements, or immediately when a later screen-specific banner becomes visible; retry once after 6 seconds when it fails, and retry one final time after 12 seconds when the second request fails.
 - Show `Ad Unavailable` only after all three requests fail. Do not display a terminal unavailable state between attempts.
-- Stop automatically after the third failed request. Prevent duplicate callbacks, concurrent retry timers, render-triggered requests, and any further automatic retry loop.
+- Rewarded ads stop automatically after the third failure. Banner ads display unavailable for 10 seconds, wait 60 additional seconds, and permit exactly one extra bounded cycle. Preserve banner budgets and deadlines across remounts; after the extra cycle fails, stop. Prevent duplicate callbacks, concurrent timers and repeated automatic retry loops.
 - A user-initiated manual retry may start a new bounded three-request cycle only when the app explicitly provides that control.
+
+## Incremental local APK workflow
+
+- User-approved default: keep C:/dev/Led Banner/artifacts/b as the fixed active build directory and reuse its dependencies, native output and caches. Do not create a new snapshot or clear caches for each APK.
+- Before every authorized build, synchronize the current main working source, including additions and deletions, into that directory. Use a source-file inventory and compare content; copy only changed files. Never mirror the whole repository into its own artifacts subfolder or overwrite generated output/credentials. Record the source revision and any uncommitted changes used.
+- Compare package.json and package-lock.json with the last build inputs. Run dependency installation only if inputs changed or the installation is missing/inconsistent. Do not routinely run npm ci for UI-only changes.
+- Compare Expo config, config plugins, native modules, toolchain and native-affecting assets/settings with the previous inputs. Reuse native output with -ResumeNative when these inputs are unchanged. Regenerate only when native inputs actually require it, using the signing-verified procedure; never resume stale native configuration merely to save time.
+- Preserve previous APKs, verification evidence and complete logs under unique build identifiers before another run. Keep the active build directory at the same path.
+- The release wrapper explicitly enables the local Gradle build cache. Do not routinely clean, delete .cxx, reinstall dependencies or rewrite unchanged generated configuration. Invalidate only the identified stale output when an actual error requires it.
+- Keep all four existing Android ABIs. ARM64-only builds require a separate explicit request and device compatibility confirmation. Retain signing, API level and artifact verification requirements.
+- Keep the current worker limit until host memory and measured timings justify adjustment. No speedup estimate is a measured result; report total time and UP-TO-DATE/FROM-CACHE/executed counts after the next authorized build.
+- This standing workflow does not authorize compiling, testing, committing, pushing or uploading without a user request.
+
+## Shared policy entrypoint
+
+Follow [development-policies](https://github.com/ssongyc/development-policies/blob/main/AGENTS.md) and only the applicable detailed references for this task. Preserve approved app-specific behavior. Historical task records are not proof of current runtime compliance.
+
+## Shared policy application (2026-10-12)
+
+Follow the [current shared policy entrypoint](https://github.com/ssongyc/development-policies/blob/main/AGENTS.md) and its applicable topic references. Preserve documented project exceptions; do not copy another app's signing, ABI set, memory limits or deferred feature decisions.
+
+- New user-facing notices, warnings and explanations require explicit approval of wording, placement and trigger before adding UI or translation resources. See [message approval](https://github.com/ssongyc/development-policies/blob/main/policies/workflow.md#user-facing-message-approval).
+- Apply [release preparation and restart](https://github.com/ssongyc/development-policies/blob/main/policies/mobile-release-review.md#preparation-and-restart-contract) and [Android profiles/cache ownership](https://github.com/ssongyc/development-policies/blob/main/skills/mobile-app-production/references/android-release-performance.md) to actual owned entrypoints when release work is in scope. Policy references alone are not implementation or runtime verification.
+- Shared modules apply host-independent rules; signing, ads, purchases, analytics and store declarations are verified at the integrating host where applicable. Preserve existing supported languages and approved UI text.

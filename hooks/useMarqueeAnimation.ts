@@ -1,10 +1,13 @@
-import { useSettings } from "@/contexts/settingsContext";
+import {
+  useSettingsContent,
+  useSettingsMotion,
+} from "@/contexts/settingsContext";
 import {
   buildMarqueeDisplayText,
   normalizeOneLineJoinMode,
   resolveMarqueeJoinSpacerPx,
 } from "@/utils/viewMode";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   cancelAnimation,
   Easing,
@@ -13,14 +16,13 @@ import {
   withTiming,
 } from "react-native-reanimated";
 
-export interface UseMarqueeAnimationParams {
+interface UseMarqueeAnimationParams {
+  isActive?: boolean;
   /** Style B(lineClear)*/
   viewportWidthPx?: number;
   /** 타일 끝 여유(글로우·stroke)*/
   effectBleedPx?: number;
 }
-
-export type { OneLineJoinMode } from "@/utils/viewMode";
 
 type TextLayoutEvent = {
   nativeEvent: { lines: { width: number }[] };
@@ -30,12 +32,14 @@ type TextLayoutEvent = {
  * 애니메이션에서 재사용할 `translateX` shared value와 표시 텍스트를 제공할 겁니다.
  */
 export function useMarqueeAnimation({
+  isActive = true,
   viewportWidthPx = 0,
   effectBleedPx = 0,
 }: UseMarqueeAnimationParams = {}) {
-  const { config } = useSettings();
-  const { previewText: text, playOption, oneLineJoinMode: oneLineJoinModeRaw } = config.content;
-  const speed = config.motion.textMoveSpeed;
+  const { content } = useSettingsContent();
+  const { motion } = useSettingsMotion();
+  const { previewText: text, playOption, oneLineJoinMode: oneLineJoinModeRaw } = content;
+  const speed = motion.textMoveSpeed;
   const translateX = useSharedValue(0);
   const totalShiftRef = useRef(0);
   const [textWidth, setTextWidth] = useState(0);
@@ -59,8 +63,13 @@ export function useMarqueeAnimation({
       return;
     }
 
+    if (!isActive) {
+      cancelAnimation(translateX);
+      return;
+    }
+
     const totalShift = textWidth + spacer + effectBleedPx;
-    const duration = (totalShift / (speed * 3)) * 1000;
+    const duration = (totalShift / (speed * 3.3)) * 1000;
 
     // translate 0으로 이동하지 않고, 현재 진행 정도에 맞춰 복구
     const prevTotalShift = totalShiftRef.current;
@@ -91,7 +100,10 @@ export function useMarqueeAnimation({
         }
       },
     );
+    return () => cancelAnimation(translateX);
   }, [
+    isActive,
+    translateX,
     speed,
     text,
     playOption,
@@ -102,7 +114,7 @@ export function useMarqueeAnimation({
   ]);
 
   const textWidthRef = useRef(textWidth);
-  textWidthRef.current = textWidth;
+  useLayoutEffect(() => { textWidthRef.current = textWidth; }, [textWidth]);
 
   const onTextLayout = useCallback((e: TextLayoutEvent) => {
     const widths = e.nativeEvent.lines.map((l) => l.width);

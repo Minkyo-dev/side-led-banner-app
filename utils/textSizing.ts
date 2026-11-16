@@ -1,10 +1,12 @@
+import { SIGN_BOARD_TEXT_LAYOUT } from "@/constants/signBoardPresets";
+import { isSpeechBubblePreset } from "@/constants/speechBubblePresets";
 import { countRows } from "@/utils/skiaBubbleTextLayout";
 import {
   maxFontSizeForAvailableHeight,
   skiaTextBlockHeightPx,
 } from "@/utils/skiaTextBlockMetrics";
 
-export const SKIA_BLOCK_HEIGHT_SAFETY_PX = 2;
+const SKIA_BLOCK_HEIGHT_SAFETY_PX = 2;
 
 export type SkiaFontProbe = {
   rowHeightPxAtProbe: number;
@@ -17,9 +19,12 @@ const PREVIEW_VERTICAL_TEXT_PADDING = {
   default: 0,
   speechBg1: 12,
   speechBg2: 24,
+  nameBg: 0,
+  locationBg: 0,
+  todayBg: 0,
 } as const;
 /** Speech BG 없을 때: 뷰포트 세로 대비 텍스트 영역 비율 */
-export const DEFAULT_MAX_TEXT_HEIGHT_RATIO = {
+const DEFAULT_MAX_TEXT_HEIGHT_RATIO = {
   portrait: 0.5,
   landscape: 1,
 } as const;
@@ -28,7 +33,10 @@ export const DEFAULT_MAX_TEXT_HEIGHT_RATIO = {
  * 말풍선 원본 아트보드(px) 기준 텍스트 박스 layout.
  * landscape 전체화면: top·height = viewportHeight × 비율
  */
-export const SPEECH_BG_TEXT_LAYOUT = {
+const SPEECH_BG_TEXT_LAYOUT = {
+  nameBg: SIGN_BOARD_TEXT_LAYOUT,
+  locationBg: SIGN_BOARD_TEXT_LAYOUT,
+  todayBg: SIGN_BOARD_TEXT_LAYOUT,
   speechBg1: {
     portrait: {
       /** 393px 아트보드 — landscape와 동일 상단 64px 이후 텍스트 영역 */
@@ -66,8 +74,8 @@ function getSpeechTextLayout(
     : SPEECH_BG_TEXT_LAYOUT[speechBubbleId].landscape;
 }
 
-export function getSpeechBubbleId(effectId: string): SpeechBubbleId | null {
-  return effectId === "speechBg1" || effectId === "speechBg2" ? effectId : null;
+function getSpeechBubbleId(effectId: string): SpeechBubbleId | null {
+  return isSpeechBubblePreset(effectId) ? effectId : null;
 }
 
 export function resolveFullscreenMaxHeight(params: {
@@ -130,16 +138,6 @@ export function getRelLineSpacing(params: {
   return requested * (1 - t);
 }
 
-export function getLineCountForMode(params: {
-  text: string;
-  playOption: "one" | "multi";
-  maxLines?: number;
-}) {
-  const { text, playOption, maxLines = 3 } = params;
-  if (playOption === "one") return 1;
-  return Math.min((text.match(/\n/g) || []).length + 1, maxLines);
-}
-
 function resolveMaxFontSizeForBox(params: {
   availableHeight: number;
   lineCount: number;
@@ -187,7 +185,7 @@ function resolveMaxFontSizeForBox(params: {
   return Math.min(ratioMax, skiaMax);
 }
 
-export function fontSizeFromSliderPercent(params: {
+function fontSizeFromSliderPercent(params: {
   maxFontSizeForBox: number;
   sizePct: number;
 }): number {
@@ -374,7 +372,7 @@ export function scaleFontSizeByHeight(params: {
   return Math.max(1, Math.floor(scaled));
 }
 
-export function resolvePctWidthPx(
+function resolvePctWidthPx(
   width: number | string,
   basisPx: number,
 ): number {

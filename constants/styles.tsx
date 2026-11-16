@@ -1,14 +1,12 @@
 import { uiThemeFontStyle } from "@/constants/appFonts";
 import { moderateScale } from "@/constants/scale";
-import { Dimensions, Platform, StyleSheet } from "react-native";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+import { Platform, StyleSheet } from "react-native";
 
 export const CONTENTS_INPUT_FONT_SIZE = moderateScale(18);
-export const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
+const CONTENTS_INPUT_LINE_HEIGHT = Math.round(
   CONTENTS_INPUT_FONT_SIZE * 1.3,
 );
-export const CONTENTS_INPUT_VIEWPORT_MARGIN = moderateScale(16);
+const CONTENTS_INPUT_VIEWPORT_MARGIN = moderateScale(16);
 export const CONTENTS_INPUT_VIEWPORT_HEIGHT =
   3 * CONTENTS_INPUT_LINE_HEIGHT + CONTENTS_INPUT_VIEWPORT_MARGIN;
 
@@ -23,7 +21,6 @@ export const styles = StyleSheet.create({
   },
 
   previewContainer: {
-    height: (SCREEN_WIDTH - 18) * (355 / 373),
     flexDirection: "column",
     padding: 5,
     marginHorizontal: 9,
@@ -248,7 +245,7 @@ export const styles = StyleSheet.create({
   },
   accessoryClose: {
     fontSize: moderateScale(16),
-    color: "#007AFF",
+    color: "#ffffff",
     fontWeight: "600",
   },
 });
@@ -263,33 +260,34 @@ export const rewardAdModalStyles = StyleSheet.create({
     zIndex: 10000,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 28,
+    // Absolute overlay owns its safe-area padding in RewardAdModal.
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   dim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   card: {
     width: "100%",
-    maxWidth: 340,
+
+    maxHeight: "100%",
+    flexShrink: 1,
     backgroundColor: "#FFFFFF",
     borderRadius: 32,
-    paddingTop: 54,
-    paddingBottom: 28,
-    paddingHorizontal: 24,
+
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 8,
-    marginTop: 40,
+    marginTop: 0,
     position: "relative",
   },
   closeButton: {
-    position: "absolute",
-    top: 14,
-    right: 16,
-    width: 32,
-    height: 32,
+    alignSelf: "flex-end",
+    width: 44,
+    height: 44,
     backgroundColor: "#EFEFEF",
     borderRadius: 16,
     alignItems: "center",
@@ -297,10 +295,10 @@ export const rewardAdModalStyles = StyleSheet.create({
     zIndex: 1,
   },
   appIconContainer: {
-    position: "absolute",
-    top: -44,
+
     alignSelf: "center",
     width: "100%",
+    maxWidth: 240,
     aspectRatio: 3,
     justifyContent: "center",
     alignItems: "center",
@@ -358,84 +356,160 @@ export const rewardAdModalStyles = StyleSheet.create({
     fontWeight: "600",
     color: "#fff",
   },
+  modalBody: {
+    flexGrow: 0,
+    flexShrink: 1,
+    minHeight: 0,
+  },
+  modalBodyContent: {
+    padding: 16,
+  },
+  modalActions: {
+    flexShrink: 0,
+    paddingTop: 8,
+  },
+  reservedText: {
+    width: "100%",
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  reservedTextRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  reservedTextCopy: {
+    width: "100%",
+    marginRight: "-100%",
+    flexShrink: 0,
+    opacity: 0,
+  },
+  reservedTextVisible: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  adStatusArea: {
+    width: "100%",
+    marginBottom: 8,
+  },
+  adStatusText: {
+    ...uiThemeFontStyle,
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#555555",
+    textAlign: "center",
+  },
+  adRetryArea: {
+    minHeight: 44,
+    flexShrink: 0,
+    alignItems: "center",
+  },
+  adRetryButton: {
+    minHeight: 44,
+    minWidth: 88,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  adRetryText: {
+    ...uiThemeFontStyle,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#7156B3",
+  },
   ctaButton: {
-    width: "83.18%",
-    aspectRatio: 277 / 56,
+    width: "100%",
+    minHeight: 56,
+    flexShrink: 0,
     alignSelf: "center",
+    borderRadius: 28,
+    overflow: "hidden",
   },
   ctaButtonBg: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
+    width: "100%",
+    height: "100%",
+    borderRadius: 28,
   },
   ctaButtonContent: {
-    position: "absolute",
-    left: 0,
-    top: "18%",
-    bottom: "18%",
-    right: 0,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
   },
   ctaPlayBg: {
-    height: "100%",
-    aspectRatio: 1,
+    width: 32,
+    height: 32,
+    flexShrink: 0,
   },
   ctaButtonText: {
-    fontSize: moderateScale(15),
+    fontSize: 15,
+    lineHeight: 21,
+    textAlign: "center",
     fontWeight: "600",
-    flexShrink: 1,
     includeFontPadding: false,
   },
 });
 
-export const backgroundPhotoSheetStyles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "flex-end",
+export const WATCH_AD_BUTTON_COLORS = ["#FFA733", "#FF6B00"] as const;
+
+export const fontDownloadModalStyles = StyleSheet.create({
+  root: rewardAdModalStyles.root,
+  dim: rewardAdModalStyles.dim,
+  card: rewardAdModalStyles.card,
+  closeButton: rewardAdModalStyles.closeButton,
+  body: {
+    padding: 24,
+    alignItems: "center",
   },
-  dim: {
-    ...StyleSheet.absoluteFillObject,
+  title: {
+    ...uiThemeFontStyle,
+    fontSize: moderateScale(17),
+    fontWeight: "bold",
+    color: "#1A1A1A",
+    textAlign: "center",
+    lineHeight: moderateScale(23),
+    marginBottom: 24,
   },
-  sheet: {
-    paddingHorizontal: 10,
-  },
-  group: {
-    borderRadius: 14,
+  progressTrack: {
+    width: "100%",
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#EFEFEF",
     overflow: "hidden",
+    marginBottom: 12,
   },
-  row: {
-    paddingVertical: 16,
-    alignItems: "center",
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
   },
-  rowText: {
+  progressText: {
     ...uiThemeFontStyle,
-    fontSize: moderateScale(17),
-    fontWeight: "400",
+    fontSize: 13,
+    fontWeight: "700",
+    color: WATCH_AD_BUTTON_COLORS[1],
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-  },
-  cancelWrap: {
-    marginTop: 10,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  cancelText: {
+  errorText: {
     ...uiThemeFontStyle,
-    fontSize: moderateScale(17),
-    fontWeight: "600",
+    fontSize: moderateScale(14),
+    color: "#B3261E",
+    textAlign: "center",
+    lineHeight: moderateScale(20),
   },
 });
 
 export const heartBackgroundTickerStyles = StyleSheet.create({
   clip: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: "hidden",
   },
   row: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     flexDirection: "row",
   },
 });
@@ -501,7 +575,7 @@ export const colorPickerLockStyles = StyleSheet.create({
 
 export const effectSectionLockStyles = StyleSheet.create({
   chipOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(160,160,160,0.5)",
     borderRadius: 24,
     justifyContent: "center",
@@ -513,7 +587,7 @@ export const effectSectionLockStyles = StyleSheet.create({
     resizeMode: "contain",
   },
   cardOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(150,150,150,0.5)",
     justifyContent: "center",
     alignItems: "center",
@@ -527,7 +601,7 @@ export const effectSectionLockStyles = StyleSheet.create({
 
 export const sliderLockStyles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(150,150,150,0.35)",
     justifyContent: "center",
     alignItems: "center",
@@ -539,22 +613,22 @@ export const sliderLockStyles = StyleSheet.create({
   },
 });
 
-const SLIDER_WIDTH = SCREEN_WIDTH - 100;
 export const sliderComponentStyles = StyleSheet.create({
   sliderContainer: {
-    height: 40,
+    minHeight: 58,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 15,
-    paddingBottom: 30,
     marginHorizontal: 10,
     marginBottom: 5,
+    paddingVertical: 4,
     borderBottomWidth: 2,
     borderBottomColor: "#DDDDDD",
   },
+  slider: {
+    flex: 1,
+    height: 48,
+  },
   sliderTrack: {
-    width: SLIDER_WIDTH,
     backgroundColor: "#8F8D8A",
     borderRadius: 4,
     height: 4,
@@ -590,14 +664,13 @@ export const sliderComponentStyles = StyleSheet.create({
 
 export const ledBannerFullScreenStyles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000000",
+    ...StyleSheet.absoluteFill,
   },
   flex: {
     flex: 1,
   },
   layerPassThrough: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
 });
 
@@ -611,9 +684,6 @@ export const toolbarStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  cursorNavText: {
-    fontSize: moderateScale(18),
-  },
 });
 
 export const settingsFooterStyles = StyleSheet.create({
@@ -621,7 +691,7 @@ export const settingsFooterStyles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
     paddingTop: 8,
     paddingBottom: 24,
     paddingHorizontal: 20,
@@ -646,6 +716,26 @@ export const settingsFooterStyles = StyleSheet.create({
   separator: {
     fontSize: moderateScale(11),
     color: "#CCCCCC",
+  },
+  containerDark: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 14,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+    gap: 12,
+    backgroundColor: "#3F3F3F",
+  },
+  linkTextDark: {
+    fontSize: moderateScale(12),
+    color: "#E8E3EC",
+    fontWeight: "500",
+  },
+  separatorDark: {
+    fontSize: moderateScale(11),
+    color: "#AFA9B8",
   },
 });
 

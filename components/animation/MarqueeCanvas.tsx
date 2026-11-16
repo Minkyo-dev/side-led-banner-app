@@ -1,18 +1,19 @@
-import { DOT_MATRIX_TEXT_SOURCE } from "@/components/animation/dotMatrixTextShader";
+import { DOT_MATRIX_TEXT_SKSL } from "@/components/animation/dotMatrixTextShader";
 import { usePreviewPanelCanvas } from "@/hooks/usePreviewPanelCanvas";
-import { useTilePicture } from "@/hooks/useTilePicture";
+import { getCachedSkiaRuntimeEffect } from "@/utils/skiaRuntimeEffectCache";
+import type { useTilePicture } from "@/hooks/useTilePicture";
 import {
     Canvas,
     Group,
     Paint,
     Rect,
     RuntimeShader,
-    Skia,
 } from "@shopify/react-native-skia";
 import React, { useMemo } from "react";
 import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
 export interface MarqueeCanvasProps {
+  tilePaints: ReturnType<typeof useTilePicture>;
   canvas: ReturnType<typeof usePreviewPanelCanvas>;
   isPixelEffect: boolean;
   /** false면 Pixel이어도 글자는 도트 셰이더 없이 벡터 */
@@ -67,7 +68,7 @@ function isNearWhiteColor(color: string): boolean {
   return s === "white";
 }
 
-const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
+const OUTLINE_RING_DOT_SKSL = `
   uniform shader content;
   uniform float dotSize;
   uniform float dotRadius;
@@ -124,72 +125,50 @@ const OUTLINE_RING_DOT_SOURCE = Skia.RuntimeEffect.Make(`
       return half4(0.0);
     }
 
-    float d = distance(pos, cellCenter);
-    float aa = max(dotRadius * dotMaskAaScale, dotSize * 0.05);
-    float mask = smoothstep(dotRadius, dotRadius - aa, d);
+    float edge = max(abs(pos.x - cellCenter.x), abs(pos.y - cellCenter.y));
+    float aa = max(dotRadius * dotMaskAaScale, dotSize * 0.025);
+    float mask = 1.0 - smoothstep(dotRadius - aa, dotRadius, edge);
     if (blackRing) {
       return half4(0.0, 0.0, 0.0, mask);
     }
     return half4(half3(outlineLuminance), mask);
   }
-`)!;
+`;
 
 export function MarqueeCanvas({
+  tilePaints,
   canvas,
   isPixelEffect,
   isPixelTextDots,
-  isPixelColorMix,
   pixelShaderSize,
   pixelTextShaderUniforms,
-  pixelMaskDilateRadius,
-  pixelMaskErodeRadius,
-  pixelGlyphPadCells,
-  pixelContentUpscaleFactor,
-  hasBgPhoto,
   blinkOpacity,
-  spacer,
   isGlowEffect,
-  glowBlurRadius,
-  glowLayerColor,
-  skiaStrokeWidthPx,
   pixelOutlineRings,
-  dropShadow,
   previewTextColor,
   backgroundColor,
 }: MarqueeCanvasProps) {
-  const blob = canvas.skiaTextBlob;
-  const strokeWidthPx = skiaStrokeWidthPx;
-  const dropShadowBlur = Math.round((dropShadow / 100) * 5);
+  const dotMatrixTextSource = useMemo(
+    () =>
+      getCachedSkiaRuntimeEffect(
+        DOT_MATRIX_TEXT_SKSL,
+        "Failed to compile dot matrix text shader.",
+      ),
+    [],
+  );
+  const outlineRingDotSource = useMemo(
+    () =>
+      getCachedSkiaRuntimeEffect(
+        OUTLINE_RING_DOT_SKSL,
+        "Failed to compile outline ring dot shader.",
+      ),
+    [],
+  );
   const layout = canvas.skiaCanvasLayout;
   const splitGlowFromDots = isPixelTextDots && isGlowEffect;
-  const recordTextAsPixel = isPixelTextDots;
   const hasPixelOutlineDots = pixelOutlineRings > 0;
 
-  const { stripPaint, glowStripPaint, stripWidth } = useTilePicture({
-    blob,
-    textBlobs: canvas.skiaTextBlobs,
-    textWidthPx: canvas.skiaTextWidth,
-    spacerPx: spacer,
-    canvasWidthPx: layout.width,
-    canvasHeightPx: layout.height,
-    previewTextColor,
-    glowLayerColor,
-    isGlowEffect,
-    isPixelEffect: recordTextAsPixel,
-    isPixelColorMix: recordTextAsPixel && isPixelColorMix,
-    pixelShaderSize,
-    pixelGlyphPadCells,
-    glowBlurRadius,
-    strokeWidthPx,
-    dropShadow,
-    dropShadowBlur,
-    glyphPositions: canvas.skiaGlyphPositions,
-    font: canvas.skiaFont,
-    backgroundColor,
-    pixelMaskDilateRadius,
-    pixelMaskErodeRadius,
-    pixelContentUpscaleFactor,
-  });
+  const { stripPaint, glowStripPaint, stripWidth } = tilePaints;
 
   const rectX = useDerivedValue(
     () => -canvas.marqueeOffsetX.value,
@@ -221,6 +200,8 @@ export function MarqueeCanvas({
   );
 
   const pixelDotRadius = pixelShaderSize * pixelTextShaderUniforms.dotRadiusScale;
+  // Text fill can be denser without widening the existing outline rings.
+  const outlineDotRadius = pixelShaderSize * 0.40;
 
   const outlineLuminance = useMemo(
     () => isNearWhiteColor(backgroundColor) || isNearWhiteColor(previewTextColor) ? 0.5 : 1.0,
@@ -232,7 +213,7 @@ export function MarqueeCanvas({
       isPixelTextDots ? (
         <Paint>
           <RuntimeShader
-            source={DOT_MATRIX_TEXT_SOURCE}
+            source={dotMatrixTextSource}
             uniforms={{
               dotSize: pixelShaderSize,
               dotRadius: pixelDotRadius,
@@ -245,7 +226,13 @@ export function MarqueeCanvas({
           />
         </Paint>
       ) : undefined,
-    [isPixelTextDots, pixelShaderSize, pixelDotRadius, pixelTextShaderUniforms],
+    [
+      dotMatrixTextSource,
+      isPixelTextDots,
+      pixelShaderSize,
+      pixelDotRadius,
+      pixelTextShaderUniforms,
+    ],
   );
 
   const outlineDotShaderLayer = useMemo(
@@ -253,10 +240,10 @@ export function MarqueeCanvas({
       hasPixelOutlineDots ? (
         <Paint>
           <RuntimeShader
-            source={OUTLINE_RING_DOT_SOURCE}
+            source={outlineRingDotSource}
             uniforms={{
               dotSize: pixelShaderSize,
-              dotRadius: pixelDotRadius,
+              dotRadius: outlineDotRadius,
               textThreshold: pixelTextShaderUniforms.textThreshold,
               ringDetectThreshold: 0.01,
               outlineRings: pixelOutlineRings,
@@ -268,8 +255,9 @@ export function MarqueeCanvas({
       ) : undefined,
     [
       hasPixelOutlineDots,
+      outlineRingDotSource,
       pixelShaderSize,
-      pixelDotRadius,
+      outlineDotRadius,
       pixelOutlineRings,
       pixelTextShaderUniforms,
       outlineLuminance,

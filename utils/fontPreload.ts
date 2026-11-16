@@ -5,15 +5,12 @@ import {
   getEagerFontIdsForLocale,
   getFontAssetIds,
   getFontIdsInLocaleMap,
-  getRemoteFontIdsForIds,
   type FontId,
 } from "@/constants/appFonts";
 import type { AppLocaleKey } from "@/constants/language";
-import { REMOTE_FONT_FACE_SETS } from "@/constants/remoteFonts";
-import { preloadSkiaTypefaces } from "@/hooks/useCachedSkiaFont";
+import { loadTypeface, preloadSkiaTypefaces } from "@/hooks/useCachedSkiaFont";
 import { readAppLanguage } from "@/utils/appLanguageStorage";
 import { readPresetSlotsJson } from "@/utils/presetStorage";
-import { ensureRemoteFontSetDownloaded } from "@/utils/remoteFontLoader";
 import * as Font from "expo-font";
 
 type PresetSlotLike = {
@@ -39,7 +36,7 @@ async function readPresetFontIds(): Promise<FontId[]> {
 }
 
 /** 부팅 시 즉시 로드해야 할 폰트: 현재 로케일 + 모든 언어 default + 프리셋에서 쓰인 폰트 */
-export async function collectPriorityFontIds(device: AppLocaleKey): Promise<FontId[]> {
+async function collectPriorityFontIds(device: AppLocaleKey): Promise<FontId[]> {
   const [locale, presetFontIds] = await Promise.all([
     resolveStoredLocale(device),
     readPresetFontIds(),
@@ -70,25 +67,8 @@ async function loadAssetsWithRetry(assets: Record<string, number>): Promise<void
   }
 }
 
-export function loadFontIds(ids: FontId[]): Promise<void> {
+function loadFontIds(ids: FontId[]): Promise<void> {
   return loadAssetsWithRetry(buildFontAssets(ids));
-}
-
-export function loadRemainingFonts(excludeIds: FontId[]): Promise<void> {
-  return loadAssetsWithRetry(buildRemainingFontAssets(excludeIds));
-}
-
-export function prefetchRemoteFonts(ids: FontId[]): void {
-  getRemoteFontIdsForIds(ids).forEach((remoteId) => {
-    if (__DEV__) console.log("[fonts] remote font prefetch start", remoteId);
-    ensureRemoteFontSetDownloaded(REMOTE_FONT_FACE_SETS[remoteId])
-      .then((uris) => {
-        if (__DEV__) console.log("[fonts] remote font prefetch done", remoteId, uris);
-      })
-      .catch((err) => {
-        if (__DEV__) console.warn("[fonts] remote font prefetch failed", remoteId, err);
-      });
-  });
 }
 
 const loadedLocales = new Set<AppLocaleKey>();
@@ -103,4 +83,29 @@ export function ensureLocaleFontsLoaded(locale: AppLocaleKey): Promise<void> {
     loadedLocales.delete(locale);
     throw err;
   });
+}
+
+
+/** Optional cache warming: the root runs one bounded unit per idle opportunity. */
+export async function createDeferredFontPreloadTasks(device: AppLocaleKey): Promise<(() => Promise<unknown>)[]> {
+  const priorityIds = await collectPriorityFontIds(device);
+  const tasks: (() => Promise<unknown>)[] = [];
+  const addTextFonts = (assets: Record<string, number>) => {
+    const entries = Object.entries(assets);
+    for (let index = 0; index < entries.length; index += 2) {
+      const batch = entries.slice(index, index + 2);
+      tasks.push(async () => {
+        const missing = Object.fromEntries(batch.filter(([family]) => !Font.isLoaded(family)));
+        if (Object.keys(missing).length > 0) await loadAssetsWithRetry(missing);
+      });
+    }
+  };
+  addTextFonts(buildFontAssets(priorityIds));
+  for (const asset of new Set(getFontAssetIds([...getEagerFontIdsForLocale(device), ...priorityIds]))) {
+    tasks.push(async () => {
+      if (!await loadTypeface(asset)) throw new Error("Optional Skia font preload failed");
+    });
+  }
+  addTextFonts(buildRemainingFontAssets(priorityIds));
+  return tasks;
 }

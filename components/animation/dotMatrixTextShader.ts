@@ -1,7 +1,5 @@
-import { Skia } from "@shopify/react-native-skia";
-
 /** 글자 LED 도트 (배경 off-LED 없음 — 전체 화면 배경 레이어가 담당) */
-export const DOT_MATRIX_TEXT_SOURCE = Skia.RuntimeEffect.Make(`
+export const DOT_MATRIX_TEXT_SKSL = `
   uniform shader content;
   uniform float dotSize;
   uniform float dotRadius;
@@ -18,11 +16,10 @@ export const DOT_MATRIX_TEXT_SOURCE = Skia.RuntimeEffect.Make(`
   }
 
   float ledDotMask(vec2 pos, vec2 cellCenter) {
-    float d = distance(pos, cellCenter);
-    // inner-only fade: d=dotRadius에서 0, d=dotRadius-aa에서 1
-    // dotRadius 바깥으로 번지지 않으므로 셀 크기와 무관하게 갭 보장
-    float aa = max(dotRadius * dotMaskAaScale, dotSize * 0.05);
-    return smoothstep(dotRadius, dotRadius - aa, d);
+    float edge = max(abs(pos.x - cellCenter.x), abs(pos.y - cellCenter.y));
+    // Square block with an inner-only edge fade, preserving the gap between cells.
+    float aa = max(dotRadius * dotMaskAaScale, dotSize * 0.025);
+    return 1.0 - smoothstep(dotRadius - aa, dotRadius, edge);
   }
 
   float textWeightFromSample(half4 s) {
@@ -119,4 +116,4 @@ export const DOT_MATRIX_TEXT_SOURCE = Skia.RuntimeEffect.Make(`
 
     return half4(bestRgb, mask);
   }
-`)!;
+`;

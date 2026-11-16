@@ -6,7 +6,8 @@ import {
   sliderComponentStyles as styles,
   sliderLockStyles as lockStyles,
 } from "@/constants/styles";
-import { Slider } from "@miblanchard/react-native-slider";
+import { ScrollFriendlySlider } from "@/components/settings/ScrollFriendlySlider";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Image, TouchableOpacity, View } from "react-native";
 
 const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
@@ -30,6 +31,45 @@ export const SliderComponent = ({
   locked?: boolean;
   onLockedPress?: () => void;
 }) => {
+  const [isSliding, setIsSliding] = useState(false);
+  const [dragStartValue, setDragStartValue] = useState(value);
+
+  // A new array at release also snaps a sub-step drag back to its stored value.
+  const sliderValue = useMemo(() => [isSliding ? dragStartValue : value], [dragStartValue, isSliding, value]);
+
+  const lastEmittedValue = useRef(value);
+  const onChangeRef = useRef(onChange);
+  useLayoutEffect(() => {
+    onChangeRef.current = onChange;
+    if (!isSliding) lastEmittedValue.current = value;
+  }, [onChange, isSliding, value]);
+
+  // Keep thumb motion continuous without rebuilding the preview for the same step.
+  const handleValueChange = useCallback(
+    (values: number[]) => {
+      const raw = values[0];
+      if (raw === undefined || !Number.isFinite(raw)) return;
+      const stepped = step > 0
+        ? minimumValue + Math.round((raw - minimumValue) / step) * step
+        : raw;
+      const next = Math.max(minimumValue, Math.min(maximumValue, Math.round(stepped)));
+      if (next === lastEmittedValue.current) return;
+      lastEmittedValue.current = next;
+      onChangeRef.current(next);
+    },
+    [minimumValue, maximumValue, step],
+  );
+
+  const handleSlidingStart = useCallback(() => {
+    setDragStartValue(value);
+    setIsSliding(true);
+  }, [value]);
+
+  const handleSlidingComplete = useCallback((values: number[]) => {
+    handleValueChange(values);
+    setIsSliding(false);
+  }, [handleValueChange]);
+
   return (
     <View style={styles.sliderContainer}>
       <TouchableOpacity
@@ -39,24 +79,20 @@ export const SliderComponent = ({
       >
         <SliderMinusButton />
       </TouchableOpacity>
-      <Slider
-        animateTransitions
+      <ScrollFriendlySlider
         disabled={disabled || locked}
-        trackClickable={true}
+        trackClickable
+        containerStyle={styles.slider}
         trackStyle={styles.sliderTrack}
         thumbStyle={styles.sliderThumb}
         maximumValue={maximumValue}
         minimumValue={minimumValue}
-        value={value}
-        onValueChange={(nextValue) =>
-          onChange(
-            Math.round(
-              Array.isArray(nextValue) ? (nextValue[0] ?? value) : nextValue,
-            ),
-          )
-        }
+        step={0}
+        value={sliderValue}
+        onSlidingStart={handleSlidingStart}
+        onSlidingComplete={handleSlidingComplete}
+        onValueChange={handleValueChange}
         minimumTrackTintColor="#FF6E00"
-        // renderThumbComponent={() => <SliderThumb />}
       />
       <TouchableOpacity
         style={styles.sliderButton}

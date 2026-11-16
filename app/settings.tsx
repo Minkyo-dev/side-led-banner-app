@@ -1,3 +1,5 @@
+import { AdPrivacyOptions } from '@/ads/adConsent';
+import { usePremium } from "@/contexts/premiumContext";
 import BannerAdComponent from "@/components/admob/bannerAd";
 import type { AppLocaleKey } from "@/constants/language";
 import { settingsStyles } from "@/constants/settingsStyles";
@@ -6,10 +8,14 @@ import {
   resolveDropdownMaxHeight,
   settingsFooterStyles,
 } from "@/constants/styles";
-import { useSettingsRest } from "@/contexts/settingsContext";
+import {
+  useSettingsLocalizationContext,
+  useSettingsUI,
+} from "@/contexts/settingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
-import { type Href, useRouter } from "expo-router";
+import { type Href, useFocusEffect, useRouter } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { loadRewardedAd } from "@/hooks/useRewardedAd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -26,7 +32,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SUNNY_LINKS = {
-  homepage: "https://ssongyc.github.io/sunny-homepage/",
+  homepage: "https://sunnyinnolab.com",
   instagram: "https://www.instagram.com/sunnyinnolab/",
   twitter: "https://x.com/Sunnyinnolab",
   terms:
@@ -36,18 +42,27 @@ const SUNNY_LINKS = {
 } as const;
 
 export default function SettingsScreen() {
+  const { adsAllowed } = usePremium();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
   const [languageDropdownContentHeight, setLanguageDropdownContentHeight] =
     useState(0);
   const [languageDropdownWidth, setLanguageDropdownWidth] = useState(0);
-  const {
-    updateUI,
-    textSectionLabel,
-    rewardAdLabel,
-    resolvedAppLocale,
-  } = useSettingsRest();
+  const { updateUI } = useSettingsUI();
+  const { textSectionLabel, rewardAdLabel, resolvedAppLocale } =
+    useSettingsLocalizationContext();
+  const compactHeight = windowH - insets.top - insets.bottom < 480;
+  const rootPaddingTop = Platform.OS === "web" ? 0 : insets.top;
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    void ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.PORTRAIT_UP,
+    ).catch((error) => {
+      if (__DEV__) console.error("[Settings] Portrait lock failed", error);
+    });
+  }, []);
 
   const languageDropdownItems = useMemo(
     () => [
@@ -92,13 +107,13 @@ export default function SettingsScreen() {
   );
 
   const appVersion = useMemo(
-    () => Constants.expoConfig?.version ?? "1.0.0",
+    () => Constants.expoConfig?.version,
     [],
   );
 
-  useEffect(() => {
-    loadRewardedAd();
-  }, []);
+  useFocusEffect(useCallback(() => {
+    if (adsAllowed) loadRewardedAd({ restartFailed: true });
+  }, [adsAllowed]));
 
   const openUrl = (url: string) => {
     void Linking.openURL(url).catch((error) => {
@@ -106,8 +121,18 @@ export default function SettingsScreen() {
     });
   };
 
+  const footer = (
+    <SettingsFooter
+        onLogoPress={() => openUrl(SUNNY_LINKS.homepage)}
+        termsLabel={textSectionLabel("terms")}
+        privacyLabel={textSectionLabel("privacy")}
+        onTermsPress={() => openUrl(SUNNY_LINKS.terms)}
+        onPrivacyPress={() => openUrl(SUNNY_LINKS.privacy)}
+      />
+  );
+
   return (
-    <View style={[base.container, { backgroundColor: "#FFFFFF", paddingTop: insets.top }]}>
+    <View style={[base.container, { backgroundColor: "#FFFFFF", paddingTop: rootPaddingTop, paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
       <View style={settingsStyles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -115,10 +140,10 @@ export default function SettingsScreen() {
           accessibilityLabel="Back"
           hitSlop={10}
         >
-<Ionicons
-            name={Platform.OS === "ios" ? "chevron-back" : "arrow-back"}
-            size={24}
-            color="black"
+          <Image
+            source={require("@/assets/images/icon_arrow_back_DT_xxhdpi.png")}
+            style={settingsStyles.backIcon}
+            resizeMode="contain"
           />
         </TouchableOpacity>
         <View style={settingsStyles.titleRow}>
@@ -235,22 +260,18 @@ export default function SettingsScreen() {
             style={settingsStyles.versionValueText}
             allowFontScaling={false}
           >
-            V{appVersion}
+            {appVersion ? `V${appVersion}` : "—"}
           </Text>
         </View>
+        {compactHeight && footer}
+        <AdPrivacyOptions language={resolvedAppLocale} color="#111111" />
       </ScrollView>
 
-      <SettingsFooter
-        onLogoPress={() => openUrl(SUNNY_LINKS.homepage)}
-        termsLabel={textSectionLabel("terms")}
-        privacyLabel={textSectionLabel("privacy")}
-        onTermsPress={() => openUrl(SUNNY_LINKS.terms)}
-        onPrivacyPress={() => openUrl(SUNNY_LINKS.privacy)}
-      />
-      <BannerAdComponent
-        style={{ height: 60, marginBottom: 12 }}
-        unavailableLabel={rewardAdLabel("rewardAdUnavailable")}
-      />
+      {!compactHeight && footer}
+      {(Platform.OS === "web" || adsAllowed) && <BannerAdComponent
+        style={{ alignSelf: "stretch", marginBottom: 12 }}
+        unavailableLabel={rewardAdLabel("bannerAdUnavailable")}
+      />}
     </View>
   );
 }
@@ -301,7 +322,7 @@ interface SettingsFooterProps {
   onPrivacyPress: () => void;
 }
 
-export function SettingsFooter({
+function SettingsFooter({
   onLogoPress,
   termsLabel,
   privacyLabel,

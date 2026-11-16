@@ -1,184 +1,73 @@
+import { FireworksBurst } from "./rewardAdModal/FireworksBurst";
+import { RewardBenefits } from "./rewardAdModal/RewardBenefits";
+import { adUnavailableReason, shouldTrackAdInteraction } from "@/utils/adAvailability";
 import { appFontFamilyForText } from "@/constants/appFonts";
 import { rewardAdModalStyles as styles } from "@/constants/styles";
-import { useSettingsRest } from "@/contexts/settingsContext";
-import * as amplitude from "@amplitude/analytics-react-native";
-import type { RewardAdLabelKey } from "@/language/rewardAdLabels";
+import { useSettingsLocalizationContext } from "@/contexts/settingsContext";
+import { trackAnalyticsEvent } from "@/utils/ApiClient";
+import { REWARD_AD_STATUS_TEXTS, REWARD_AD_BUTTON_TEXTS } from "@/language/rewardAdLabels";
 import { Ionicons } from "@expo/vector-icons";
-import { Canvas, Group, Path, Rect, Skia } from "@shopify/react-native-skia";
 import { Image } from "expo-image";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
+  AppState,
   BackHandler,
+  Image as NativeImage,
+  Platform,
   Pressable,
-  StyleSheet,
+  ScrollView,
+  type StyleProp,
+  type TextStyle,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from "react-native";
 import Animated, {
-  cancelAnimation,
-  Easing,
   useAnimatedStyle,
-  useDerivedValue,
   useSharedValue,
-  withDelay,
-  withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { scheduleOnRN } from "react-native-worklets";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const CHECK_ICON = require("../assets/images/Check.png");
 const WATCH_AD_BUTTON = require("../assets/images/Watch_Ad_Button.png");
 const PLAY_BG = require("../assets/images/Play_Bg.png");
 const PRO_BADGE = require("../assets/images/PRO_Badge.png");
 
-// FireworksBurst
-const N = 45;
-
-const createStarPath = (size: number) => {
-  const path = Skia.Path.Make();
-  const half = size / 2;
-  const inner = size * 0.15;
-
-  path.moveTo(0, -half);
-  path.quadTo(0, 0, inner, -inner);
-  path.lineTo(half, 0);
-  path.quadTo(0, 0, inner, inner);
-  path.lineTo(0, half);
-  path.quadTo(0, 0, -inner, inner);
-  path.lineTo(-half, 0);
-  path.quadTo(0, 0, -inner, -inner);
-  path.close();
-
-  return path;
-};
-
-const PARTICLE_DATA = Array.from({ length: N }, (_, i) => {
-  const angle = (i / N) * Math.PI * 2 + ((i * 13) % 5) * 0.15;
-  const maxDistance = 140 + ((i * 73) % 160);
-  const size = 10 + ((i * 23) % 14);
-  const type = i % 2 === 0 ? "rect" : "star";
-  const colors = [
-    "#FF6B00",
-    "#FF9E00",
-    "#e59e6b",
-    "#e7b22d",
-    "#f3cf8d",
-    "#ecc330",
-  ];
-  const color = colors[i % colors.length];
-  const baseOpacity = 0.5 + ((i * 7) % 6) * 0.1;
-  const rotationSpeed = ((i * 11) % 4) + 4;
-  const spinDirection = i % 3 === 0 ? 1 : -1;
-
-  return {
-    angle,
-    maxDistance,
-    size,
-    type,
-    color,
-    baseOpacity,
-    rotationSpeed,
-    spinDirection,
-  };
-});
-
-function FireworksBurst({ visible }: { visible: boolean }) {
-  const { width: W, height: H } = useWindowDimensions();
-  const cx = W / 2;
-  const cy = H / 2;
-
-  const progress = useSharedValue(0);
-  const alpha = useSharedValue(0);
-
-  const starPaths = useMemo(() => {
-    return PARTICLE_DATA.map((p) =>
-      p.type === "star" ? createStarPath(p.size) : null,
-    );
-  }, []);
-
-  useEffect(() => {
-    if (visible) {
-      progress.value = 0;
-      alpha.value = 0;
-
-      progress.value = withTiming(1, {
-        duration: 1200,
-        easing: Easing.out(Easing.back(1.2)),
-      });
-
-      alpha.value = withSequence(
-        withTiming(1, { duration: 50 }),
-        withDelay(700, withTiming(0, { duration: 500 })),
-      );
-    } else {
-      cancelAnimation(progress);
-      cancelAnimation(alpha);
-      progress.value = 0;
-      alpha.value = 0;
-    }
-  }, [visible, progress, alpha]);
-
+// Overlapping, in-flow invisible copies reserve the tallest variant in the first
+// native layout pass. No onLayout/setState resize after the popup is displayed.
+function ReservedAdText({ text, variants, textStyle }: {
+  text: string;
+  variants: readonly string[];
+  textStyle: StyleProp<TextStyle>;
+}) {
   return (
-    <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-      {PARTICLE_DATA.map((particle, index) => {
-        const transform = useDerivedValue(() => {
-          const currentDist = particle.maxDistance * progress.value;
-          const x = cx + Math.cos(particle.angle) * currentDist;
-          const y = cy + Math.sin(particle.angle) * currentDist;
-          const rotation =
-            progress.value * particle.rotationSpeed * particle.spinDirection;
-
-          return [{ translateX: x }, { translateY: y }, { rotate: rotation }];
-        });
-
-        const opacity = useDerivedValue(
-          () => alpha.value * particle.baseOpacity,
-        );
-
-        return (
-          <Group key={index} transform={transform} opacity={opacity}>
-            {particle.type === "rect" ? (
-              <Rect
-                x={-particle.size / 2}
-                y={-particle.size / 2}
-                width={particle.size}
-                height={particle.size}
-                color={particle.color}
-              />
-            ) : (
-              <Path
-                path={starPaths[index]!}
-                color={particle.color}
-                style="fill"
-              />
-            )}
-          </Group>
-        );
-      })}
-    </Canvas>
+    <View style={styles.reservedText}>
+      <View style={styles.reservedTextRow} pointerEvents="none"
+        accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden>
+        {[...variants, text].map((variant, index) => (
+          <Text key={index} allowFontScaling={false}
+            style={[textStyle, styles.reservedTextCopy]}>{variant}</Text>
+        ))}
+      </View>
+      <Text style={[textStyle, styles.reservedTextVisible]} allowFontScaling={false}
+        accessibilityLiveRegion="polite">{text}</Text>
+    </View>
   );
 }
-
-type BenefitRow = {
-  labelKey: RewardAdLabelKey;
-};
-
-const BENEFIT_ROWS: BenefitRow[] = [
-  { labelKey: "rewardBenefitTextSize" },
-  { labelKey: "rewardBenefitColors" },
-  { labelKey: "rewardBenefitEffects" },
-  { labelKey: "rewardBenefitFavorites" },
-  { labelKey: "rewardBenefitOutlineShadow" },
-];
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   adReady?: boolean;
   adFailed?: boolean;
+  adFailure?: 'unavailable' | 'load' | 'show' | 'open-timeout' | 'expiry' | 'configuration' | 'initialization' | 'consent' | null;
+  adShowFailed?: boolean;
+  adDelayed?: boolean;
+  adExpired?: boolean;
   onWatchAd?: () => void;
+  canRetry?: boolean;
+  onRetry?: () => void;
+  isAdReady?: () => boolean;
 };
 
 export function RewardAdModal({
@@ -186,74 +75,120 @@ export function RewardAdModal({
   onClose,
   adReady = false,
   adFailed = false,
+  adFailure = null,
+  adShowFailed = false,
+  adDelayed = false,
+  adExpired = false,
   onWatchAd,
+  canRetry = false,
+  onRetry,
+  isAdReady,
 }: Props) {
-  const { rewardAdLabel, resolvedAppLocale } = useSettingsRest();
+  const { rewardAdLabel, resolvedAppLocale } = useSettingsLocalizationContext();
+  const insets = useSafeAreaInsets();
+  const drag = useRef({ x: 0, y: 0, moved: false });
   const watchAdFontFamily =
     resolvedAppLocale === "ko" || resolvedAppLocale === "en"
       ? appFontFamilyForText("noto_sans_kr", "bold")
       : undefined;
 
-  const [mounted, setMounted] = useState(visible);
   const overlayOpacity = useSharedValue(visible ? 1 : 0);
-  const wasVisibleRef = useRef(visible);
   const pendingAfterCloseRef = useRef<(() => void) | null>(null);
+  const frameRef = useRef<number | null>(null);
 
-  const handleFullyClosed = useCallback(() => {
-    setMounted(false);
-    const after = pendingAfterCloseRef.current;
-    pendingAfterCloseRef.current = null;
-    if (after) requestAnimationFrame(after);
+  // `visible=false` already committed a null render. Only then may an ad open.
+  useEffect(() => {
+    if (visible || !pendingAfterCloseRef.current) return;
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      const after = pendingAfterCloseRef.current;
+      pendingAfterCloseRef.current = null;
+      if (AppState.currentState === "active") after?.();
+    });
+    return () => {
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    };
+  }, [visible]);
+
+  useEffect(() => {
+    const cancelPending = () => {
+      pendingAfterCloseRef.current = null;
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    };
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active") cancelPending();
+    });
+    return () => { sub.remove(); cancelPending(); };
   }, []);
+
+  const handleCancel = useCallback(() => {
+    pendingAfterCloseRef.current = null;
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     if (visible) {
-      setMounted(true);
       overlayOpacity.value = withTiming(1, { duration: 180 });
-    } else if (wasVisibleRef.current) {
-      overlayOpacity.value = withTiming(0, { duration: 180 }, (finished) => {
-        if (finished) {
-          scheduleOnRN(handleFullyClosed);
-        }
-      });
+    } else {
+      // Do not retain a fading card after close. Reset only for the next open.
+      overlayOpacity.value = 0;
     }
-    wasVisibleRef.current = visible;
-  }, [visible, overlayOpacity, handleFullyClosed]);
+  }, [visible, overlayOpacity]);
 
   //mount 시, 현재 screen의 뒤로가기 이벤트 리스너 등록
   useEffect(() => {
-    if (!mounted) return;
+    if (!visible) return;
     //true로 마지막에 등록된 handler 호출
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      onClose();
+      handleCancel();
       return true;
     });
     return () => sub.remove();
-  }, [mounted, onClose]);
+  }, [visible, handleCancel]);
 
   const overlayStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
 
   const handleWatchAd = () => {
-    amplitude.track("WatchAd_clicked");
+    if (drag.current.moved || !visible || !adReady || !onWatchAd || pendingAfterCloseRef.current || (isAdReady && !isAdReady())) return;
+    if (shouldTrackAdInteraction()) trackAnalyticsEvent("WatchAd_clicked");
     // 닫힘 애니메이션이 실제로 끝난 뒤(추측 딜레이 아님) 광고를 띄운다.
     pendingAfterCloseRef.current = onWatchAd ?? null;
     onClose();
   };
 
-  if (!mounted) return null;
+  if (!visible) return null;
 
   return (
     <Animated.View
-      style={[styles.root, overlayStyle]}
+      style={[styles.root, { paddingTop: 12 + insets.top, paddingBottom: 12 + insets.bottom, paddingLeft: 12 + insets.left, paddingRight: 12 + insets.right }, overlayStyle]}
       pointerEvents={visible ? "auto" : "none"}
+      accessibilityViewIsModal={visible}
+      importantForAccessibility={visible ? "yes" : "no-hide-descendants"}
     >
       <Pressable
         style={[styles.dim, { backgroundColor: "rgba(0,0,0,0.45)" }]}
-        onPress={onClose}
+        onPress={handleCancel}
       />
       <FireworksBurst visible={visible} />
 
       <View style={styles.card}>
+        <ScrollView style={styles.modalBody} contentContainerStyle={styles.modalBodyContent}
+          keyboardShouldPersistTaps="handled" canCancelContentTouches
+          onTouchStart={event => {
+            drag.current = { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY, moved: false };
+          }}
+          onTouchMove={event => {
+            if (Math.hypot(event.nativeEvent.pageX - drag.current.x, event.nativeEvent.pageY - drag.current.y) > 8) drag.current.moved = true;
+          }}
+          onScrollBeginDrag={() => { drag.current.moved = true; }}
+          showsVerticalScrollIndicator>
+          <TouchableOpacity style={styles.closeButton}
+            onPress={() => { if (!drag.current.moved) handleCancel(); }}
+            accessibilityRole="button" accessibilityLabel="Close">
+            <Ionicons name="close" size={22} color="#8A8A8A" />
+          </TouchableOpacity>
         <View style={styles.appIconContainer}>
           <Image
             source={PRO_BADGE}
@@ -263,16 +198,6 @@ export function RewardAdModal({
           />
         </View>
 
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={onClose}
-            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-          >
-            <Ionicons name="close" size={22} color="#8A8A8A" />
-          </TouchableOpacity>
-
           <View style={styles.contentContainer}>
             <Text
               style={styles.headerBadge}
@@ -281,37 +206,52 @@ export function RewardAdModal({
               {rewardAdLabel("rewardHeaderBadge")}
             </Text>
 
-          <View style={styles.benefitContainer}>
-            {BENEFIT_ROWS.map(({ labelKey }) => (
-              <View key={labelKey} style={styles.benefitRow}>
-                <Image
-                  source={CHECK_ICON}
-                  style={styles.checkIcon}
-                  contentFit="contain"
-                  accessibilityIgnoresInvertColors
-                />
-                <Text style={styles.benefitText} allowFontScaling={false}>
-                  {rewardAdLabel(labelKey)}
-                </Text>
-              </View>
-            ))}
-          </View>
+          <RewardBenefits rewardAdLabel={rewardAdLabel} />
         </View>
+
+        <View style={styles.adStatusArea}>
+          <ReservedAdText
+            text={adUnavailableReason(resolvedAppLocale) ?? (adReady || adFailure === "consent" ? "" : rewardAdLabel(adFailure === "unavailable" ? "rewardAdUnavailable" : adFailure === "initialization" ? "rewardAdInitializationFailed" : adFailure === "configuration" ? "rewardAdConfigurationFailed" : adFailure === "open-timeout" ? "rewardAdOpenUnconfirmed" : adExpired ? "rewardAdExpired" : adShowFailed ? "rewardAdShowFailed" : adFailed ? "rewardAdLoadFailed" : adDelayed ? "rewardAdDelayed" : "rewardAdPreparing"))}
+            variants={REWARD_AD_STATUS_TEXTS}
+            textStyle={styles.adStatusText}
+          />
+        </View>
+
+        <View style={styles.modalActions}>
+          <View style={styles.adRetryArea}>
+            {canRetry && onRetry && (
+              <TouchableOpacity onPress={() => { if (!drag.current.moved && visible && canRetry) onRetry(); }}
+                accessibilityRole="button" style={styles.adRetryButton}>
+                <Text style={styles.adRetryText} allowFontScaling={false}>{rewardAdLabel("rewardAdRetry")}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleWatchAd}
           disabled={!adReady}
           accessibilityRole="button"
-          accessibilityLabel={rewardAdLabel("rewardWatchAd")}
+          accessibilityLabel={rewardAdLabel(adReady ? "rewardWatchAd" : "rewardAdPreparingButton")}
+          accessibilityState={{ disabled: !adReady }}
           style={[styles.ctaButton, !adReady && { opacity: 0.4 }]}
         >
-          <Image
-            source={WATCH_AD_BUTTON}
-            style={styles.ctaButtonBg}
-            contentFit="fill"
-            accessibilityIgnoresInvertColors
-          />
+          {Platform.OS === "ios" ? (
+            <NativeImage
+              source={WATCH_AD_BUTTON}
+              style={styles.ctaButtonBg}
+              resizeMode="stretch"
+              capInsets={{ top: 27, left: 27, bottom: 27, right: 27 }}
+              accessibilityIgnoresInvertColors
+            />
+          ) : (
+            <Image
+              source={WATCH_AD_BUTTON}
+              style={styles.ctaButtonBg}
+              contentFit="fill"
+              accessibilityIgnoresInvertColors
+            />
+          )}
           <View style={styles.ctaButtonContent}>
             <Image
               source={PLAY_BG}
@@ -319,20 +259,18 @@ export function RewardAdModal({
               contentFit="contain"
               accessibilityIgnoresInvertColors
             />
-            <Text
-              style={[
+            <ReservedAdText
+              text={rewardAdLabel(adReady ? "rewardWatchAd" : "rewardAdPreparingButton")}
+              variants={REWARD_AD_BUTTON_TEXTS}
+              textStyle={[
                 styles.ctaButtonText,
                 watchAdFontFamily ? { fontFamily: watchAdFontFamily } : undefined,
               ]}
-              allowFontScaling={false}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.72}
-            >
-              {adFailed ? rewardAdLabel("rewardAdUnavailable") : rewardAdLabel("rewardWatchAd")}
-            </Text>
+            />
           </View>
         </TouchableOpacity>
+        </View>
+        </ScrollView>
       </View>
     </Animated.View>
   );

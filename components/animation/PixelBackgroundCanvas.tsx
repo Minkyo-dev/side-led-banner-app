@@ -1,9 +1,7 @@
+import { isSignBoardPreset } from "@/constants/signBoardPresets";
 import {
-  DOT_MATRIX_BACKGROUND_SOURCE,
-  DOT_MATRIX_PHOTO_BACKGROUND_SOURCE,
-  DOT_MATRIX_STATIC_OFF_SOURCE,
-  OFF_LED_UNIFORMS,
-  resolveDefaultLedFromBackground,
+  DOT_MATRIX_BACKGROUND_SKSL,
+  DOT_MATRIX_PHOTO_BACKGROUND_SKSL,
 } from "@/components/animation/backgroundDotShader";
 import { PixelEffect1Background } from "@/components/animation/PixelEffect1Background";
 import { PixelHeartBackground } from "@/components/animation/PixelHeartBackground";
@@ -22,8 +20,10 @@ import {
 import type { BackgroundEffectAnimationResult } from "@/hooks/useBackgroundAnimation";
 import {
   Canvas,
+  Fill,
   Group,
   Image,
+  ImageShader,
   Paint,
   Rect,
   RuntimeShader,
@@ -31,7 +31,8 @@ import {
 } from "@shopify/react-native-skia";
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
-import type { SharedValue } from "react-native-reanimated";
+import { useDerivedValue, useSharedValue, type SharedValue } from "react-native-reanimated";
+import { getCachedSkiaRuntimeEffect } from "@/utils/skiaRuntimeEffectCache";
 
 const TABLET_MIN_SHORTEST_SIDE_DP = 600;
 
@@ -55,15 +56,37 @@ function PixelBackgroundImage({
   uri,
   width,
   height,
+  fillViewport,
 }: {
   uri: string;
   width: number;
   height: number;
+  fillViewport: boolean;
 }) {
   const image = useImage(uri);
   if (!image) return null;
+  if (fillViewport) {
+    return (
+      <Rect x={0} y={0} width={width} height={height}>
+        <ImageShader
+          image={image}
+          fit="contain"
+          rect={{ x: 0, y: 0, width, height }}
+          tx="repeat"
+          ty="repeat"
+        />
+      </Rect>
+    );
+  }
   return (
-    <Image image={image} x={0} y={0} width={width} height={height} fit="cover" />
+    <Image
+      image={image}
+      x={0}
+      y={0}
+      width={width}
+      height={height}
+      fit="cover"
+    />
   );
 }
 
@@ -82,31 +105,42 @@ export function PixelBackgroundCanvas({
   translateX,
   isPortrait,
   mode,
-}: PixelBackgroundCanvasProps) {
+  isActive,
+}: PixelBackgroundCanvasProps & { isActive: boolean }) {
   const { width: winW, height: winH } = useWindowDimensions();
   const isTablet = Math.min(winW, winH) >= TABLET_MIN_SHORTEST_SIDE_DP;
   const isFullscreen = mode === "fullscreen";
+  const surfaceSize = useSharedValue({ width, height });
+  // Keep the complete last scene covering the native surface while JS catches
+  // up with rotation. Steady-state scales are 1; images stay mounted/decoded.
+  const surfaceTransform = useDerivedValue(() => [
+    { scaleX: isFullscreen && width > 0 && surfaceSize.value.width > 0 ? surfaceSize.value.width / width : 1 },
+    { scaleY: isFullscreen && height > 0 && surfaceSize.value.height > 0 ? surfaceSize.value.height / height : 1 },
+  ], [isFullscreen, width, height]);
   const isFullscreenPortrait = isFullscreen && isPortrait;
   const effectId = backgroundEffect.id;
   const isHeartBg = effectId === "heartBgA";
   const isEffect1 = effectId === "effect1";
   const isSpeechBg = isSpeechBubblePreset(effectId);
+  const isPixelManagedSpeechBg = isSpeechBg && !isSignBoardPreset(effectId);
   const hasPhoto = hasBgPhoto && backgroundImageUri;
-  const { backgroundShaderLayer, photoBackgroundShaderLayer, staticOffLayer } =
-    usePixelDotShaderLayers(pixelShaderSize, backgroundColor);
+  const { backgroundShaderLayer, photoBackgroundShaderLayer } =
+    usePixelDotShaderLayers(pixelShaderSize);
 
   const speechBubbleSource = useMemo(
     () =>
-      isSpeechBg ? resolveSpeechBubbleImageSource(effectId, mode, isPortrait) : null,
-    [isSpeechBg, effectId, mode, isPortrait],
+      isPixelManagedSpeechBg
+        ? resolveSpeechBubbleImageSource(effectId, mode, isPortrait)
+        : null,
+    [isPixelManagedSpeechBg, effectId, mode, isPortrait],
   );
 
   const speechPreviewInset = useMemo(() => {
-    if (!isSpeechBg || mode !== "preview") return 0;
+    if (!isPixelManagedSpeechBg || mode !== "preview") return 0;
     const preset = SPEECH_BUBBLE_PRESETS[effectId];
     const platformPreset = Platform.OS === "ios" ? preset.ios : preset.android;
     return (platformPreset.previewHeightBoostPx ?? 0) / 2;
-  }, [isSpeechBg, effectId, mode]);
+  }, [isPixelManagedSpeechBg, effectId, mode]);
 
   if (!isPixelEffect || width <= 0 || height <= 0) {
     return null;
@@ -114,11 +148,15 @@ export function PixelBackgroundCanvas({
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Canvas style={{ width, height }} opaque={false}>
-        {/* Layer 0: 항상 최하단 — 꺼진 LED 격자 (배경 사진/이펙트 없는 영역에서 보임) */}
-        <Group layer={staticOffLayer}>
-          <Rect x={0} y={0} width={width} height={height} color={backgroundColor} />
-        </Group>
+      {/* Follow native fullscreen bounds before JS layout sizes arrive. */}
+      <Canvas
+        style={isFullscreen ? StyleSheet.absoluteFill : { width, height }}
+        onSize={isFullscreen ? surfaceSize : undefined}
+        opaque={false}
+      >
+        {/* Selected background remains visible outside photo/effect coverage. */}
+        <Fill color={backgroundColor} />
+        <Group transform={surfaceTransform}>
 
         {/* Layer 1: 배경 사진 (있을 때만, pixel shader 적용) */}
         {hasPhoto ? (
@@ -127,9 +165,11 @@ export function PixelBackgroundCanvas({
               uri={backgroundImageUri!}
               width={width}
               height={height}
+              fillViewport={isFullscreen}
             />
             {showGradientBackdrop ? (
               <GradientBackdrop
+                isActive={isActive}
                 key={`gradient-${gradientBackgroundPreset}`}
                 preset={gradientBackgroundPreset as GradientBackdropId}
                 width={width}
@@ -139,8 +179,9 @@ export function PixelBackgroundCanvas({
             ) : null}
           </Group>
         ) : showGradientBackdrop ? (
-          <Group layer={photoBackgroundShaderLayer}>
+          <Group layer={backgroundShaderLayer}>
             <GradientBackdrop
+              isActive={isActive}
               key={`gradient-${gradientBackgroundPreset}`}
               preset={gradientBackgroundPreset as GradientBackdropId}
               width={width}
@@ -150,7 +191,7 @@ export function PixelBackgroundCanvas({
           </Group>
         ) : null}
 
-        {/* Layer 2: 움직이는 이펙트 (투명 영역은 Layer 0 off-LED 격자가 비침) */}
+        {/* Layer 2: 움직이는 이펙트; 투명 영역에는 선택한 배경이 보임 */}
         {isEffect1 && backgroundEffect.sources != null ? (
           <Group layer={backgroundShaderLayer}>
             <PixelEffect1Background
@@ -176,7 +217,7 @@ export function PixelBackgroundCanvas({
           />
         ) : null}
 
-        {isSpeechBg && speechBubbleSource != null ? (
+        {isPixelManagedSpeechBg && speechBubbleSource != null ? (
           <PixelSpeechBubbleFrame
             source={speechBubbleSource}
             width={width}
@@ -186,49 +227,51 @@ export function PixelBackgroundCanvas({
             useWhiteDots={!showGradientBackdrop}
           />
         ) : null}
+        </Group>
       </Canvas>
     </View>
   );
 }
 
-function usePixelDotShaderLayers(dotSize: number, backgroundColor: string) {
-  const pixelDotUniforms = useMemo(() => pixelLedDotUniforms(dotSize), [dotSize]);
-  const defaultLedUniforms = useMemo(
-    () => resolveDefaultLedFromBackground(backgroundColor),
-    [backgroundColor],
+function usePixelDotShaderLayers(dotSize: number) {
+  const backgroundSource = useMemo(
+    () =>
+      getCachedSkiaRuntimeEffect(
+        DOT_MATRIX_BACKGROUND_SKSL,
+        "Failed to compile dot matrix background shader.",
+      ),
+    [],
   );
+  const photoSource = useMemo(
+    () =>
+      getCachedSkiaRuntimeEffect(
+        DOT_MATRIX_PHOTO_BACKGROUND_SKSL,
+        "Failed to compile photo dot matrix background shader.",
+      ),
+    [],
+  );
+  const pixelDotUniforms = useMemo(() => pixelLedDotUniforms(dotSize), [dotSize]);
   const backgroundShaderLayer = useMemo(
     () => (
       <Paint>
         <RuntimeShader
-          source={DOT_MATRIX_BACKGROUND_SOURCE}
-          uniforms={{ ...pixelDotUniforms, ...defaultLedUniforms }}
+          source={backgroundSource}
+          uniforms={pixelDotUniforms}
         />
       </Paint>
     ),
-    [pixelDotUniforms, defaultLedUniforms],
+    [backgroundSource, pixelDotUniforms],
   );
   const photoBackgroundShaderLayer = useMemo(
     () => (
       <Paint>
         <RuntimeShader
-          source={DOT_MATRIX_PHOTO_BACKGROUND_SOURCE}
+          source={photoSource}
           uniforms={pixelDotUniforms}
         />
       </Paint>
     ),
-    [pixelDotUniforms],
+    [photoSource, pixelDotUniforms],
   );
-  const staticOffLayer = useMemo(
-    () => (
-      <Paint>
-        <RuntimeShader
-          source={DOT_MATRIX_STATIC_OFF_SOURCE}
-          uniforms={{ ...pixelDotUniforms, ...OFF_LED_UNIFORMS }}
-        />
-      </Paint>
-    ),
-    [pixelDotUniforms],
-  );
-  return { backgroundShaderLayer, photoBackgroundShaderLayer, staticOffLayer };
+  return { backgroundShaderLayer, photoBackgroundShaderLayer };
 }

@@ -1,29 +1,58 @@
 import { backgroundColorPalette } from "@/constants/colorPalette";
 import { styles as base, colorPickerLockStyles as bgLock, colorPickerStyles as chip } from "@/constants/styles";
+import { persistBackgroundPhoto } from "@/utils/backgroundPhotoStorage";
+import { centerCropPhoto } from "@/utils/centerCropPhoto";
+import {
+  hidePhotoCropNoticeToday,
+  isPhotoCropNoticeHiddenToday,
+} from "@/utils/photoCropNoticeStorage";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import React, { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Alert,
+  Modal,
+  Platform,
   Image as RNImage,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSettingsRest } from "../../contexts/settingsContext";
+import {
+  useSettingsBackground,
+  useSettingsLocalizationContext,
+  useSettingsUI,
+} from "../../contexts/settingsContext";
+import { PhotoCropNoticeModal } from "./photoCropNoticeModal";
 import { SettingsSliderBlock } from "./settingsSliderBlock";
 
 const LOCK_ICON = require("@/assets/images/icon_lock_type2.png");
 const COLS = 9;
 const ROW1_SWATCHES = COLS - 1;
+const PHOTO_BUTTON_HIT_SLOP = { top: 6, right: 6, bottom: 6, left: 6 } as const;
+
+// The palette is fixed; build its display rows once per module load.
+const colors = backgroundColorPalette;
+const row1 = colors.slice(0, ROW1_SWATCHES);
+const tail = colors.slice(ROW1_SWATCHES);
+const moreRows: string[][] = [];
+for (let i = 0; i < tail.length; i += COLS) {
+  moreRows.push(tail.slice(i, i + COLS));
+}
+
 
 
 export const BackgroundSection = () => {
-  const { config, updateConfig, textSectionLabel, isProActive, openRewardAdModal } = useSettingsRest();
+  const { background, updateConfig } = useSettingsBackground();
+  const { textSectionLabel } = useSettingsLocalizationContext();
+  const { isProActive, openRewardAdModal } = useSettingsUI();
   const { backgroundColor, backgroundBlur, backgroundImageUri } =
-    config.background;
+    background;
+  const [photoPickerCoverVisible, setPhotoPickerCoverVisible] = useState(false);
+  const photoPickerLaunchPendingRef = useRef(false);
+  const [pendingPhotoUri, setPendingPhotoUri] = useState<string | null>(null);
 
   const setBackgroundBlur = (value: number) =>
     updateConfig("background", { backgroundBlur: value });
@@ -34,6 +63,58 @@ export const BackgroundSection = () => {
       backgroundImageUri: null,
     });
 
+  const applyPhoto = useCallback(async (uri: string) => {
+    const croppedUri = await centerCropPhoto(uri);
+    const savedUri = await persistBackgroundPhoto(croppedUri);
+    updateConfig("background", { backgroundImageUri: savedUri });
+  }, [updateConfig]);
+
+  const launchAlbumPicker = useCallback(async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: false,
+      quality: 0.95,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const uri = result.assets[0].uri;
+    if (await isPhotoCropNoticeHiddenToday()) {
+      await applyPhoto(uri);
+      return;
+    }
+    setPendingPhotoUri(uri);
+  }, [applyPhoto]);
+
+  const cancelPhotoCropNotice = useCallback(() => {
+    setPendingPhotoUri(null);
+  }, []);
+
+  const confirmPhotoCropNotice = useCallback(
+    (hideToday: boolean) => {
+      if (!pendingPhotoUri) return;
+      const uri = pendingPhotoUri;
+      setPendingPhotoUri(null);
+      if (hideToday) {
+        void hidePhotoCropNoticeToday().catch(error => {
+          console.error("[background] Photo crop notice preference save failed", error);
+        });
+      }
+      void applyPhoto(uri).catch(error => {
+        console.error("[background] Photo crop or permanent save failed", error);
+      });
+    },
+    [applyPhoto, pendingPhotoUri],
+  );
+
+  const launchAndroidAlbumFromCover = useCallback(() => {
+    if (!photoPickerLaunchPendingRef.current) return;
+    photoPickerLaunchPendingRef.current = false;
+    void launchAlbumPicker().catch(error => {
+      console.error("[background] Photo selection or permanent save failed", error);
+    }).finally(() => {
+      setPhotoPickerCoverVisible(false);
+    });
+  }, [launchAlbumPicker]);
+
   const openAlbum = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -43,25 +124,21 @@ export const BackgroundSection = () => {
       );
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.85,
-      aspect: [16, 9],
-    });
-    if (result.canceled || !result.assets[0]) return;
-    updateConfig("background", {
-      backgroundImageUri: result.assets[0].uri,
-    });
-  }, [updateConfig]);
 
-  const colors = backgroundColorPalette;
-  const row1 = colors.slice(0, ROW1_SWATCHES);
-  const tail = colors.slice(ROW1_SWATCHES);
-  const moreRows: string[][] = [];
-  for (let i = 0; i < tail.length; i += COLS) {
-    moreRows.push(tail.slice(i, i + COLS));
-  }
+    if (Platform.OS === "android") {
+      photoPickerLaunchPendingRef.current = true;
+      setPhotoPickerCoverVisible(true);
+      return;
+    }
+
+    await launchAlbumPicker();
+  }, [launchAlbumPicker]);
+
+  const closePhotoPickerCover = useCallback(() => {
+    photoPickerLaunchPendingRef.current = false;
+    setPhotoPickerCoverVisible(false);
+  }, []);
+
 
 
   const hasBgPhoto = backgroundImageUri != null && backgroundImageUri !== "";
@@ -69,7 +146,11 @@ export const BackgroundSection = () => {
   return (
     <>
       <ScrollView
+        style={base.settingsPanelContainer}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        directionalLockEnabled
+        canCancelContentTouches
         contentContainerStyle={base.scrollViewContainer}
       >
         <View
@@ -84,7 +165,14 @@ export const BackgroundSection = () => {
           <View style={chip.colorPickerRow}>
             <TouchableOpacity
               style={chip.colorPickerItemButton}
-              onPress={() => void openAlbum()}
+              hitSlop={PHOTO_BUTTON_HIT_SLOP}
+              activeOpacity={0.65}
+              onPress={() => {
+                void openAlbum().catch(error => {
+                  console.error("[background] Photo selection or permanent save failed", error);
+                });
+              }}
+              accessibilityRole="button"
               accessibilityLabel="Background photo"
             >
               {hasBgPhoto ? (
@@ -159,6 +247,24 @@ export const BackgroundSection = () => {
           step={1}
         />
       </ScrollView>
+      <Modal
+        visible={photoPickerCoverVisible}
+        animationType="none"
+        presentationStyle="fullScreen"
+        statusBarTranslucent
+        navigationBarTranslucent
+        hardwareAccelerated
+        onShow={launchAndroidAlbumFromCover}
+        onRequestClose={closePhotoPickerCover}
+      >
+        <View style={{ flex: 1, backgroundColor: "#000000" }} />
+      </Modal>
+      {pendingPhotoUri && (
+        <PhotoCropNoticeModal
+          onCancel={cancelPhotoCropNotice}
+          onConfirm={confirmPhotoCropNotice}
+        />
+      )}
     </>
   );
 };

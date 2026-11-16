@@ -9,10 +9,10 @@ import {
   isSpeechBubblePreset,
   type SpeechBubblePresetId,
 } from "@/constants/speechBubblePresets";
-import { useSettingsRest } from "@/contexts/settingsContext";
-import { useEffect, useMemo, useState } from "react";
+import { useSettingsAppearance } from "@/contexts/settingsContext";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-export type BackgroundEffectPreset =
+type BackgroundEffectPreset =
   | "none"
   | "effect1"
   | "heartBgA"
@@ -68,24 +68,37 @@ export type BackgroundEffectAnimationResult =
 export type BackgroundEffectId = BackgroundEffectAnimationResult["id"];
 
 //각 배경 이펙트마다 렌더링 가능한 상태로 바꿈
-export function useBackgroundAnimation() {
-  const { config } = useSettingsRest();
-  const preset: BackgroundEffectPreset = config.appearance.backgroundEffectPreset as BackgroundEffectPreset;
+export function useBackgroundAnimation(isActive = true) {
+  const { appearance } = useSettingsAppearance();
+  const preset = appearance.backgroundEffectPreset as BackgroundEffectPreset;
   const [frameIndex, setFrameIndex] = useState(0);
+  const remainingMs = useRef(FRAME_DURATION_MS);
   const isEnabled = preset === "effect1";
   const isHeartEnabled = preset === "heartBgA";
   const isSpeechBubble = isSpeechBubblePreset(preset);
 
+  // The assignment makes this guard false on the next render.
+  if (!isEnabled && frameIndex !== 0) setFrameIndex(0);
   useEffect(() => {
     if (!isEnabled) {
-      setFrameIndex(0);
+      remainingMs.current = FRAME_DURATION_MS;
       return;
     }
-    const id = setInterval(() => {
-      setFrameIndex((prev) => (prev + 1) % FRAME_SEQUENCE.length);
-    }, FRAME_DURATION_MS);
-    return () => clearInterval(id);
-  }, [isEnabled]);
+    if (!isActive) return;
+    let deadline = performance.now() + remainingMs.current;
+    let timer: ReturnType<typeof setTimeout>;
+    const advance = () => {
+      setFrameIndex(prev => (prev + 1) % FRAME_SEQUENCE.length);
+      remainingMs.current = FRAME_DURATION_MS;
+      deadline = performance.now() + FRAME_DURATION_MS;
+      timer = setTimeout(advance, FRAME_DURATION_MS);
+    };
+    timer = setTimeout(advance, remainingMs.current);
+    return () => {
+      clearTimeout(timer);
+      remainingMs.current = Math.max(0, Math.min(FRAME_DURATION_MS, deadline - performance.now()));
+    };
+  }, [isEnabled, isActive]);
 
   return useMemo<BackgroundEffectAnimationResult>(() => {
     if (isHeartEnabled) {

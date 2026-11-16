@@ -1,5 +1,6 @@
+import { layoutSkiaLine, type SkiaLineLayout } from "@/utils/skiaLineLayout";
 import type { SkFont, SkTextBlob } from "@shopify/react-native-skia";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LayoutChangeEvent } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import { useDerivedValue, useSharedValue } from "react-native-reanimated";
@@ -10,7 +11,11 @@ import {
   getDefaultForLocale,
   resolveFontFaceSet,
 } from "@/constants/appFonts";
-import { useSettings } from "@/contexts/settingsContext";
+import {
+  useSettingsAppearance,
+  useSettingsContent,
+  useSettingsLocalizationContext,
+} from "@/contexts/settingsContext";
 import { useCachedSkiaFont, useResolvedFontAssetRef } from "@/hooks/useCachedSkiaFont";
 import { useSkiaAppearanceFont } from "@/hooks/useSkiaAppearanceFont";
 import {
@@ -30,8 +35,6 @@ type TextLayoutEvent = {
   nativeEvent: { lines: { width: number }[] };
 };
 
-type SkiaLineGlyphLayout = { x: number; text: string };
-type SkiaLineLayout = { width: number; glyphs: SkiaLineGlyphLayout[] };
 
 /** CJK문자 판별하는 용  */
 function isCJKChar(ch: string): boolean {
@@ -42,50 +45,6 @@ function isCJKChar(ch: string): boolean {
     (code >= 0x20000 && code <= 0x2a6df) ||
     (code >= 0xf900 && code <= 0xfaff)
   );
-}
-
-function getSpaceAdvanceWidth(font: SkFont): number {
-  const ids = font.getGlyphIDs(" ", 1);
-  if (ids.length > 0 && ids[0] !== 0) {
-    const widths = font.getGlyphWidths(ids);
-    if (widths.length > 0 && widths[0] != null && widths[0] > 0) return widths[0];
-  }
-  return 0;
-}
-
-function layoutSkiaLine(
-  font: SkFont,
-  text: string,
-  letterSpacing: number,
-  getCharFont?: (ch: string) => SkFont,
-): SkiaLineLayout {
-  if (text.length === 0) return { width: 0, glyphs: [] };
-
-  const glyphs: SkiaLineGlyphLayout[] = [];
-  let x = 0;
-
-  if (!getCharFont) {
-    const advances = font.getGlyphWidths(font.getGlyphIDs(text));
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i]!;
-      glyphs.push({ x, text: ch });
-      const isSpace = ch === " ";
-      x += (advances[i] ?? 0) + (!isSpace && i < text.length - 1 ? letterSpacing : 0);
-    }
-  } else {
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i]!;
-      glyphs.push({ x, text: ch });
-      const charFont = getCharFont(ch);
-      const adv =
-        ch === " "
-          ? getSpaceAdvanceWidth(charFont)
-          : charFont.measureText(ch).width + (i < text.length - 1 ? letterSpacing : 0);
-      x += adv;
-    }
-  }
-
-  return { width: x, glyphs };
 }
 
 /** 마퀴 타일은 텍스트 너비 기준(고정). 프레임 가운데 정렬 x는 별도 오프셋으로 복원합니다. */
@@ -127,7 +86,7 @@ function lineLayoutsToGlyphs(
   return out;
 }
 
-export interface UsePreviewPanelCanvasParams {
+interface UsePreviewPanelCanvasParams {
   displayText: string;
   translateX: SharedValue<number>;
   onTextLayout: (e: TextLayoutEvent) => void;
@@ -194,9 +153,11 @@ export function usePreviewPanelCanvas({
   speechBubbleLayout = null,
   isPixelMode = false,
 }: UsePreviewPanelCanvasParams) {
-  const { config, resolvedAppLocale, lastFontByLocale } = useSettings();
-  const { font: appearanceFont, fontWeight, letterSpacing } = config.appearance;
-  const { playOption } = config.content;
+  const { appearance, lastFontByLocale } = useSettingsAppearance();
+  const { content } = useSettingsContent();
+  const { resolvedAppLocale } = useSettingsLocalizationContext();
+  const { font: appearanceFont, fontWeight, letterSpacing } = appearance;
+  const { playOption } = content;
   const skiaAppearanceFont = appearanceFontOverride ?? appearanceFont;
   const skiaFont = useSkiaAppearanceFont(
     skiaAppearanceFont,
@@ -274,15 +235,31 @@ export function usePreviewPanelCanvas({
     scFallbackFont,
   ]);
 
+  // Only wait for fonts used by this text, using the same script rules as rendering.
+  // Unrelated remote fonts must not hold startup open.
+  const textFontsReady = useMemo(() => !!skiaFont && Array.from(displayText).every(ch => {
+    if (isPixelMode) return !isCJKChar(ch) || !!(pixelZhHansFont && pixelZhHantFont);
+    if (isHangulChar(ch)) return selectedFontIsKo || !!koFallbackFont;
+    if (isJapaneseKanaChar(ch)) return selectedFontIsJa || !!jaFallbackFont;
+    if (isCJKChar(ch)) return selectedFontIsZhTC || selectedFontIsZhSC || selectedFontIsJa ||
+      !!(resolvedAppLocale === "zhSC" ? scFallbackFont : tcFallbackFont);
+    return true;
+  }), [skiaFont, displayText, isPixelMode, pixelZhHansFont, pixelZhHantFont,
+    selectedFontIsKo, selectedFontIsJa, selectedFontIsZhTC, selectedFontIsZhSC,
+    koFallbackFont, jaFallbackFont, scFallbackFont, tcFallbackFont, resolvedAppLocale]);
+
   const [skiaCanvasLayout, setSkiaCanvasLayout] = useState({
     width: 0,
     height: 0,
   });
 
   // 말풍선 ON/OFF 시 onLayout이 다른 View로 옮겨져 재측정이 안 될 수 있음 → stale 높이로 위쪽 붙음
-  useEffect(() => {
+  const hasBubbleLayout = speechBubbleLayout != null;
+  const [previousBubbleLayout, setPreviousBubbleLayout] = useState(hasBubbleLayout);
+  if (previousBubbleLayout !== hasBubbleLayout) {
+    setPreviousBubbleLayout(hasBubbleLayout);
     setSkiaCanvasLayout({ width: 0, height: 0 });
-  }, [speechBubbleLayout != null]);
+  }
 
   const hasCanvasLayout =
     skiaCanvasLayout.width > 0 && skiaCanvasLayout.height > 0;
@@ -305,14 +282,14 @@ export function usePreviewPanelCanvas({
         })
       : (displayText.length > 0 ? [displayText] : []);
 
-    if (useBubbleLayout) {
-      return bubbleLayouts(skiaFont, rows, letterSpacing);
-    }
-
     const getCharFont: ((ch: string) => SkFont) | undefined =
       isPixelMode && (pixelZhHansFont || pixelZhHantFont)
         ? (ch) => pickBestCJKFont(ch, pixelZhHansFont, pixelZhHantFont, skiaFont)
         : (localeCharFontPicker ?? undefined);
+
+    if (useBubbleLayout) {
+      return bubbleLayouts(skiaFont, rows, letterSpacing, getCharFont);
+    }
 
     return rows.map((line) => layoutSkiaLine(skiaFont, line, letterSpacing, getCharFont));
   }, [
@@ -418,12 +395,19 @@ export function usePreviewPanelCanvas({
     });
   }, [marqueePeriodPx, onTextLayout]);
 
-  const onSkiaCanvasLayout = (e: LayoutChangeEvent) => {
+  const onSkiaCanvasLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
-    setSkiaCanvasLayout({ width, height });
-  };
+    setSkiaCanvasLayout((previous) =>
+      previous.width === width && previous.height === height
+        ? previous
+        : { width, height },
+    );
+  }, []);
 
   return {
+    // An empty or unsupported glyph sequence may legitimately have no text blob.
+    // Do not make the editor unreachable merely because the authored text has no drawable glyphs.
+    isPrepared: textFontsReady && drawW > 0 && drawH > 0 && skiaLineLayouts !== null,
     skiaFont,
     skiaTextWidth,
     skiaTextBlob: skiaTextBlobs?.[0] ?? null,

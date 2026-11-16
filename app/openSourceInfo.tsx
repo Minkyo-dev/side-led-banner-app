@@ -3,12 +3,11 @@ import {
   settingsStyles,
 } from "@/constants/settingsStyles";
 import { styles as base } from "@/constants/styles";
-import { useSettingsRest } from "@/contexts/settingsContext";
-import { Ionicons } from "@expo/vector-icons";
+import { useSettingsLocalizationContext } from "@/contexts/settingsContext";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
-  Platform,
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -26,7 +25,7 @@ type OssEntry = { name: string; version: string };
 export default function OpenSourceInfoScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { textSectionLabel } = useSettingsRest();
+  const { textSectionLabel } = useSettingsLocalizationContext();
 
   const entries = useMemo<OssEntry[]>(() => {
     const deps = (pkg as { dependencies?: Record<string, string> })
@@ -49,10 +48,10 @@ export default function OpenSourceInfoScreen() {
           accessibilityLabel="Back"
           hitSlop={10}
         >
-          <Ionicons
-            name={Platform.OS === "ios" ? "chevron-back" : "arrow-back"}
-            size={24}
-            color="black"
+          <Image
+            source={require("@/assets/images/icon_arrow_back_DT_xxhdpi.png")}
+            style={settingsStyles.backIcon}
+            resizeMode="contain"
           />
         </TouchableOpacity>
         <Text style={settingsStyles.titleText} allowFontScaling={false}>
